@@ -4,6 +4,26 @@ import 'alert_providers.dart';
 
 final statsTimeRangeProvider = StateProvider<String>((ref) => 'week');
 
+final alertsTodayCountProvider = Provider<int>((ref) {
+  final alerts = ref.watch(alertListProvider);
+  final now = DateTime.now();
+  return alerts.where((a) =>
+    a.timestamp.year == now.year &&
+    a.timestamp.month == now.month &&
+    a.timestamp.day == now.day).length;
+});
+
+final alertsWeekCountProvider = Provider<int>((ref) {
+  final alerts = ref.watch(alertListProvider);
+  final cutoff = DateTime.now().subtract(const Duration(days: 7));
+  return alerts.where((a) => a.timestamp.isAfter(cutoff)).length;
+});
+
+final highPriorityCountProvider = Provider<int>((ref) {
+  final alerts = ref.watch(alertListProvider);
+  return alerts.where((a) => a.priorityLevel.toLowerCase() == 'high').length;
+});
+
 /// Returns total alerts grouped by sound category name for the bar chart.
 final categoryFrequencyProvider = Provider<Map<String, int>>((ref) {
   final alerts = ref.watch(alertListProvider);
@@ -19,7 +39,6 @@ final categoryFrequencyProvider = Provider<Map<String, int>>((ref) {
 
   final filtered = alerts.where((a) => a.timestamp.isAfter(cutoff)).toList();
 
-  // Group by short label (category group)
   final Map<String, int> freq = {};
   for (final alert in filtered) {
     try {
@@ -31,9 +50,6 @@ final categoryFrequencyProvider = Provider<Map<String, int>>((ref) {
     }
   }
 
-  if (freq.isEmpty) {
-    return {'No Data': 0};
-  }
   return freq;
 });
 
@@ -59,9 +75,9 @@ String _groupLabel(SoundCategory cat) {
 }
 
 /// Top sound: the category with the most alerts.
-final topSoundProvider = Provider<Map<String, dynamic>>((ref) {
+final topSoundProvider = Provider<Map<String, dynamic>?>((ref) {
   final alerts = ref.watch(alertListProvider);
-  if (alerts.isEmpty) return {'emoji': '🎧', 'name': 'None yet', 'count': 0};
+  if (alerts.isEmpty) return null;
 
   final Map<String, int> counts = {};
   for (final alert in alerts) {

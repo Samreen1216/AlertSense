@@ -52,7 +52,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                 side: BorderSide(
                   color: isActive
                       ? theme.colorScheme.primary
-                      : theme.colorScheme.outlineVariant.withOpacity(0.6),
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
                   width: isActive ? 2 : 1,
                 ),
               ),
@@ -63,7 +63,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                     leading: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.primaryContainer.withOpacity(0.5),
+                        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(profile.emoji, style: const TextStyle(fontSize: 24)),
@@ -130,7 +130,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                         dense: true,
                         secondary: SoundIcon(
                           emoji: category.emoji,
-                          color: category.color.withOpacity(0.15),
+                          color: category.color.withValues(alpha: 0.15),
                         ),
                         title: Text(category.label),
                         subtitle: Text(

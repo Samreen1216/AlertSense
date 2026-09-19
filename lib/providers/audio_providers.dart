@@ -8,11 +8,27 @@ import 'alert_providers.dart';
 import 'service_providers.dart';
 import 'settings_providers.dart';
 
+import '../core/constants/priority_levels.dart';
+
 class DetectedSound {
-  final String category;
+  final SoundCategory category;
   final double confidence;
   final double angle;
-  DetectedSound({required this.category, required this.confidence, required this.angle});
+  final double distance;
+  final PriorityLevel priority;
+  final DateTime timestamp;
+
+  DetectedSound({
+    required this.category,
+    required this.confidence,
+    required this.angle,
+    this.distance = 0.65,
+    PriorityLevel? priority,
+    DateTime? timestamp,
+  })  : priority = priority ?? category.defaultPriority,
+        timestamp = timestamp ?? DateTime.now();
+
+  String get categoryName => category.label;
 }
 
 class ListeningNotifier extends StateNotifier<bool> {
@@ -75,18 +91,30 @@ class ListeningNotifier extends StateNotifier<bool> {
         (c) => c.name == alertEvent.soundCategory,
         orElse: () => SoundCategory.dogBarking,
       );
-      _ref.read(detectedSoundsProvider.notifier).state = [
-        DetectedSound(
-          category: cat.label,
-          confidence: alertEvent.confidence * 100,
-          angle: random.nextDouble() * 2 * pi,
-        ),
-      ];
+      final dist = (0.75 - (alertEvent.confidence * 0.2)).clamp(0.42, 0.82);
+      final newSound = DetectedSound(
+        category: cat,
+        confidence: alertEvent.confidence * 100,
+        angle: random.nextDouble() * 2 * pi,
+        distance: dist,
+        priority: cat.defaultPriority,
+      );
+
+      final currentSounds = _ref.read(detectedSoundsProvider)
+          .where((s) => DateTime.now().difference(s.timestamp).inSeconds < 18 && s.category != cat)
+          .toList();
+
+      _ref.read(detectedSoundsProvider.notifier).state = [newSound, ...currentSounds].take(4).toList();
       _ref.read(alertListProvider.notifier).syncFromRepo();
 
       _clearRadarTimer?.cancel();
-      _clearRadarTimer = Timer(const Duration(seconds: 4), () {
-        if (mounted) _ref.read(detectedSoundsProvider.notifier).state = [];
+      _clearRadarTimer = Timer(const Duration(seconds: 18), () {
+        if (mounted) {
+          final valid = _ref.read(detectedSoundsProvider)
+              .where((s) => DateTime.now().difference(s.timestamp).inSeconds < 18)
+              .toList();
+          _ref.read(detectedSoundsProvider.notifier).state = valid;
+        }
       });
     }
   }

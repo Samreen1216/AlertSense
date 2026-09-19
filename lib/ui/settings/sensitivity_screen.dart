@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/sound_categories.dart';
-import '../../providers/settings_providers.dart';
 import '../shared/priority_badge.dart';
 import '../shared/sound_icon.dart';
 
@@ -52,7 +51,7 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -79,7 +78,7 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(
-                  color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                 ),
               ),
               child: Padding(
@@ -91,7 +90,7 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                       children: [
                         SoundIcon(
                           emoji: category.emoji,
-                          color: category.color.withOpacity(0.15),
+                          color: category.color.withValues(alpha: 0.15),
                         ),
                         const SizedBox(width: 12),
                         Expanded(

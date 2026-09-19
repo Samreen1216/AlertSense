@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
+import '../../providers/alert_providers.dart';
+import '../../providers/audio_providers.dart';
 import '../../providers/settings_providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -13,7 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     final settings = ref.watch(userSettingsProvider);
     final themeType = ref.watch(themeTypeProvider);
     final textScale = ref.watch(textScaleProvider);
-    final theme = Theme.of(context);
+    final enabledSounds = ref.watch(enabledSoundsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -29,6 +31,14 @@ class SettingsScreen extends ConsumerWidget {
             context,
             children: [
               ListTile(
+                leading: const Icon(Icons.category_rounded),
+                title: const Text('Manage Sounds'),
+                subtitle: Text('${enabledSounds.length} of 9 sounds enabled'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push(AppRoutes.soundManagement),
+              ),
+              const Divider(height: 1),
+              ListTile(
                 leading: const Icon(Icons.tune_rounded),
                 title: const Text('Sound Profiles'),
                 subtitle: const Text('Manage Home, Sleep, and Outdoor presets'),
@@ -42,6 +52,14 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: const Text('Fine-tune AI confidence per sound category'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push(AppRoutes.sensitivity),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.mic_external_on_rounded),
+                title: const Text('Quick Scan Check'),
+                subtitle: const Text('Run dedicated 4-second environmental audio test'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push(AppRoutes.quickScan),
               ),
             ],
           ),
@@ -135,7 +153,55 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Section 5: App Information ──
+          // ── Section 5: Data Management ──
+          _buildSectionHeader(context, 'DATA & STORAGE', Icons.storage_rounded),
+          _buildSettingsCard(
+            context,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.history_rounded),
+                title: const Text('View Alert History'),
+                subtitle: const Text('View and export all recorded alerts'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push(AppRoutes.history),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
+                title: const Text('Clear All Alert History', style: TextStyle(color: Colors.red)),
+                subtitle: const Text('Permanently erase saved history from local storage'),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Clear History?'),
+                      content: const Text('This will delete all saved alerts.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Cancel'),
+                        ),
+                        FilledButton(
+                          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                          onPressed: () {
+                            ref.read(alertListProvider.notifier).clear();
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('History cleared successfully')),
+                            );
+                          },
+                          child: const Text('Clear'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Section 6: App Information ──
           _buildSectionHeader(context, 'ABOUT ALERTSENSE', Icons.info_outline_rounded),
           _buildSettingsCard(
             context,
@@ -158,7 +224,7 @@ class SettingsScreen extends ConsumerWidget {
               const ListTile(
                 leading: Icon(Icons.code_rounded),
                 title: Text('Version'),
-                subtitle: Text('AlertSense v1.0.0 (On-Device AI Engine)'),
+                subtitle: Text('AlertSense v1.0.0 (On-Device Pure-DSP AI Engine)'),
               ),
             ],
           ),
@@ -192,11 +258,11 @@ class SettingsScreen extends ConsumerWidget {
   Widget _buildSettingsCard(BuildContext context, {required List<Widget> children}) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.4),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.5),
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
       child: Column(children: children),
@@ -228,21 +294,23 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Select Theme'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: ThemeType.values.map((type) {
-            return RadioListTile<ThemeType>(
-              title: Text(_getThemeName(type)),
-              value: type,
-              groupValue: current,
-              onChanged: (selected) {
-                if (selected != null) {
-                  ref.read(themeTypeProvider.notifier).setTheme(selected);
-                  Navigator.pop(ctx);
-                }
-              },
-            );
-          }).toList(),
+        content: RadioGroup<ThemeType>(
+          groupValue: current,
+          onChanged: (selected) {
+            if (selected != null) {
+              ref.read(themeTypeProvider.notifier).setTheme(selected);
+              Navigator.pop(ctx);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: ThemeType.values.map((type) {
+              return RadioListTile<ThemeType>(
+                title: Text(_getThemeName(type)),
+                value: type,
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -254,21 +322,23 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Font Size & Scaling'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: scales.map((scale) {
-            return RadioListTile<double>(
-              title: Text(_getFontScaleName(scale)),
-              value: scale,
-              groupValue: current,
-              onChanged: (selected) {
-                if (selected != null) {
-                  ref.read(textScaleProvider.notifier).setScale(selected);
-                  Navigator.pop(ctx);
-                }
-              },
-            );
-          }).toList(),
+        content: RadioGroup<double>(
+          groupValue: current,
+          onChanged: (selected) {
+            if (selected != null) {
+              ref.read(textScaleProvider.notifier).setScale(selected);
+              Navigator.pop(ctx);
+            }
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: scales.map((scale) {
+              return RadioListTile<double>(
+                title: Text(_getFontScaleName(scale)),
+                value: scale,
+              );
+            }).toList(),
+          ),
         ),
       ),
     );

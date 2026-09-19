@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 class AlertEvent {
   final String id;
@@ -8,7 +8,8 @@ class AlertEvent {
   final DateTime timestamp;
   final bool acknowledged;
   final int? durationSeconds; // for ongoing alerts
-  final String? responseAction; // 'safe', 'called_911', 'alerted_family', 'dismissed'
+  final String? responseAction; // 'safe', 'called_emergency', 'alerted_family', 'dismissed'
+  final String source; // 'Continuous Monitoring', 'Quick Scan'
 
   const AlertEvent({
     required this.id,
@@ -19,6 +20,7 @@ class AlertEvent {
     this.acknowledged = false,
     this.durationSeconds,
     this.responseAction,
+    this.source = 'Continuous Monitoring',
   });
 
   AlertEvent copyWith({
@@ -30,6 +32,7 @@ class AlertEvent {
     bool? acknowledged,
     int? durationSeconds,
     String? responseAction,
+    String? source,
   }) {
     return AlertEvent(
       id: id ?? this.id,
@@ -40,6 +43,7 @@ class AlertEvent {
       acknowledged: acknowledged ?? this.acknowledged,
       durationSeconds: durationSeconds ?? this.durationSeconds,
       responseAction: responseAction ?? this.responseAction,
+      source: source ?? this.source,
     );
   }
 
@@ -53,6 +57,7 @@ class AlertEvent {
       'acknowledged': acknowledged,
       'durationSeconds': durationSeconds,
       'responseAction': responseAction,
+      'source': source,
     };
   }
 
@@ -66,6 +71,7 @@ class AlertEvent {
       acknowledged: map['acknowledged'] ?? false,
       durationSeconds: map['durationSeconds'],
       responseAction: map['responseAction'],
+      source: map['source'] ?? 'Continuous Monitoring',
     );
   }
 

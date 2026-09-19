@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/constants/sound_categories.dart';
+import '../../core/router/app_router.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/alert_providers.dart';
 import '../shared/priority_badge.dart';
@@ -23,6 +25,32 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final selectedFilter = ref.watch(alertFilterPriorityProvider) ?? 'All';
     final alerts = ref.watch(filteredAlertsProvider);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Group alerts by Today, Yesterday, Earlier
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+
+    final Map<String, List<AlertEvent>> grouped = {
+      'Today': [],
+      'Yesterday': [],
+      'Earlier': [],
+    };
+
+    for (final a in alerts) {
+      final aDate = DateTime(a.timestamp.year, a.timestamp.month, a.timestamp.day);
+      if (aDate == today) {
+        grouped['Today']!.add(a);
+      } else if (aDate == yesterday) {
+        grouped['Yesterday']!.add(a);
+      } else {
+        grouped['Earlier']!.add(a);
+      }
+    }
+
+    // Remove empty groups
+    grouped.removeWhere((key, list) => list.isEmpty);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,11 +77,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               children: _filters.map((filter) {
-                final isSelected = selectedFilter.toLowerCase() == filter.toLowerCase();
+                final isSelected =
+                    selectedFilter.toLowerCase() == filter.toLowerCase();
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: FilterChip(
-                    label: Text(filter == 'All' ? 'All Alerts' : '$filter Priority'),
+                    label: Text(
+                        filter == 'All' ? 'All Alerts' : '$filter Priority'),
                     selected: isSelected,
                     onSelected: (selected) {
                       ref.read(alertFilterPriorityProvider.notifier).state =
@@ -78,18 +108,22 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                              color: isDark
+                                  ? const Color(0xFF1E2638)
+                                  : theme.colorScheme.surfaceContainerHighest
+                                      .withValues(alpha: 0.5),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              Icons.verified_outlined,
+                              Icons.notifications_off_outlined,
                               size: 64,
-                              color: theme.colorScheme.primary.withOpacity(0.7),
+                              color: theme.colorScheme.primary
+                                  .withValues(alpha: 0.7),
                             ),
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No Alerts Recorded',
+                            'No alerts yet',
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -97,7 +131,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           const SizedBox(height: 8),
                           Text(
                             selectedFilter == 'All'
-                                ? 'AlertSense hasn\'t detected any critical environmental sounds yet.'
+                                ? 'No sounds have been detected yet. When an environmental sound or alarm occurs, it will be logged here.'
                                 : 'No $selectedFilter priority alerts found.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
@@ -110,109 +144,172 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.only(top: 8, bottom: 24),
-                    itemCount: alerts.length,
-                    itemBuilder: (context, index) {
-                      final alert = alerts[index];
-                      final category = _getCategory(alert.soundCategory);
-                      final borderColor = _getPriorityColor(alert.priorityLevel);
+                    itemCount: grouped.keys.length,
+                    itemBuilder: (context, groupIndex) {
+                      final groupTitle = grouped.keys.elementAt(groupIndex);
+                      final groupAlerts = grouped[groupTitle]!;
 
-                      return Dismissible(
-                        key: Key(alert.id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          color: theme.colorScheme.error,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Icon(Icons.delete_outline_rounded, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                        onDismissed: (_) {
-                          ref.read(alertListProvider.notifier).removeAlert(alert.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Removed ${category?.label ?? alert.soundCategory} alert'),
-                              action: SnackBarAction(
-                                label: 'Undo',
-                                onPressed: () {
-                                  ref.read(alertListProvider.notifier).addAlert(alert);
-                                },
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+                            child: Text(
+                              groupTitle.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.0,
+                                color: theme.colorScheme.primary,
                               ),
-                            ),
-                          );
-                        },
-                        child: Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: borderColor.withOpacity(0.5),
-                              width: 1.5,
                             ),
                           ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border(
-                                left: BorderSide(color: borderColor, width: 6),
-                              ),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              leading: SoundIcon(
-                                emoji: category?.emoji ?? '🔔',
-                                color: borderColor.withOpacity(0.15),
-                              ),
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      category?.label ?? alert.soundCategory,
-                                      style: theme.textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                  ),
-                                  PriorityBadge(priority: alert.priorityLevel.toUpperCase()),
-                                ],
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 6.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                          ...groupAlerts.map((alert) {
+                            final category = _getCategory(alert.soundCategory);
+                            final borderColor =
+                                _getPriorityColor(alert.priorityLevel);
+
+                            return Dismissible(
+                              key: Key(alert.id),
+                              direction: DismissDirection.endToStart,
+                              background: Container(
+                                color: theme.colorScheme.error,
+                                alignment: Alignment.centerRight,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 24),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    Text(
-                                      '${(alert.confidence * 100).toStringAsFixed(0)}% Confidence • ${DateFormat.yMMMd().add_jm().format(alert.timestamp)}',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                    if (alert.acknowledged)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 4.0),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.check_circle, size: 14, color: Colors.green),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'Acknowledged (${alert.responseAction ?? "checked"})',
-                                              style: const TextStyle(fontSize: 12, color: Colors.green, fontWeight: FontWeight.w500),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                    Icon(Icons.delete_outline_rounded,
+                                        color: Colors.white),
+                                    SizedBox(width: 8),
+                                    Text('Delete',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
+                              onDismissed: (_) {
+                                ref
+                                    .read(alertListProvider.notifier)
+                                    .removeAlert(alert.id);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        'Removed ${category?.label ?? alert.soundCategory} alert'),
+                                    action: SnackBarAction(
+                                      label: 'Undo',
+                                      onPressed: () {
+                                        ref
+                                            .read(alertListProvider.notifier)
+                                            .addAlert(alert);
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Card(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 5),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  side: BorderSide(
+                                    color: borderColor.withValues(alpha: 0.4),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: InkWell(
+                                  onTap: () {
+                                    context.push(AppRoutes.alertDetails,
+                                        extra: alert);
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border(
+                                        left: BorderSide(
+                                            color: borderColor, width: 5),
+                                      ),
+                                    ),
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 6),
+                                      leading: SoundIcon(
+                                        emoji: category?.emoji ?? '🔔',
+                                        color:
+                                            borderColor.withValues(alpha: 0.15),
+                                      ),
+                                      title: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              category?.label ??
+                                                  alert.soundCategory,
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                          PriorityBadge(
+                                              priority: alert.priorityLevel
+                                                  .toUpperCase()),
+                                        ],
+                                      ),
+                                      subtitle: Padding(
+                                        padding: const EdgeInsets.only(top: 4.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${(alert.confidence * 100).toStringAsFixed(0)}% • ${DateFormat.jm().format(alert.timestamp)} • ${alert.source}',
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                color: theme.colorScheme
+                                                    .onSurfaceVariant,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            if (alert.acknowledged)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 4.0),
+                                                child: Row(
+                                                  children: [
+                                                    const Icon(
+                                                        Icons.check_circle,
+                                                        size: 13,
+                                                        color: Colors.green),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      'Acknowledged (${alert.responseAction ?? "checked"})',
+                                                      style: const TextStyle(
+                                                          fontSize: 11,
+                                                          color: Colors.green,
+                                                          fontWeight:
+                                                              FontWeight.w500),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      trailing: const Icon(
+                                          Icons.chevron_right_rounded,
+                                          size: 18),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
                       );
                     },
                   ),
@@ -224,7 +321,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   SoundCategory? _getCategory(String name) {
     try {
-      return SoundCategory.values.firstWhere((c) => c.name.toLowerCase() == name.toLowerCase());
+      return SoundCategory.values
+          .firstWhere((c) => c.name.toLowerCase() == name.toLowerCase());
     } catch (_) {
       return null;
     }
@@ -233,24 +331,26 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'high':
-        return const Color(0xFFD32F2F);
+        return const Color(0xFFEF4444);
       case 'medium':
-        return const Color(0xFFF57C00);
+        return const Color(0xFFF59E0B);
       case 'low':
       default:
-        return const Color(0xFF388E3C);
+        return const Color(0xFF10B981);
     }
   }
 
   Future<void> _exportHistory(List<AlertEvent> alerts) async {
     final buffer = StringBuffer();
     buffer.writeln('=== AlertSense Event Log ===');
-    buffer.writeln('Generated: ${DateFormat.yMd().add_jm().format(DateTime.now())}');
+    buffer.writeln(
+        'Generated: ${DateFormat.yMd().add_jm().format(DateTime.now())}');
     buffer.writeln('Total Events: ${alerts.length}\n');
 
     for (final a in alerts) {
       final cat = _getCategory(a.soundCategory)?.label ?? a.soundCategory;
-      buffer.writeln('[${DateFormat.yMd().add_jm().format(a.timestamp)}] ${a.priorityLevel.toUpperCase()}: $cat (${(a.confidence * 100).toStringAsFixed(0)}%)');
+      buffer.writeln(
+          '[${DateFormat.yMd().add_jm().format(a.timestamp)}] ${a.priorityLevel.toUpperCase()}: $cat (${(a.confidence * 100).toStringAsFixed(0)}%) [Source: ${a.source}]');
     }
 
     await Share.share(buffer.toString(), subject: 'AlertSense Event Log');
@@ -261,7 +361,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Clear Alert History?'),
-        content: const Text('This will permanently delete all recorded alert events.'),
+        content: const Text(
+            'This will permanently delete all recorded alert events from local storage.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/audio_providers.dart';
 
@@ -8,42 +8,74 @@ class DbMeterWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ambientDb = ref.watch(ambientDbProvider);
-    // Range 0 to 120
     final progress = (ambientDb / 120.0).clamp(0.0, 1.0);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    Color getBarColor(double db) {
-      if (db <= 40) return Colors.green;
-      if (db <= 70) return Colors.yellow;
-      if (db <= 90) return Colors.orange;
-      return Colors.red;
-    }
-
-    return SizedBox(
-      height: 24,
-      child: Row(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 8,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                valueColor: AlwaysStoppedAnimation<Color>(getBarColor(ambientDb)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            height: 8,
+            width: double.infinity,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : theme.colorScheme.surfaceContainerHighest,
+            child: Stack(
+              children: [
+                FractionallySizedBox(
+                  widthFactor: progress,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF10B981), // Green
+                          Color(0xFF06B6D4), // Cyan
+                          Color(0xFFF59E0B), // Orange
+                          Color(0xFFEF4444), // Red
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '0 dB (Silence)',
+              style: TextStyle(
+                fontSize: 10,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w500,
               ),
             ),
-          ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 48,
-            child: Text(
-              '${ambientDb.toInt()} dB',
-              textAlign: TextAlign.end,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            Text(
+              '60 dB (Normal)',
+              style: TextStyle(
+                fontSize: 10,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
-      ),
+            Text(
+              '120 dB (Critical)',
+              style: TextStyle(
+                fontSize: 10,
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

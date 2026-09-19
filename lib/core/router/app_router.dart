@@ -1,15 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/models/alert_event.dart';
 import '../../ui/onboarding/onboarding_screen.dart';
 import '../../ui/home/home_screen.dart';
 import '../../ui/history/history_screen.dart';
 import '../../ui/stats/stats_screen.dart';
 import '../../ui/settings/settings_screen.dart';
+import '../../ui/settings/sound_management_screen.dart';
 import '../../ui/settings/profile_editor_screen.dart';
 import '../../ui/settings/vibration_designer_screen.dart';
 import '../../ui/settings/sensitivity_screen.dart';
 import '../../ui/settings/emergency_contacts_screen.dart';
+import '../../ui/quick_scan/quick_scan_screen.dart';
+import '../../ui/alert/alert_details_screen.dart';
 import '../../ui/sleep/sleep_mode_screen.dart';
 import '../../ui/alert/full_screen_alert.dart';
 import '../../ui/shared/app_scaffold.dart';
@@ -20,7 +23,10 @@ class AppRoutes {
   static const home = '/home';
   static const history = '/history';
   static const stats = '/stats';
+  static const quickScan = '/quick-scan';
+  static const alertDetails = '/alert-details';
   static const settings = '/settings';
+  static const soundManagement = '/settings/sounds';
   static const profileEditor = '/settings/profiles';
   static const vibrationDesigner = '/settings/vibration';
   static const sensitivity = '/settings/sensitivity';
@@ -75,10 +81,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
 
+      // Quick Scan (dedicated full screen)
+      GoRoute(
+        path: AppRoutes.quickScan,
+        builder: (context, state) => const QuickScanScreen(),
+      ),
+
+      // Alert Details (dedicated full screen)
+      GoRoute(
+        path: AppRoutes.alertDetails,
+        builder: (context, state) {
+          final alert = state.extra as AlertEvent?;
+          if (alert == null) {
+            return const HistoryScreen();
+          }
+          return AlertDetailsScreen(alert: alert);
+        },
+      ),
+
       // Settings (full screen)
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.soundManagement,
+        builder: (context, state) => const SoundManagementScreen(),
       ),
       GoRoute(
         path: AppRoutes.profileEditor,

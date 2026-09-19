@@ -99,7 +99,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
           children: [
             // Sound Category Dropdown
             DropdownButtonFormField<SoundCategory>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: InputDecoration(
                 labelText: 'Sound Category',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -136,7 +136,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: _isRecording ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
@@ -179,7 +179,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(

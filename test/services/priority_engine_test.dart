@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:alertsense/core/constants/priority_levels.dart';
-import 'package:alertsense/core/constants/sound_categories.dart';
 import 'package:alertsense/data/models/classification_result.dart';
 import 'package:alertsense/services/priority_engine.dart';
 

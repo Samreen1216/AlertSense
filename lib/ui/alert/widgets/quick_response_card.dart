@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class QuickResponseCard extends StatelessWidget {
   final String label;
@@ -25,10 +25,10 @@ class QuickResponseCard extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: onPressed == null || isLoading
-              ? color.withOpacity(0.5)
+              ? color.withValues(alpha: 0.5)
               : color,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: color.withOpacity(0.5),
+          disabledBackgroundColor: color.withValues(alpha: 0.5),
           disabledForegroundColor: Colors.white70,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 0,

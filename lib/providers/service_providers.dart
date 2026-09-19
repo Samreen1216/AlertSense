@@ -14,6 +14,22 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   throw UnimplementedError('Must be overridden in ProviderScope');
 });
 
+final priorityEngineProvider = Provider<PriorityEngine>((ref) {
+  return PriorityEngine();
+});
+
+final deduplicationServiceProvider = Provider<DeduplicationService>((ref) {
+  return DeduplicationService();
+});
+
+final vibrationServiceProvider = Provider<VibrationService>((ref) {
+  return VibrationService();
+});
+
+final flashServiceProvider = Provider<FlashService>((ref) {
+  return FlashService();
+});
+
 final audioStreamServiceProvider = Provider<AudioStreamService>((ref) {
   final service = AudioStreamService();
   ref.onDispose(service.dispose);
@@ -28,10 +44,10 @@ final classifierServiceProvider = Provider<TFLiteClassifierService>((ref) {
 
 final alertDispatcherServiceProvider = Provider<AlertDispatcherService>((ref) {
   final service = AlertDispatcherService(
-    priorityEngine: PriorityEngine(),
-    deduplicationService: DeduplicationService(),
-    vibrationService: VibrationService(),
-    flashService: FlashService(),
+    priorityEngine: ref.watch(priorityEngineProvider),
+    deduplicationService: ref.watch(deduplicationServiceProvider),
+    vibrationService: ref.watch(vibrationServiceProvider),
+    flashService: ref.watch(flashServiceProvider),
     notificationService: ref.watch(notificationServiceProvider),
     alertRepository: ref.watch(alertRepositoryProvider),
   );

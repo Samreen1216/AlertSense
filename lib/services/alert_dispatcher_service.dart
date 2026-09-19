@@ -51,6 +51,7 @@ class AlertDispatcherService {
     Set<String>? enabledCategories,
     Map<String, int>? customCooldowns,
     Map<String, List<int>>? customVibrationPatterns,
+    String source = 'Continuous Monitoring',
   }) async {
     // 1. Check if category is enabled in current profile
     if (enabledCategories != null && !enabledCategories.contains(result.soundCategory)) {
@@ -88,6 +89,7 @@ class AlertDispatcherService {
       confidence: result.confidence,
       timestamp: result.timestamp,
       acknowledged: false,
+      source: source,
     );
 
     await _alertRepository.addAlert(alertEvent);
@@ -131,3 +133,4 @@ class AlertDispatcherService {
     _urgentAlertController.close();
   }
 }
+
