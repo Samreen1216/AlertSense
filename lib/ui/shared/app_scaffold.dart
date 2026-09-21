@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../../core/router/app_router.dart';
+import '../../data/models/alert_event.dart';
 import '../../providers/service_providers.dart';
+import 'in_app_notification_banner.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -16,15 +18,19 @@ class AppScaffold extends ConsumerStatefulWidget {
 
 class _AppScaffoldState extends ConsumerState<AppScaffold> {
   StreamSubscription? _urgentSub;
+  StreamSubscription? _allAlertsSub;
+  AlertEvent? _activeBannerAlert;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _subscribeToUrgentAlerts());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _subscribeToAlerts());
   }
 
-  void _subscribeToUrgentAlerts() {
+  void _subscribeToAlerts() {
     final dispatcher = ref.read(alertDispatcherServiceProvider);
+
+    // 1. High-priority full-screen overlay for critical alarms
     _urgentSub = dispatcher.urgentAlertStream.listen((alert) {
       if (!mounted) return;
 
@@ -36,11 +42,20 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
         'timestamp': alert.timestamp,
       });
     });
+
+    // 2. On-screen heads-up notification banner for all detected sounds (Bell Ring, Knocking, etc.)
+    _allAlertsSub = dispatcher.allAlertsStream.listen((alert) {
+      if (!mounted) return;
+      setState(() {
+        _activeBannerAlert = alert;
+      });
+    });
   }
 
   @override
   void dispose() {
     _urgentSub?.cancel();
+    _allAlertsSub?.cancel();
     super.dispose();
   }
 
@@ -51,7 +66,24 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
 
     return WithForegroundTask(
       child: Scaffold(
-        body: widget.navigationShell,
+        body: Stack(
+          children: [
+            widget.navigationShell,
+            if (_activeBannerAlert != null)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: InAppNotificationBanner(
+                  key: ValueKey(_activeBannerAlert!.id),
+                  alert: _activeBannerAlert!,
+                  onDismiss: () {
+                    if (mounted) setState(() => _activeBannerAlert = null);
+                  },
+                ),
+              ),
+          ],
+        ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF0D1424) : Colors.white,

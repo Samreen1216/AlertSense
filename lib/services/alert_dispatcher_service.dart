@@ -28,6 +28,10 @@ class AlertDispatcherService {
   final _urgentAlertController = StreamController<AlertEvent>.broadcast();
   Stream<AlertEvent> get urgentAlertStream => _urgentAlertController.stream;
 
+  // Stream controller to notify the UI when any alert occurs (for in-app on-screen notifications)
+  final _allAlertsController = StreamController<AlertEvent>.broadcast();
+  Stream<AlertEvent> get allAlertsStream => _allAlertsController.stream;
+
   AlertDispatcherService({
     required PriorityEngine priorityEngine,
     required DeduplicationService deduplicationService,
@@ -121,7 +125,10 @@ class AlertDispatcherService {
       confidence: result.confidence,
     );
 
-    // 8. If High priority, push to the urgent stream for the full-screen overlay
+    // 8. Broadcast to all-alerts stream for in-app on-screen notification overlay
+    _allAlertsController.add(alertEvent);
+
+    // 9. If High priority, push to the urgent stream for the full-screen overlay
     if (priority == PriorityLevel.high) {
       _urgentAlertController.add(alertEvent);
     }
@@ -131,6 +138,7 @@ class AlertDispatcherService {
 
   void dispose() {
     _urgentAlertController.close();
+    _allAlertsController.close();
   }
 }
 
