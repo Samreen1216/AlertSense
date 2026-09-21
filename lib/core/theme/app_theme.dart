@@ -17,8 +17,12 @@ class AppTheme {
       ),
       textTheme: textTheme,
       cardTheme: CardThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.0),
+        ),
+        elevation: 0,
+        color: Colors.white,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -54,8 +58,12 @@ class AppTheme {
       ),
       textTheme: textTheme,
       cardTheme: CardThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFF1E2D4A), width: 1.0),
+        ),
+        elevation: 0,
+        color: const Color(0xFF162035),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -158,8 +166,12 @@ class AppTheme {
       ),
       textTheme: textTheme,
       cardTheme: CardThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFD0D7DE), width: 1.0),
+        ),
+        elevation: 0,
+        color: Colors.white,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

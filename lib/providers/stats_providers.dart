@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/sound_categories.dart';
 import 'alert_providers.dart';
 
@@ -86,9 +86,9 @@ final topSoundProvider = Provider<Map<String, dynamic>?>((ref) {
   final top = counts.entries.reduce((a, b) => a.value >= b.value ? a : b);
   try {
     final cat = SoundCategory.values.firstWhere((c) => c.name == top.key);
-    return {'emoji': cat.emoji, 'name': cat.label, 'count': top.value};
+    return {'emoji': cat.emoji, 'category': cat.name, 'name': cat.label, 'count': top.value};
   } catch (_) {
-    return {'emoji': '🔊', 'name': top.key, 'count': top.value};
+    return {'emoji': '', 'category': top.key, 'name': top.key, 'count': top.value};
   }
 });
 

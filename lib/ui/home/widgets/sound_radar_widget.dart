@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_svg_icons.dart';
 import '../../../providers/audio_providers.dart';
 
 class SoundRadarWidget extends ConsumerStatefulWidget {
@@ -165,7 +166,6 @@ class _SoundRadarWidgetState extends ConsumerState<SoundRadarWidget>
 
                             final category = sound.category;
                             final dotColor = category.color;
-                            final emoji = category.emoji;
                             final label = category.label;
 
                             return AnimatedBuilder(
@@ -197,10 +197,10 @@ class _SoundRadarWidgetState extends ConsumerState<SoundRadarWidget>
                                               ),
                                             ],
                                           ),
-                                          child: Text(
-                                            emoji,
-                                            style:
-                                                const TextStyle(fontSize: 18),
+                                          child: AppSvgIcon(
+                                            iconKey: category.name,
+                                            size: 18,
+                                            color: Colors.white,
                                           ),
                                         ),
                                         const SizedBox(height: 4),

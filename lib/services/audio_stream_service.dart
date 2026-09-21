@@ -9,7 +9,7 @@ class AudioStreamService {
   static const int sampleRate = 16000;
   static const double windowDuration = 0.975;
   static const int samplesPerWindow = 15600;
-  static const double silenceThreshold = 0.01;
+  static const double silenceThreshold = 0.003;
 
   bool _isListening = false;
   final _audioBufferController = StreamController<List<double>>.broadcast();

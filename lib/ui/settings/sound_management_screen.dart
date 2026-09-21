@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/priority_levels.dart';
 import '../../core/constants/sound_categories.dart';
@@ -187,7 +187,7 @@ class SoundManagementScreen extends ConsumerWidget {
                   if (index > 0) const Divider(height: 1),
                   SwitchListTile(
                     secondary: SoundIcon(
-                      emoji: cat.emoji,
+                      iconName: cat.name,
                       color: cat.color.withValues(alpha: 0.15),
                     ),
                     title: Text(

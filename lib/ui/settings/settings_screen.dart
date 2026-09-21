@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
@@ -6,6 +6,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/audio_providers.dart';
 import '../../providers/settings_providers.dart';
+import '../history/history_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -39,27 +40,11 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.tune_rounded),
-                title: const Text('Sound Profiles'),
-                subtitle: const Text('Manage Home, Sleep, and Outdoor presets'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push(AppRoutes.profileEditor),
-              ),
-              const Divider(height: 1),
-              ListTile(
                 leading: const Icon(Icons.speed_rounded),
                 title: const Text('Sensitivity Thresholds'),
                 subtitle: const Text('Fine-tune AI confidence per sound category'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push(AppRoutes.sensitivity),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.mic_external_on_rounded),
-                title: const Text('Quick Scan Check'),
-                subtitle: const Text('Run dedicated 4-second environmental audio test'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push(AppRoutes.quickScan),
               ),
             ],
           ),
@@ -153,6 +138,22 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
+          // ── Section: Home Screen Widget ──
+          _buildSectionHeader(context, 'HOME SCREEN WIDGET', Icons.widgets_rounded),
+          _buildSettingsCard(
+            context,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.widgets_rounded, color: Color(0xFF00E5FF)),
+                title: const Text('Home Screen Widget (3-in-1 Slider)'),
+                subtitle: const Text('Live sound radar, alerts feed & emergency quick actions'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push(AppRoutes.widgetShowcase),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
           // ── Section 5: Data Management ──
           _buildSectionHeader(context, 'DATA & STORAGE', Icons.storage_rounded),
           _buildSettingsCard(
@@ -163,7 +164,15 @@ class SettingsScreen extends ConsumerWidget {
                 title: const Text('View Alert History'),
                 subtitle: const Text('View and export all recorded alerts'),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push(AppRoutes.history),
+                onTap: () {
+                  try {
+                    context.push(AppRoutes.settingsHistory);
+                  } catch (_) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                    );
+                  }
+                },
               ),
               const Divider(height: 1),
               ListTile(

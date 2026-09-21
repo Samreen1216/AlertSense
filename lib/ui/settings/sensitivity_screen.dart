@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/sound_categories.dart';
+import '../../providers/service_providers.dart';
+import '../../providers/settings_providers.dart';
 import '../shared/priority_badge.dart';
 import '../shared/sound_icon.dart';
 
@@ -17,8 +19,10 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
   @override
   void initState() {
     super.initState();
+    final profile = ref.read(currentProfileProvider);
     for (final category in SoundCategory.values) {
-      _localThresholds[category.name] = category.defaultThreshold;
+      _localThresholds[category.name] =
+          profile.sensitivityOverrides[category.name] ?? category.defaultThreshold;
     }
   }
 
@@ -35,8 +39,12 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
               setState(() {
                 for (final category in SoundCategory.values) {
                   _localThresholds[category.name] = category.defaultThreshold;
+                  ref.read(priorityEngineProvider).setThreshold(category.name, category.defaultThreshold);
                 }
               });
+              final profile = ref.read(currentProfileProvider);
+              final updatedProfile = profile.copyWith(sensitivityOverrides: {});
+              ref.read(soundProfilesProvider.notifier).saveProfile(updatedProfile);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Reset to default AI thresholds')),
               );
@@ -89,7 +97,7 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                     Row(
                       children: [
                         SoundIcon(
-                          emoji: category.emoji,
+                          iconName: category.name,
                           color: category.color.withValues(alpha: 0.15),
                         ),
                         const SizedBox(width: 12),
@@ -142,6 +150,12 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                         setState(() {
                           _localThresholds[category.name] = val;
                         });
+                        final profile = ref.read(currentProfileProvider);
+                        final updatedOverrides = Map<String, double>.from(profile.sensitivityOverrides);
+                        updatedOverrides[category.name] = val;
+                        final updatedProfile = profile.copyWith(sensitivityOverrides: updatedOverrides);
+                        ref.read(soundProfilesProvider.notifier).saveProfile(updatedProfile);
+                        ref.read(priorityEngineProvider).setThreshold(category.name, val);
                       },
                     ),
                   ],

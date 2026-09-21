@@ -30,7 +30,7 @@ class QuickResponseCard extends StatelessWidget {
           foregroundColor: Colors.white,
           disabledBackgroundColor: color.withValues(alpha: 0.5),
           disabledForegroundColor: Colors.white70,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,
         ),
         child: isLoading

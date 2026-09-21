@@ -1,22 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import '../../../core/router/app_router.dart';
+import '../../../core/constants/app_svg_icons.dart';
 import '../../../providers/alert_providers.dart';
+import 'profile_side_navigation.dart';
 
 class HeroProfileCard extends ConsumerWidget {
   const HeroProfileCard({super.key});
-
-  IconData _getProfileIcon(String profile) {
-    switch (profile.toLowerCase()) {
-      case 'sleep':
-        return Icons.nightlight_round;
-      case 'outdoor':
-        return Icons.park_rounded;
-      default:
-        return Icons.home_rounded;
-    }
-  }
 
   String _getProfileTitle(String profile) {
     switch (profile.toLowerCase()) {
@@ -29,16 +18,49 @@ class HeroProfileCard extends ConsumerWidget {
     }
   }
 
+  void _openProfileSideNav(BuildContext context) {
+    final scaffold = Scaffold.maybeOf(context);
+    if (scaffold != null && scaffold.hasEndDrawer) {
+      scaffold.openEndDrawer();
+    } else {
+      showGeneralDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: 'Dismiss',
+        barrierColor: Colors.black54,
+        transitionDuration: const Duration(milliseconds: 250),
+        transitionBuilder: (ctx, anim, secAnim, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: anim,
+              curve: Curves.easeOutCubic,
+            )),
+            child: child,
+          );
+        },
+        pageBuilder: (ctx, a1, a2) => const Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            width: 320,
+            child: ProfileSideNavigation(),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeProfile = ref.watch(activeProfileProvider);
-    final icon = _getProfileIcon(activeProfile);
     final title = _getProfileTitle(activeProfile);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.push(AppRoutes.profileEditor),
+        onTap: () => _openProfileSideNav(context),
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -64,10 +86,12 @@ class HeroProfileCard extends ConsumerWidget {
                     width: 1,
                   ),
                 ),
-                child: Icon(
-                  icon,
-                  color: const Color(0xFF00C6FF),
-                  size: 20,
+                child: Center(
+                  child: AppSvgIcon(
+                    iconKey: activeProfile,
+                    size: 20,
+                    color: const Color(0xFF00C6FF),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),

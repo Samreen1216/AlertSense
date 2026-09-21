@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/alert_providers.dart';
@@ -25,7 +26,6 @@ class AlertDetailsScreen extends ConsumerWidget {
     } catch (_) {}
 
     final label = category?.label ?? alert.soundCategory;
-    final emoji = category?.emoji ?? '🚨';
     final priority = alert.priorityLevel.toUpperCase();
     final isHigh = priority == 'HIGH';
     final isMedium = priority == 'MEDIUM';
@@ -66,10 +66,10 @@ class AlertDetailsScreen extends ConsumerWidget {
                   color: isDark
                       ? const Color(0xFF1E2638)
                       : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: priorityColor.withValues(alpha: 0.4),
-                    width: 2,
+                    width: 1.2,
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -81,7 +81,11 @@ class AlertDetailsScreen extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    Text(emoji, style: const TextStyle(fontSize: 72)),
+                    AppSvgIcon(
+                      iconKey: alert.soundCategory,
+                      size: 72,
+                      color: priorityColor,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       label,
@@ -121,9 +125,10 @@ class AlertDetailsScreen extends ConsumerWidget {
                     ? const Color(0xFF1E2638)
                     : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
                     color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    width: 1.0,
                   ),
                 ),
                 child: Padding(

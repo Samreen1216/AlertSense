@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import '../../core/constants/app_svg_icons.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/audio_providers.dart';
 
@@ -56,7 +57,7 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
-              const Text('🌙', style: TextStyle(fontSize: 72)),
+              const AppSvgIcon(iconKey: 'sleep', size: 76, color: Colors.amberAccent),
               const SizedBox(height: 24),
               Text(
                 DateFormat('hh:mm a').format(_currentTime),
@@ -72,7 +73,8 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white12, width: 1.0),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -103,16 +105,34 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
                 'Only Monitoring Life-Safety Alarms:',
                 style: TextStyle(fontSize: 14, color: Colors.white54),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                '🔥 Fire / Smoke Alarm  •  🚨 Siren  •  👶 Baby Crying',
-                style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const AppSvgIcon(iconKey: 'fireAlarm', size: 18, color: Colors.redAccent),
+                  const SizedBox(width: 4),
+                  const Text('Fire Alarm', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 12),
+                  const AppSvgIcon(iconKey: 'emergencySiren', size: 18, color: Colors.redAccent),
+                  const SizedBox(width: 4),
+                  const Text('Siren', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 12),
+                  const AppSvgIcon(iconKey: 'babyCrying', size: 18, color: Colors.amberAccent),
+                  const SizedBox(width: 4),
+                  const Text('Baby Crying', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                ],
               ),
               const SizedBox(height: 16),
-              const Text(
-                '📳 Amplified Vibration Alert for Bedside Tables',
-                style: TextStyle(fontSize: 13, color: Colors.amberAccent),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.vibration_rounded, size: 16, color: Colors.amberAccent),
+                  SizedBox(width: 6),
+                  Text(
+                    'Amplified Vibration Alert for Bedside Tables',
+                    style: TextStyle(fontSize: 13, color: Colors.amberAccent),
+                  ),
+                ],
               ),
               const Spacer(),
               SizedBox(

@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/constants/sound_categories.dart';
 import '../../../core/router/app_router.dart';
 import '../../../providers/audio_providers.dart';
@@ -143,12 +144,12 @@ class _VerticalSoundCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
               : category.color.withValues(alpha: 0.2),
-          width: 1.2,
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(
@@ -176,9 +177,10 @@ class _VerticalSoundCard extends StatelessWidget {
               ),
             ),
             child: Center(
-              child: Text(
-                category.emoji,
-                style: const TextStyle(fontSize: 20),
+              child: AppSvgIcon(
+                iconKey: category.name,
+                size: 20,
+                color: category.color,
               ),
             ),
           ),

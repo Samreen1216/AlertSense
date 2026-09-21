@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- TOP HEADER -->
+    <LinearLayout
+        android:id="@+id/widget_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Left: App Icon / Title & Live Pill -->
+        <LinearLayout
+            android:id="@+id/widget_brand_container"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🛡️"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/widget_app_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="AlertSense"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_status_pill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/widget_pill_live"
+                android:paddingStart="7dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="7dp"
+                android:paddingBottom="2dp"
+                android:text="● LIVE"
+                android:textColor="@color/widget_live_green"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Right: Slider Controls (Prev, Indicators, Next) -->
+        <LinearLayout
+            android:id="@+id/widget_slider_controls"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btn_prev_slide"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:background="@drawable/widget_btn_icon"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="◀"
+                android:textColor="@color/widget_accent_cyan"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/widget_slide_indicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="6dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="● ○ ○"
+                android:textColor="@color/widget_accent_cyan"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_next_slide"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:background="@drawable/widget_btn_icon"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="▶"
+                android:textColor="@color/widget_accent_cyan"
+                android:textSize="10sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- DIVIDER -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="7dp"
+        android:layout_marginBottom="7dp"
+        android:background="@color/widget_card_border" />
+
+    <!-- SLIDE 1: AWARENESS & REAL-TIME SOUND MONITOR -->
+    <LinearLayout
+        android:id="@+id/layout_slide_1"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="visible">
+
+        <TextView
+            android:id="@+id/slide1_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AWARENESS &amp; LIVE RADAR"
+            android:textColor="@color/widget_accent_cyan"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <!-- Sound Status Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/widget_card_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/widget_db_level"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="42 dB"
+                    android:textColor="@color/widget_accent_cyan"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_sound_status"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Normal Room Noise"
+                    android:textColor="@color/widget_text_primary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/widget_profile_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="🏠 Home Profile"
+                    android:textColor="@color/widget_text_secondary"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/widget_monitored_sounds"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="9 Sounds Monitored"
+                    android:textColor="@color/widget_text_secondary"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Slide 1 Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="7dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btn_quick_scan"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_btn_primary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="⚡ Quick Scan (10s)"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_toggle_listen"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_btn_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="🎙️ Toggle Mic"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- SLIDE 2: RECENT ALERTS & THREAT FEED -->
+    <LinearLayout
+        android:id="@+id/layout_slide_2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/slide2_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RECENT ALERTS &amp; SAFETY FEED"
+            android:textColor="@color/widget_warning_orange"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <!-- Alert Feed Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/widget_card_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/widget_alert_title"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="🚨 Smoke Alarm"
+                    android:textColor="@color/widget_text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_alert_priority_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/widget_badge_high"
+                    android:paddingStart="6dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="2dp"
+                    android:text="HIGH"
+                    android:textColor="@color/widget_danger_red"
+                    android:textSize="9sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/widget_alert_meta"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="94% Match • 2m ago"
+                    android:textColor="@color/widget_text_secondary"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/widget_alert_stats"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3 Alerts Today"
+                    android:textColor="@color/widget_accent_cyan"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Slide 2 Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="7dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btn_view_history"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="6dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_btn_primary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="📜 Full History"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_view_stats"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_btn_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="📊 Insights &amp; Stats"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- SLIDE 3: RAPID EMERGENCY & SAFETY ACTIONS -->
+    <LinearLayout
+        android:id="@+id/layout_slide_3"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/slide3_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="RAPID EMERGENCY &amp; SAFETY"
+            android:textColor="@color/widget_danger_red"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <!-- Emergency Action Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/widget_card_bg"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/widget_emergency_headline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🚨 Life-Safety Quick Response"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/widget_emergency_subtext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Instant SOS alert dispatch &amp; Bedside mode"
+                android:textColor="@color/widget_text_secondary"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <!-- Slide 3 Actions (3 buttons) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="7dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btn_action_sos"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_btn_danger"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="🚨 SOS Contact"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_action_sleep"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginEnd="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_btn_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="🌙 Sleep Mode"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_action_settings"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@drawable/widget_btn_secondary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="⚙️ Settings"
+                android:textColor="@color/widget_text_primary"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

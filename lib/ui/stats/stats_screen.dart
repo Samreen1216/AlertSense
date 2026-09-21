@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../core/constants/app_svg_icons.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/stats_providers.dart';
 
@@ -114,10 +115,11 @@ class StatsScreen extends ConsumerWidget {
                           : theme.colorScheme.surfaceContainerHighest
                               .withValues(alpha: 0.4),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         side: BorderSide(
                           color: theme.colorScheme.outlineVariant
                               .withValues(alpha: 0.3),
+                          width: 1.0,
                         ),
                       ),
                       child: Padding(
@@ -131,8 +133,11 @@ class StatsScreen extends ConsumerWidget {
                                     .withValues(alpha: 0.12),
                                 shape: BoxShape.circle,
                               ),
-                              child: Text(topSound['emoji'] as String,
-                                  style: const TextStyle(fontSize: 36)),
+                              child: AppSvgIcon(
+                                iconKey: (topSound['category'] as String?) ?? 'alert',
+                                size: 36,
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -209,10 +214,11 @@ class StatsScreen extends ConsumerWidget {
                           : theme.colorScheme.surfaceContainerHighest
                               .withValues(alpha: 0.35),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         side: BorderSide(
                           color: theme.colorScheme.outlineVariant
                               .withValues(alpha: 0.3),
+                          width: 1.0,
                         ),
                       ),
                       child: Padding(
@@ -290,10 +296,11 @@ class StatsScreen extends ConsumerWidget {
                         : theme.colorScheme.surfaceContainerHighest
                             .withValues(alpha: 0.35),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
                         color: theme.colorScheme.outlineVariant
                             .withValues(alpha: 0.3),
+                        width: 1.0,
                       ),
                     ),
                     child: Padding(
@@ -345,10 +352,11 @@ class StatsScreen extends ConsumerWidget {
                         : theme.colorScheme.surfaceContainerHighest
                             .withValues(alpha: 0.35),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                       side: BorderSide(
                         color: theme.colorScheme.outlineVariant
                             .withValues(alpha: 0.3),
+                        width: 1.0,
                       ),
                     ),
                     child: Padding(

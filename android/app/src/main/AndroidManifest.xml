@@ -61,7 +61,30 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Deep Link Filter for Home Widget Quick Actions -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="alertsense" />
+                <data android:scheme="alertsence" />
+            </intent-filter>
         </activity>
+
+        <!-- AlertSense 3-Slider Home Screen Widget Receiver -->
+        <receiver
+            android:name=".AlertSenseWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.alertsense.ACTION_SLIDE_NEXT" />
+                <action android:name="com.alertsense.ACTION_SLIDE_PREV" />
+                <action android:name="com.alertsense.ACTION_SLIDE_TO" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/alertsense_widget_info" />
+        </receiver>
 
         <!-- Foreground task service for background sound awareness -->
         <service

@@ -1,13 +1,21 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/alert_dispatcher_service.dart';
 import '../services/audio_stream_service.dart';
 import '../services/deduplication_service.dart';
 import '../services/flash_service.dart';
+import '../services/foreground_service.dart';
+import '../services/home_widget_service.dart';
 import '../services/notification_service.dart';
 import '../services/priority_engine.dart';
 import '../services/tflite_classifier_service.dart';
 import '../services/vibration_service.dart';
 import '../main.dart';
+
+final foregroundServiceProvider = Provider<ForegroundService>((ref) {
+  final service = ForegroundService();
+  service.init();
+  return service;
+});
 
 /// Singleton NotificationService — initialized in main().
 final notificationServiceProvider = Provider<NotificationService>((ref) {
@@ -54,3 +62,11 @@ final alertDispatcherServiceProvider = Provider<AlertDispatcherService>((ref) {
   ref.onDispose(service.dispose);
   return service;
 });
+
+/// Singleton HomeWidgetService for native widget updates and deep linking
+final homeWidgetServiceProvider = Provider<HomeWidgetService>((ref) {
+  final service = HomeWidgetService();
+  ref.onDispose(service.dispose);
+  return service;
+});
+

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -9,6 +9,7 @@ import 'data/datasources/local_storage.dart';
 import 'data/repositories/alert_repository.dart';
 import 'data/repositories/settings_repository.dart';
 import 'providers/service_providers.dart';
+import 'services/home_widget_service.dart';
 import 'services/notification_service.dart';
 
 void main() async {
@@ -36,6 +37,28 @@ void main() async {
   final notificationService = NotificationService();
   await notificationService.init();
 
+  final homeWidgetService = HomeWidgetService();
+  await homeWidgetService.init();
+
+  // Populate initial home widget state from repositories
+  final initialAlerts = alertRepository.getAll();
+  final now = DateTime.now();
+  final todayAlerts = initialAlerts.where((a) =>
+    a.timestamp.year == now.year &&
+    a.timestamp.month == now.month &&
+    a.timestamp.day == now.day).length;
+  final highPriority = initialAlerts.where((a) => a.priorityLevel.toLowerCase() == 'high').length;
+
+  await homeWidgetService.syncData(
+    isListening: false,
+    activeProfile: 'home',
+    ambientDb: 38.0,
+    lastAlert: initialAlerts.isNotEmpty ? initialAlerts.first : null,
+    alertsTodayCount: todayAlerts,
+    highPriorityCount: highPriority,
+    monitoredCount: 9,
+  );
+
   // Request POST_NOTIFICATIONS permission (Android 13+)
   await Permission.notification.request();
 
@@ -48,6 +71,7 @@ void main() async {
         alertRepositoryProvider.overrideWithValue(alertRepository),
         settingsRepositoryProvider.overrideWithValue(settingsRepository),
         notificationServiceProvider.overrideWithValue(notificationService),
+        homeWidgetServiceProvider.overrideWithValue(homeWidgetService),
       ],
       child: const AlertSenseApp(),
     ),

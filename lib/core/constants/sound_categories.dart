@@ -44,14 +44,24 @@ enum SoundCategory {
     defaultThreshold: 0.60,
   ),
   doorbell(
-    label: 'Doorbell',
+    label: 'Bell Ring',
     emoji: '🔔',
-    description: 'Standard doorbell chime',
+    description: 'Doorbell, bell ring, or chime',
     defaultPriority: PriorityLevel.medium,
     color: AppColors.doorbell,
     icon: Icons.doorbell,
-    yamnetLabels: ['Doorbell'],
-    defaultThreshold: 0.55,
+    yamnetLabels: [
+      'Bell ring',
+      'Doorbell',
+      'Ding-dong',
+      'Chime',
+      'Bell',
+      'Bicycle bell',
+      'Jingle bell',
+      'Doorbell chime',
+      'Alarm clock',
+    ],
+    defaultThreshold: 0.50,
   ),
   knocking(
     label: 'Knocking',
@@ -117,8 +127,15 @@ enum SoundCategory {
 
 extension SoundCategoryExtension on SoundCategory {
   static SoundCategory? fromYamnetLabel(String label) {
+    final lower = label.toLowerCase().trim();
     for (final category in SoundCategory.values) {
-      if (category.yamnetLabels.any((yLabel) => yLabel.toLowerCase() == label.toLowerCase())) {
+      if (category.yamnetLabels.any((yLabel) => yLabel.toLowerCase() == lower)) {
+        return category;
+      }
+    }
+    // Substring match
+    for (final category in SoundCategory.values) {
+      if (category.yamnetLabels.any((yLabel) => lower.contains(yLabel.toLowerCase()))) {
         return category;
       }
     }

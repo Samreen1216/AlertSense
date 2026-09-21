@@ -1,8 +1,9 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../core/router/app_router.dart';
 import '../../providers/quick_scan_provider.dart';
@@ -260,7 +261,6 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
     } catch (_) {}
 
     final label = category?.label ?? result.soundCategory;
-    final emoji = category?.emoji ?? '🚨';
     final priority = alert.priorityLevel.toUpperCase();
     final isHigh = priority == 'HIGH';
     final priorityColor = isHigh
@@ -271,14 +271,18 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 84)),
+          AppSvgIcon(
+            iconKey: category?.name ?? 'alert',
+            size: 84,
+            color: priorityColor,
+          ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
               color: priorityColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: priorityColor, width: 1.5),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: priorityColor, width: 1.0),
             ),
             child: Text(
               '$priority PRIORITY DETECTED',

@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/constants/priority_levels.dart';
 import '../../../core/constants/sound_categories.dart';
 import '../../../providers/audio_providers.dart';
@@ -58,12 +59,10 @@ class SoundToggleGrid extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    category.emoji,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: isEnabled ? null : Colors.grey,
-                    ),
+                  AppSvgIcon(
+                    iconKey: category.name,
+                    size: 16,
+                    color: isEnabled ? color : Colors.grey,
                   ),
                   const SizedBox(width: 8),
                   Text(

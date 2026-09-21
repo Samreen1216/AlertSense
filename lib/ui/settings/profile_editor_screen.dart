@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../data/models/sound_profile.dart';
 import '../../providers/settings_providers.dart';
@@ -66,7 +67,11 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                         color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Text(profile.emoji, style: const TextStyle(fontSize: 24)),
+                      child: AppSvgIcon(
+                        iconKey: profile.id,
+                        size: 24,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                     title: Row(
                       children: [
@@ -129,7 +134,7 @@ class _ProfileEditorScreenState extends ConsumerState<ProfileEditorScreen> {
                       return SwitchListTile(
                         dense: true,
                         secondary: SoundIcon(
-                          emoji: category.emoji,
+                          iconName: category.name,
                           color: category.color.withValues(alpha: 0.15),
                         ),
                         title: Text(category.label),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/device_providers.dart';
 import '../../../providers/stats_providers.dart';
@@ -111,12 +111,12 @@ class _StatTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A2234) : Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
               : const Color(0xFFE2E8F0),
-          width: 1.2,
+          width: 1.0,
         ),
         boxShadow: [
           BoxShadow(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/constants/sound_categories.dart';
 import '../../../core/router/app_router.dart';
 import '../../../providers/alert_providers.dart';
@@ -34,10 +35,10 @@ class ReferenceLastAlertCard extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF13221C) : const Color(0xFFF0FDF4),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: const Color(0xFF10B981).withValues(alpha: 0.25),
-            width: 1.2,
+            width: 1.0,
           ),
         ),
         child: Row(
@@ -97,15 +98,15 @@ class ReferenceLastAlertCard extends ConsumerWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => context.push(AppRoutes.alertDetails, extra: lastAlert),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: accentColor.withValues(alpha: 0.3),
-              width: 1.2,
+              width: 1.0,
             ),
             boxShadow: [
               BoxShadow(
@@ -133,9 +134,10 @@ class ReferenceLastAlertCard extends ConsumerWidget {
                   ],
                 ),
                 child: Center(
-                  child: Text(
-                    cat.emoji,
-                    style: const TextStyle(fontSize: 24),
+                  child: AppSvgIcon(
+                    iconKey: cat.name,
+                    size: 24,
+                    color: Colors.white,
                   ),
                 ),
               ),

@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/settings_providers.dart';
@@ -63,7 +64,10 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white24, width: 1.0),
+        ),
         title: const Row(
           children: [
             Icon(Icons.local_phone_rounded, color: Colors.red, size: 28),
@@ -192,7 +196,10 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Colors.white24, width: 1.0),
+        ),
         title: const Row(
           children: [
             Icon(Icons.sms_rounded, color: Color(0xFFE65100), size: 28),
@@ -324,7 +331,6 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
 
   @override
   Widget build(BuildContext context) {
-    final emoji = widget.alertData['emoji'] as String? ?? '🚨';
     final rawCategory = widget.alertData['soundCategory'] as String? ?? 'fireAlarm';
     final name = _resolveName(rawCategory);
     final confidence = widget.alertData['confidence'] ?? 95;
@@ -350,8 +356,12 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
             children: [
               const Spacer(),
 
-              // Emoji
-              Text(emoji, style: const TextStyle(fontSize: 84)),
+              // SVG Alert Icon
+              AppSvgIcon(
+                iconKey: rawCategory,
+                size: 84,
+                color: Colors.white,
+              ),
               const SizedBox(height: 16),
 
               // Badge

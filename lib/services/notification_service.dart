@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../core/constants/priority_levels.dart';
 import '../core/constants/sound_categories.dart';
@@ -99,15 +99,17 @@ class NotificationService {
       channelId,
       channelName,
       importance: importance,
-      priority: priority == PriorityLevel.high ? Priority.high : Priority.defaultPriority,
+      priority: priority == PriorityLevel.high ? Priority.max : Priority.high,
       fullScreenIntent: priority == PriorityLevel.high,
       category: AndroidNotificationCategory.alarm,
-      ticker: '${category.emoji} ${category.label} detected',
+      visibility: NotificationVisibility.public,
+      enableVibration: true,
+      ticker: '${category.label} detected',
       showWhen: true,
       when: DateTime.now().millisecondsSinceEpoch,
       styleInformation: BigTextStyleInformation(
         'Detected ${category.label} with ${(confidence * 100).toStringAsFixed(0)}% confidence.',
-        contentTitle: '${category.emoji} ${category.label} Detected!',
+        contentTitle: '${category.label} Detected!',
         summaryText: '${priority.label.toUpperCase()} PRIORITY',
       ),
       color: category.color,
@@ -118,7 +120,7 @@ class NotificationService {
     try {
       await _plugin.show(
         id,
-        '${category.emoji} ${category.label} Detected',
+        '${category.label} Detected',
         'Confidence: ${(confidence * 100).toStringAsFixed(0)}%  |  Tap for details',
         notificationDetails,
         payload: category.name,

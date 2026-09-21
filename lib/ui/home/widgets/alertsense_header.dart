@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
 
@@ -71,7 +71,13 @@ class AlertSenseHeader extends StatelessWidget {
             ),
           ),
 
-          // Action Buttons: Profile & Settings
+          // Action Buttons: Widget, Profile & Settings
+          _HeaderIconButton(
+            icon: Icons.widgets_rounded,
+            tooltip: 'Home Widget',
+            onTap: () => context.push(AppRoutes.widgetShowcase),
+          ),
+          const SizedBox(width: 8),
           _HeaderIconButton(
             icon: Icons.person_rounded,
             tooltip: 'Profiles',

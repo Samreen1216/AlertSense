@@ -1,4 +1,4 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/alert_event.dart';
 import '../../ui/onboarding/onboarding_screen.dart';
@@ -16,6 +16,7 @@ import '../../ui/alert/alert_details_screen.dart';
 import '../../ui/sleep/sleep_mode_screen.dart';
 import '../../ui/alert/full_screen_alert.dart';
 import '../../ui/shared/app_scaffold.dart';
+import '../../ui/widget/home_widget_showcase_screen.dart';
 
 // Route paths
 class AppRoutes {
@@ -26,11 +27,13 @@ class AppRoutes {
   static const quickScan = '/quick-scan';
   static const alertDetails = '/alert-details';
   static const settings = '/settings';
+  static const settingsHistory = '/settings/history';
   static const soundManagement = '/settings/sounds';
   static const profileEditor = '/settings/profiles';
   static const vibrationDesigner = '/settings/vibration';
   static const sensitivity = '/settings/sensitivity';
   static const emergencyContacts = '/settings/emergency-contacts';
+  static const widgetShowcase = '/settings/widget';
   static const sleepMode = '/sleep';
   static const fullScreenAlert = '/alert';
 }
@@ -105,6 +108,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
+        path: AppRoutes.settingsHistory,
+        builder: (context, state) => const HistoryScreen(),
+      ),
+      GoRoute(
         path: AppRoutes.soundManagement,
         builder: (context, state) => const SoundManagementScreen(),
       ),
@@ -123,6 +130,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.emergencyContacts,
         builder: (context, state) => const EmergencyContactsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.widgetShowcase,
+        builder: (context, state) => const HomeWidgetShowcaseScreen(),
       ),
 
       // Sleep mode (full screen)

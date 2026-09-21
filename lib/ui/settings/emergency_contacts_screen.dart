@@ -65,6 +65,10 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
             decoration: BoxDecoration(
               color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: theme.colorScheme.primary.withValues(alpha: 0.25),
+                width: 1.0,
+              ),
             ),
             child: Row(
               children: [
@@ -103,7 +107,7 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
                         prefixIcon: const Icon(Icons.phone_outlined),
                         labelText: 'Contact #${index + 1}',
                         hintText: '+1 (555) 000-0000',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                     ),
                   ),

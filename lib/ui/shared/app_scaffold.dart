@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/constants/sound_categories.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../../core/router/app_router.dart';
 import '../../providers/service_providers.dart';
 
@@ -28,17 +28,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
     _urgentSub = dispatcher.urgentAlertStream.listen((alert) {
       if (!mounted) return;
 
-      // Resolve emoji from category
-      String emoji = '🚨';
-      try {
-        final cat = SoundCategory.values.firstWhere((c) => c.name == alert.soundCategory);
-        emoji = cat.emoji;
-      } catch (_) {}
-
       context.push(AppRoutes.fullScreenAlert, extra: {
         'id': alert.id,
         'soundCategory': alert.soundCategory,
-        'emoji': emoji,
         'confidence': (alert.confidence * 100).toStringAsFixed(0),
         'priorityLevel': alert.priorityLevel,
         'timestamp': alert.timestamp,
@@ -57,8 +49,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
     final currentIndex = widget.navigationShell.currentIndex;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: widget.navigationShell,
+    return WithForegroundTask(
+      child: Scaffold(
+        body: widget.navigationShell,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF0D1424) : Colors.white,
@@ -170,6 +163,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
           ),
         ),
       ),
+    ),
     );
   }
 }

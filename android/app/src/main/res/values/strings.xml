@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AlertSense</string>
+    <string name="widget_name">AlertSense Radar</string>
+    <string name="widget_description">Interactive 3-view sound monitor, recent alerts feed, and emergency quick actions.</string>
+</resources>

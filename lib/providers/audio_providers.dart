@@ -3,10 +3,12 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../core/constants/sound_categories.dart';
+import '../data/models/alert_event.dart';
 import '../data/models/classification_result.dart';
 import 'alert_providers.dart';
 import 'service_providers.dart';
 import 'settings_providers.dart';
+import 'stats_providers.dart';
 
 import '../core/constants/priority_levels.dart';
 
@@ -50,7 +52,19 @@ class ListeningNotifier extends StateNotifier<bool> {
     final status = await Permission.microphone.request();
     if (!status.isGranted) return;
 
+    // Ensure notification permission is requested so background alerts can show
+    await Permission.notification.request();
+
+    // Start Android Foreground Service with microphone type & wake lock
+    // This allows continuous background audio capture whether app is open, minimized, or screen locked.
+    final foregroundService = _ref.read(foregroundServiceProvider);
+    await foregroundService.startMonitoring(
+      title: 'AlertSense Active',
+      text: 'Actively monitoring surrounding sounds in real time...',
+    );
+
     state = true;
+    _syncWidget();
 
     final classifier = _ref.read(classifierServiceProvider);
     await classifier.loadModel();
@@ -63,7 +77,7 @@ class ListeningNotifier extends StateNotifier<bool> {
     });
 
     _audioSub = audioStream.audioStream.listen((buffer) async {
-      if (!mounted || !state) return;
+      if (!state) return;
       final result = classifier.classify(buffer);
       if (result == null) return;
       await _dispatch(result);
@@ -85,37 +99,49 @@ class ListeningNotifier extends StateNotifier<bool> {
       enabledCategories: enabledSounds,
     );
 
-    if (alertEvent != null && mounted) {
-      final random = Random();
+    if (alertEvent != null) {
       final cat = SoundCategory.values.firstWhere(
         (c) => c.name == alertEvent.soundCategory,
         orElse: () => SoundCategory.dogBarking,
       );
-      final dist = (0.75 - (alertEvent.confidence * 0.2)).clamp(0.42, 0.82);
-      final newSound = DetectedSound(
-        category: cat,
-        confidence: alertEvent.confidence * 100,
-        angle: random.nextDouble() * 2 * pi,
-        distance: dist,
-        priority: cat.defaultPriority,
+
+      // Update the persistent status bar notification with the latest sound event
+      final foregroundService = _ref.read(foregroundServiceProvider);
+      await foregroundService.updateStatus(
+        title: '${cat.label} Detected!',
+        text: 'Confidence: ${(alertEvent.confidence * 100).toStringAsFixed(0)}% • AlertSense Active',
       );
 
-      final currentSounds = _ref.read(detectedSoundsProvider)
-          .where((s) => DateTime.now().difference(s.timestamp).inSeconds < 18 && s.category != cat)
-          .toList();
+      if (mounted) {
+        final random = Random();
+        final dist = (0.75 - (alertEvent.confidence * 0.2)).clamp(0.42, 0.82);
+        final newSound = DetectedSound(
+          category: cat,
+          confidence: alertEvent.confidence * 100,
+          angle: random.nextDouble() * 2 * pi,
+          distance: dist,
+          priority: cat.defaultPriority,
+        );
 
-      _ref.read(detectedSoundsProvider.notifier).state = [newSound, ...currentSounds].take(4).toList();
-      _ref.read(alertListProvider.notifier).syncFromRepo();
+        final currentSounds = _ref.read(detectedSoundsProvider)
+            .where((s) => DateTime.now().difference(s.timestamp).inSeconds < 18 && s.category != cat)
+            .toList();
 
-      _clearRadarTimer?.cancel();
-      _clearRadarTimer = Timer(const Duration(seconds: 18), () {
-        if (mounted) {
-          final valid = _ref.read(detectedSoundsProvider)
-              .where((s) => DateTime.now().difference(s.timestamp).inSeconds < 18)
-              .toList();
-          _ref.read(detectedSoundsProvider.notifier).state = valid;
-        }
-      });
+        _ref.read(detectedSoundsProvider.notifier).state = [newSound, ...currentSounds].take(4).toList();
+        _ref.read(alertListProvider.notifier).syncFromRepo();
+
+        _clearRadarTimer?.cancel();
+        _clearRadarTimer = Timer(const Duration(seconds: 18), () {
+          if (mounted) {
+            final valid = _ref.read(detectedSoundsProvider)
+                .where((s) => DateTime.now().difference(s.timestamp).inSeconds < 18)
+                .toList();
+            _ref.read(detectedSoundsProvider.notifier).state = valid;
+          }
+        });
+      }
+
+      _syncWidget(event: alertEvent);
     }
   }
 
@@ -125,7 +151,31 @@ class ListeningNotifier extends StateNotifier<bool> {
     await _dbSub?.cancel(); _dbSub = null;
     _clearRadarTimer?.cancel(); _clearRadarTimer = null;
     await _ref.read(audioStreamServiceProvider).stopListening();
+    await _ref.read(foregroundServiceProvider).stopMonitoring();
     if (mounted) _ref.read(detectedSoundsProvider.notifier).state = [];
+    _syncWidget();
+  }
+
+  void _syncWidget({AlertEvent? event}) {
+    try {
+      final widgetService = _ref.read(homeWidgetServiceProvider);
+      final profile = _ref.read(activeProfileProvider);
+      final db = _ref.read(ambientDbProvider);
+      final todayCount = _ref.read(alertsTodayCountProvider);
+      final highCount = _ref.read(highPriorityCountProvider);
+      final lastAlert = event ?? _ref.read(lastAlertProvider);
+      final enabledCount = _ref.read(enabledSoundsProvider).length;
+
+      widgetService.syncData(
+        isListening: state,
+        activeProfile: profile,
+        ambientDb: db,
+        lastAlert: lastAlert,
+        alertsTodayCount: todayCount,
+        highPriorityCount: highCount,
+        monitoredCount: enabledCount,
+      );
+    } catch (_) {}
   }
 
   /// Fire a synthetic test alert for demonstration.

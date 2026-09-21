@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vibration/vibration.dart';
+import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../providers/settings_providers.dart';
 
@@ -102,15 +103,15 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
               initialValue: _selectedCategory,
               decoration: InputDecoration(
                 labelText: 'Sound Category',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               ),
               items: SoundCategory.values.map((cat) {
                 return DropdownMenuItem(
                   value: cat,
                   child: Row(
                     children: [
-                      Text(cat.emoji, style: const TextStyle(fontSize: 18)),
-                      const SizedBox(width: 8),
+                      AppSvgIcon(iconKey: cat.name, size: 18, color: cat.color),
+                      const SizedBox(width: 10),
                       Text(cat.label),
                     ],
                   ),
@@ -137,10 +138,10 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: _isRecording ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
-                      width: _isRecording ? 2.5 : 1.5,
+                      width: _isRecording ? 2.0 : 1.0,
                     ),
                   ),
                   child: Center(

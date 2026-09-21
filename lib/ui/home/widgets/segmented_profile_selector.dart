@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/alert_providers.dart';
 import '../../../providers/audio_providers.dart';
@@ -36,12 +36,12 @@ class SegmentedProfileSelector extends ConsumerWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF161F33) : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
               : const Color(0xFFE2E8F0),
-          width: 1,
+          width: 1.0,
         ),
       ),
       child: Row(

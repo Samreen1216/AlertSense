@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/constants/sound_categories.dart';
 import '../../../core/router/app_router.dart';
 import '../../../providers/alert_providers.dart';
@@ -20,10 +21,10 @@ class LastAlertCard extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         decoration: BoxDecoration(
           color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.12 : 0.08),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: const Color(0xFF10B981).withValues(alpha: 0.3),
-            width: 1.2,
+            width: 1.0,
           ),
         ),
         child: Row(
@@ -90,16 +91,16 @@ class LastAlertCard extends ConsumerWidget {
       onTap: () {
         context.push(AppRoutes.alertDetails, extra: lastAlert);
       },
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
           color: isDark
               ? const Color(0xFF1E2638)
               : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: color.withValues(alpha: isHigh ? 0.6 : 0.35),
-            width: isHigh ? 1.8 : 1.2,
+            width: isHigh ? 1.5 : 1.0,
           ),
           boxShadow: [
             BoxShadow(
@@ -130,9 +131,10 @@ class LastAlertCard extends ConsumerWidget {
                           color: color.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: Text(
-                          category?.emoji ?? '🚨',
-                          style: const TextStyle(fontSize: 24),
+                        child: AppSvgIcon(
+                          iconKey: category?.name ?? 'alert',
+                          size: 24,
+                          color: color,
                         ),
                       ),
                       const SizedBox(width: 14),
