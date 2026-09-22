@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:background="@drawable/widget_background"
     android:orientation="vertical"
     android:padding="12dp">
@@ -40,8 +40,9 @@
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
+            <!-- LIVE STATUS PILL -->
             <TextView
-                android:id="@+id/widget_status_pill"
+                android:id="@+id/widget_status_pill_live"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -53,7 +54,25 @@
                 android:text="● LIVE"
                 android:textColor="@color/widget_live_green"
                 android:textSize="9sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <!-- PAUSED STATUS PILL -->
+            <TextView
+                android:id="@+id/widget_status_pill_paused"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/widget_pill_paused"
+                android:paddingStart="7dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="7dp"
+                android:paddingBottom="2dp"
+                android:text="○ PAUSED"
+                android:textColor="@color/widget_text_secondary"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:visibility="visible" />
         </LinearLayout>
 
         <!-- Right: Slider Controls (Prev, Indicators, Next) -->
@@ -85,7 +104,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="● ○ ○"
+                android:text="● ○ ○ (1/3)"
                 android:textColor="@color/widget_accent_cyan"
                 android:textSize="11sp"
                 android:textStyle="bold" />
@@ -104,8 +123,9 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- DIVIDER -->
-    <View
+    <!-- DIVIDER (FrameLayout for RemoteViews compatibility) -->
+    <FrameLayout
+        android:id="@+id/widget_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="7dp"
@@ -116,8 +136,7 @@
     <LinearLayout
         android:id="@+id/layout_slide_1"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:visibility="visible">
 
@@ -234,8 +253,7 @@
     <LinearLayout
         android:id="@+id/layout_slide_2"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:visibility="gone">
 
@@ -275,8 +293,9 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
+                <!-- 3 PRE-STYLED BADGES (NO DYNAMIC BACKGROUND SETTING) -->
                 <TextView
-                    android:id="@+id/widget_alert_priority_badge"
+                    android:id="@+id/widget_alert_priority_badge_high"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/widget_badge_high"
@@ -287,7 +306,38 @@
                     android:text="HIGH"
                     android:textColor="@color/widget_danger_red"
                     android:textSize="9sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/widget_alert_priority_badge_med"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/widget_badge_medium"
+                    android:paddingStart="6dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="2dp"
+                    android:text="MED"
+                    android:textColor="@color/widget_warning_orange"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/widget_alert_priority_badge_low"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/widget_badge_low"
+                    android:paddingStart="6dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="2dp"
+                    android:text="LOW"
+                    android:textColor="@color/widget_live_green"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
             </LinearLayout>
 
             <LinearLayout
@@ -357,8 +407,7 @@
     <LinearLayout
         android:id="@+id/layout_slide_3"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
         android:visibility="gone">
 

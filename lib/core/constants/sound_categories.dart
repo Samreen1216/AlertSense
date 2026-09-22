@@ -40,7 +40,7 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.high,
     color: AppColors.glassBreaking,
     icon: Icons.window,
-    yamnetLabels: ['Glass', 'Chink, clink', 'Shatter'],
+    yamnetLabels: ['Glass', 'Chink, clink', 'Shatter', 'Breaking'],
     defaultThreshold: 0.60,
   ),
   doorbell(
@@ -60,6 +60,10 @@ enum SoundCategory {
       'Jingle bell',
       'Doorbell chime',
       'Alarm clock',
+      'Telephone bell ringing',
+      'Church bell',
+      'Tubular bells',
+      'Cowbell',
     ],
     defaultThreshold: 0.50,
   ),
@@ -70,7 +74,7 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.medium,
     color: AppColors.knocking,
     icon: Icons.back_hand,
-    yamnetLabels: ['Knock', 'Door', 'Wood'],
+    yamnetLabels: ['Knock', 'Door', 'Wood', 'Sliding door', 'Tap', 'Bang'],
     defaultThreshold: 0.55,
   ),
   babyCrying(
@@ -80,7 +84,7 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.medium,
     color: AppColors.babyCrying,
     icon: Icons.child_care,
-    yamnetLabels: ['Crying, sobbing', 'Baby cry, infant cry'],
+    yamnetLabels: ['Crying, sobbing', 'Baby cry, infant cry', 'Whimper', 'Wail, moan'],
     defaultThreshold: 0.60,
   ),
   dogBarking(
@@ -90,7 +94,7 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.low,
     color: AppColors.dogBarking,
     icon: Icons.pets,
-    yamnetLabels: ['Dog', 'Bark', 'Howl'],
+    yamnetLabels: ['Dog', 'Bark', 'Howl', 'Canidae, dogs, wolves', 'Growling', 'Bow-wow', 'Yip'],
     defaultThreshold: 0.60,
   ),
   vehicleHorn(
@@ -100,7 +104,14 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.medium,
     color: AppColors.vehicleHorn,
     icon: Icons.directions_car,
-    yamnetLabels: ['Vehicle horn, car horn, honking'],
+    yamnetLabels: [
+      'Vehicle horn, car horn, honking',
+      'Air horn, truck horn',
+      'Car alarm',
+      'Train horn',
+      'Foghorn',
+      'Toot',
+    ],
     defaultThreshold: 0.65,
   );
 

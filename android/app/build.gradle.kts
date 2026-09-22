@@ -37,6 +37,10 @@ android {
             excludes += "META-INF/NOTICE*"
         }
     }
+
+    androidResources {
+        noCompress += "tflite"
+    }
 }
 
 kotlin {

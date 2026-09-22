@@ -6,6 +6,7 @@ import '../data/models/alert_event.dart';
 
 class HomeWidgetService {
   static const String appWidgetProviderName = 'AlertSenseWidgetProvider';
+  static const String qualifiedWidgetName = 'com.alertsense.AlertSenseWidgetProvider';
 
   final _widgetLaunchController = StreamController<Uri>.broadcast();
   Stream<Uri> get widgetLaunchStream => _widgetLaunchController.stream;
@@ -75,6 +76,7 @@ class HomeWidgetService {
       await HomeWidget.updateWidget(
         name: appWidgetProviderName,
         androidName: appWidgetProviderName,
+        qualifiedAndroidName: qualifiedWidgetName,
       );
     } catch (e) {
       debugPrint('Error updating home widget data: $e');
@@ -88,6 +90,7 @@ class HomeWidgetService {
       if (supported == true) {
         await HomeWidget.requestPinWidget(
           androidName: appWidgetProviderName,
+          qualifiedAndroidName: qualifiedWidgetName,
         );
         return true;
       }

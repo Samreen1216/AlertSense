@@ -1,4 +1,4 @@
-﻿import '../main.dart';
+import '../main.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
