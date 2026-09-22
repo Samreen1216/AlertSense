@@ -68,6 +68,7 @@ class AlertDispatcherService {
     if (priority == null) {
       return null;
     }
+    debugPrint('[Priority] ${priority.name.toUpperCase()}');
 
     SoundCategory category;
     try {
@@ -84,6 +85,7 @@ class AlertDispatcherService {
     if (!allowed) {
       return null;
     }
+    debugPrint('[Alert] Triggered');
 
     // 4. Create and persist the AlertEvent
     final alertEvent = AlertEvent(

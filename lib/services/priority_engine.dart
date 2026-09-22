@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../core/constants/sound_categories.dart';
+import '../core/constants/sound_detection_thresholds.dart';
 import '../core/constants/priority_levels.dart';
 import '../data/models/classification_result.dart';
 
@@ -20,6 +21,11 @@ class PriorityEngine {
     _customThresholds.addAll(thresholds);
   }
 
+  /// Get active threshold for category (custom override or centralized default)
+  double getThresholdForCategory(SoundCategory category) {
+    return _customThresholds[category.name] ?? SoundDetectionThresholds.getThreshold(category);
+  }
+
   /// Determine if a classification result should trigger an alert.
   ///
   /// Returns the [PriorityLevel] if the sound should trigger an alert,
@@ -30,9 +36,8 @@ class PriorityEngine {
         (c) => c.name == result.soundCategory,
       );
 
-      // Get the confidence threshold (custom or default)
-      final threshold = _customThresholds[result.soundCategory]
-          ?? category.defaultThreshold;
+      // Get the confidence threshold (custom or default centralized threshold)
+      final threshold = getThresholdForCategory(category);
 
       // Check if confidence meets threshold
       if (result.confidence < threshold) {

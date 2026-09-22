@@ -68,7 +68,10 @@ class AlertSenseWidgetProvider : HomeWidgetProvider() {
         appWidgetIds: IntArray,
         widgetData: SharedPreferences
     ) {
-        for (appWidgetId in appWidgetIds) {
+        val targetIds = if (appWidgetIds.isNotEmpty()) appWidgetIds else {
+            appWidgetManager.getAppWidgetIds(ComponentName(context, AlertSenseWidgetProvider::class.java))
+        }
+        for (appWidgetId in targetIds) {
             try {
                 val views = RemoteViews(context.packageName, R.layout.widget_layout)
 

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/constants/sound_detection_thresholds.dart';
 import '../services/alert_dispatcher_service.dart';
 import '../services/audio_stream_service.dart';
 import '../services/deduplication_service.dart';
@@ -7,9 +8,18 @@ import '../services/foreground_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/notification_service.dart';
 import '../services/priority_engine.dart';
+import '../services/temporal_smoothing_service.dart';
 import '../services/tflite_classifier_service.dart';
 import '../services/vibration_service.dart';
 import '../main.dart';
+
+final soundDetectionThresholdsProvider = Provider<SoundDetectionThresholds>((ref) {
+  return SoundDetectionThresholds();
+});
+
+final temporalSmoothingServiceProvider = Provider<TemporalSmoothingService>((ref) {
+  return TemporalSmoothingService();
+});
 
 final foregroundServiceProvider = Provider<ForegroundService>((ref) {
   final service = ForegroundService();

@@ -40,9 +40,9 @@ void main() {
     test('Dog Barking above threshold triggers LOW priority', () {
       final result = ClassificationResult(
         soundCategory: 'dogBarking',
-        confidence: 0.70,
+        confidence: 0.80,
         timestamp: DateTime.now(),
-        topPredictions: const [MapEntry('Dog', 0.70)],
+        topPredictions: const [MapEntry('Dog', 0.80)],
         ambientDbLevel: 50.0,
       );
 

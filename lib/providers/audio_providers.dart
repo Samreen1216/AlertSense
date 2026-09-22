@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../core/constants/sound_categories.dart';
@@ -80,7 +81,49 @@ class ListeningNotifier extends StateNotifier<bool> {
       if (!state) return;
       final result = classifier.classify(buffer);
       if (result == null) return;
-      await _dispatch(result);
+
+      SoundCategory? category;
+      try {
+        category = SoundCategory.values.firstWhere((c) => c.name == result.soundCategory);
+      } catch (_) {}
+      if (category == null) return;
+
+      // 1. Log YAMNet prediction
+      debugPrint('[YAMNet] Prediction: ${category.name} ${result.confidence.toStringAsFixed(2)}');
+
+      // 2. Category-specific threshold check
+      final thresholds = _ref.read(soundDetectionThresholdsProvider);
+      final threshold = thresholds.thresholdFor(category);
+      if (result.confidence < threshold) {
+        debugPrint('[Threshold] ${category.name} threshold: ${threshold.toStringAsFixed(2)} → REJECT');
+        return;
+      }
+      debugPrint('[Threshold] ${category.name} threshold: ${threshold.toStringAsFixed(2)} → PASS');
+
+      // 3. Temporal smoothing / multi-window confirmation
+      final smoother = _ref.read(temporalSmoothingServiceProvider);
+      final confirmed = smoother.processPrediction(
+        category: category,
+        confidence: result.confidence,
+        timestamp: result.timestamp,
+      );
+
+      if (confirmed == null) {
+        return;
+      }
+
+      debugPrint('[Detection] ${category.label} CONFIRMED');
+
+      // 4. Confirmed detection passed to alert dispatcher
+      final confirmedResult = ClassificationResult(
+        soundCategory: confirmed.category.name,
+        confidence: confirmed.aggregatedConfidence,
+        timestamp: confirmed.timestamp,
+        topPredictions: result.topPredictions,
+        ambientDbLevel: result.ambientDbLevel,
+      );
+
+      await _dispatch(confirmedResult);
     });
   }
 
@@ -152,6 +195,7 @@ class ListeningNotifier extends StateNotifier<bool> {
     _clearRadarTimer?.cancel(); _clearRadarTimer = null;
     await _ref.read(audioStreamServiceProvider).stopListening();
     await _ref.read(foregroundServiceProvider).stopMonitoring();
+    _ref.read(temporalSmoothingServiceProvider).reset();
     if (mounted) _ref.read(detectedSoundsProvider.notifier).state = [];
     _syncWidget();
   }

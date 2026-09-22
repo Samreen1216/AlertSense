@@ -11,7 +11,7 @@ enum SoundCategory {
     color: AppColors.fireAlarm,
     icon: Icons.local_fire_department,
     yamnetLabels: ['Fire alarm', 'Alarm'],
-    defaultThreshold: 0.70,
+    defaultThreshold: 0.65,
   ),
   smokeAlarm(
     label: 'Smoke Alarm',
@@ -31,7 +31,7 @@ enum SoundCategory {
     color: AppColors.emergencySiren,
     icon: Icons.local_police,
     yamnetLabels: ['Siren', 'Ambulance (siren)', 'Police car (siren)', 'Fire engine, fire truck (siren)'],
-    defaultThreshold: 0.65,
+    defaultThreshold: 0.70,
   ),
   glassBreaking(
     label: 'Glass Breaking',
@@ -41,7 +41,7 @@ enum SoundCategory {
     color: AppColors.glassBreaking,
     icon: Icons.window,
     yamnetLabels: ['Glass', 'Chink, clink', 'Shatter', 'Breaking'],
-    defaultThreshold: 0.60,
+    defaultThreshold: 0.75,
   ),
   doorbell(
     label: 'Bell Ring',
@@ -65,7 +65,7 @@ enum SoundCategory {
       'Tubular bells',
       'Cowbell',
     ],
-    defaultThreshold: 0.50,
+    defaultThreshold: 0.70,
   ),
   knocking(
     label: 'Knocking',
@@ -75,7 +75,7 @@ enum SoundCategory {
     color: AppColors.knocking,
     icon: Icons.back_hand,
     yamnetLabels: ['Knock', 'Door', 'Wood', 'Sliding door', 'Tap', 'Bang'],
-    defaultThreshold: 0.55,
+    defaultThreshold: 0.70,
   ),
   babyCrying(
     label: 'Baby Crying',
@@ -85,7 +85,7 @@ enum SoundCategory {
     color: AppColors.babyCrying,
     icon: Icons.child_care,
     yamnetLabels: ['Crying, sobbing', 'Baby cry, infant cry', 'Whimper', 'Wail, moan'],
-    defaultThreshold: 0.60,
+    defaultThreshold: 0.65,
   ),
   dogBarking(
     label: 'Dog Barking',
@@ -95,7 +95,7 @@ enum SoundCategory {
     color: AppColors.dogBarking,
     icon: Icons.pets,
     yamnetLabels: ['Dog', 'Bark', 'Howl', 'Canidae, dogs, wolves', 'Growling', 'Bow-wow', 'Yip'],
-    defaultThreshold: 0.60,
+    defaultThreshold: 0.75,
   ),
   vehicleHorn(
     label: 'Vehicle Horn',
@@ -112,7 +112,7 @@ enum SoundCategory {
       'Foghorn',
       'Toot',
     ],
-    defaultThreshold: 0.65,
+    defaultThreshold: 0.75,
   );
 
   final String label;
@@ -147,6 +147,17 @@ extension SoundCategoryExtension on SoundCategory {
     // Substring match
     for (final category in SoundCategory.values) {
       if (category.yamnetLabels.any((yLabel) => lower.contains(yLabel.toLowerCase()))) {
+        return category;
+      }
+    }
+    return null;
+  }
+
+  static SoundCategory? fromName(String name) {
+    final lower = name.toLowerCase().replaceAll(RegExp(r'[\s_\-]'), '');
+    for (final category in SoundCategory.values) {
+      if (category.name.toLowerCase() == lower ||
+          category.label.toLowerCase().replaceAll(RegExp(r'[\s_\-]'), '') == lower) {
         return category;
       }
     }
