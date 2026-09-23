@@ -3,13 +3,15 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:record/record.dart';
 
+import 'audio_preprocessor.dart';
+
 /// Service that manages real-time microphone audio streaming.
 /// Uses the `record` package for live PCM capture at 16 kHz.
 class AudioStreamService {
   static const int sampleRate = 16000;
   static const double windowDuration = 0.975;
   static const int samplesPerWindow = 15600;
-  static const double silenceThreshold = 0.003;
+  static const double silenceThreshold = 0.008; // Configurable baseline
 
   bool _isListening = false;
   final _audioBufferController = StreamController<List<double>>.broadcast();
@@ -17,9 +19,9 @@ class AudioStreamService {
 
   final AudioRecorder _recorder = AudioRecorder();
   StreamSubscription<Uint8List>? _recorderSub;
-  final List<double> _sampleBuffer = [];
+  final AudioWindowBuffer _windowBuffer = AudioWindowBuffer();
 
-  Timer? _simulationTimer; // fallback only
+  Timer? _fallbackDbTimer; // Baseline ambient meter when mic inactive
 
   Stream<List<double>> get audioStream => _audioBufferController.stream;
   Stream<double> get dbLevelStream => _dbLevelController.stream;
@@ -28,7 +30,7 @@ class AudioStreamService {
   Future<void> startListening() async {
     if (_isListening) return;
     _isListening = true;
-    _sampleBuffer.clear();
+    _windowBuffer.clear();
 
     bool micStarted = false;
     try {
@@ -45,64 +47,66 @@ class AudioStreamService {
           _onAudioData,
           onError: (e) {
             debugPrint('[AudioStream] Mic error: $e');
-            _fallbackSimulation();
+            _startAmbientDbFallback();
           },
         );
         micStarted = true;
-        debugPrint('[AudioStream] Real mic started');
+        debugPrint('[AudioStream] Microphone stream active (16 kHz mono)');
+      } else {
+        debugPrint('[AudioStream] Microphone permission not granted');
       }
     } catch (e) {
       debugPrint('[AudioStream] Could not start mic: $e');
     }
 
     if (!micStarted) {
-      _fallbackSimulation();
+      _startAmbientDbFallback();
     }
   }
 
   void _onAudioData(Uint8List data) {
-    final samples = convertPcmToFloat32(data);
-    _sampleBuffer.addAll(samples);
+    // 1. Preprocess incoming PCM data (PCM16 -> Float32, mono, 16 kHz)
+    final samples = AudioPreprocessor.processIncomingPcm(
+      pcmBytes: data,
+      inputSampleRate: sampleRate,
+      numChannels: 1,
+    );
+    _windowBuffer.addSamples(samples);
 
-    while (_sampleBuffer.length >= samplesPerWindow) {
-      final window = _sampleBuffer.sublist(0, samplesPerWindow);
-      _sampleBuffer.removeRange(0, samplesPerWindow);
+    // 2. Extract complete 15,600-sample windows
+    while (_windowBuffer.hasWindow) {
+      final window = _windowBuffer.nextWindow();
+      if (window == null) break;
 
       final rms = calculateRms(window);
       final db = rmsToDb(rms);
       if (!_dbLevelController.isClosed) _dbLevelController.add(db);
 
-      if (rms > silenceThreshold) {
+      // Buffer emitted only if exceeding minimal noise floor
+      if (rms >= silenceThreshold) {
         if (!_audioBufferController.isClosed) _audioBufferController.add(window);
       }
     }
   }
 
-  void _fallbackSimulation() {
-    debugPrint('[AudioStream] Using simulation fallback');
-    final random = Random();
-    _simulationTimer = Timer.periodic(const Duration(milliseconds: 975), (_) {
+  /// Ambient meter fallback that only updates decibel level without generating fake audio alerts.
+  void _startAmbientDbFallback() {
+    debugPrint('[AudioStream] Microphone standby — ambient meter only');
+    _fallbackDbTimer?.cancel();
+    _fallbackDbTimer = Timer.periodic(const Duration(milliseconds: 975), (_) {
       if (!_isListening) return;
-      final db = 35.0 + random.nextDouble() * 40.0;
-      if (!_dbLevelController.isClosed) _dbLevelController.add(db);
-      if (random.nextDouble() > 0.65) {
-        final buffer = List.generate(
-          samplesPerWindow,
-          (_) => (random.nextDouble() * 2.0 - 1.0) * 0.3,
-        );
-        if (!_audioBufferController.isClosed) _audioBufferController.add(buffer);
-      }
+      if (!_dbLevelController.isClosed) _dbLevelController.add(30.0);
     });
   }
 
   Future<void> stopListening() async {
     _isListening = false;
-    _simulationTimer?.cancel();
-    _simulationTimer = null;
+    _fallbackDbTimer?.cancel();
+    _fallbackDbTimer = null;
     await _recorderSub?.cancel();
     _recorderSub = null;
     try { await _recorder.stop(); } catch (_) {}
-    _sampleBuffer.clear();
+    _windowBuffer.clear();
     debugPrint('[AudioStream] Stopped');
   }
 

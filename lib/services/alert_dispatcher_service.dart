@@ -83,9 +83,12 @@ class AlertDispatcherService {
       customCooldowns: customCooldowns,
     );
     if (!allowed) {
+      debugPrint('[Deduplication] SUPPRESSED');
+      debugPrint('[Alert] NOT TRIGGERED');
       return null;
     }
-    debugPrint('[Alert] Triggered');
+    debugPrint('[Deduplication] PASS');
+    debugPrint('[Alert] TRIGGERED');
 
     // 4. Create and persist the AlertEvent
     final alertEvent = AlertEvent(

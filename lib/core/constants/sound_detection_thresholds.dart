@@ -7,15 +7,15 @@ import 'sound_categories.dart';
 class SoundDetectionThresholds {
   /// Default category-specific confidence thresholds.
   static const Map<SoundCategory, double> values = {
-    SoundCategory.fireAlarm: 0.65,
-    SoundCategory.smokeAlarm: 0.65,
-    SoundCategory.emergencySiren: 0.70,
-    SoundCategory.glassBreaking: 0.75,
-    SoundCategory.doorbell: 0.70,
-    SoundCategory.knocking: 0.70,
-    SoundCategory.babyCrying: 0.65,
-    SoundCategory.dogBarking: 0.75,
-    SoundCategory.vehicleHorn: 0.75,
+    SoundCategory.fireAlarm: 0.70,
+    SoundCategory.smokeAlarm: 0.70,
+    SoundCategory.emergencySiren: 0.75,
+    SoundCategory.glassBreaking: 0.80,
+    SoundCategory.doorbell: 0.75,
+    SoundCategory.knocking: 0.75,
+    SoundCategory.babyCrying: 0.70,
+    SoundCategory.dogBarking: 0.80,
+    SoundCategory.vehicleHorn: 0.80,
   };
 
   final Map<SoundCategory, double> _overrides;

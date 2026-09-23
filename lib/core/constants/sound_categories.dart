@@ -10,8 +10,8 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.high,
     color: AppColors.fireAlarm,
     icon: Icons.local_fire_department,
-    yamnetLabels: ['Fire alarm', 'Alarm'],
-    defaultThreshold: 0.65,
+    yamnetLabels: ['Fire alarm'],
+    defaultThreshold: 0.70,
   ),
   smokeAlarm(
     label: 'Smoke Alarm',
@@ -21,7 +21,7 @@ enum SoundCategory {
     color: AppColors.smokeAlarm,
     icon: Icons.smoke_free,
     yamnetLabels: ['Smoke detector, smoke alarm'],
-    defaultThreshold: 0.65,
+    defaultThreshold: 0.70,
   ),
   emergencySiren(
     label: 'Emergency Siren',
@@ -30,8 +30,14 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.high,
     color: AppColors.emergencySiren,
     icon: Icons.local_police,
-    yamnetLabels: ['Siren', 'Ambulance (siren)', 'Police car (siren)', 'Fire engine, fire truck (siren)'],
-    defaultThreshold: 0.70,
+    yamnetLabels: [
+      'Siren',
+      'Civil defense siren',
+      'Ambulance (siren)',
+      'Police car (siren)',
+      'Fire engine, fire truck (siren)',
+    ],
+    defaultThreshold: 0.75,
   ),
   glassBreaking(
     label: 'Glass Breaking',
@@ -40,8 +46,8 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.high,
     color: AppColors.glassBreaking,
     icon: Icons.window,
-    yamnetLabels: ['Glass', 'Chink, clink', 'Shatter', 'Breaking'],
-    defaultThreshold: 0.75,
+    yamnetLabels: ['Shatter'],
+    defaultThreshold: 0.80,
   ),
   doorbell(
     label: 'Bell Ring',
@@ -51,21 +57,12 @@ enum SoundCategory {
     color: AppColors.doorbell,
     icon: Icons.doorbell,
     yamnetLabels: [
-      'Bell ring',
       'Doorbell',
       'Ding-dong',
+      'Bell ring',
       'Chime',
-      'Bell',
-      'Bicycle bell',
-      'Jingle bell',
-      'Doorbell chime',
-      'Alarm clock',
-      'Telephone bell ringing',
-      'Church bell',
-      'Tubular bells',
-      'Cowbell',
     ],
-    defaultThreshold: 0.70,
+    defaultThreshold: 0.75,
   ),
   knocking(
     label: 'Knocking',
@@ -74,8 +71,8 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.medium,
     color: AppColors.knocking,
     icon: Icons.back_hand,
-    yamnetLabels: ['Knock', 'Door', 'Wood', 'Sliding door', 'Tap', 'Bang'],
-    defaultThreshold: 0.70,
+    yamnetLabels: ['Knock'],
+    defaultThreshold: 0.75,
   ),
   babyCrying(
     label: 'Baby Crying',
@@ -84,8 +81,8 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.medium,
     color: AppColors.babyCrying,
     icon: Icons.child_care,
-    yamnetLabels: ['Crying, sobbing', 'Baby cry, infant cry', 'Whimper', 'Wail, moan'],
-    defaultThreshold: 0.65,
+    yamnetLabels: ['Baby cry, infant cry'],
+    defaultThreshold: 0.70,
   ),
   dogBarking(
     label: 'Dog Barking',
@@ -94,8 +91,8 @@ enum SoundCategory {
     defaultPriority: PriorityLevel.low,
     color: AppColors.dogBarking,
     icon: Icons.pets,
-    yamnetLabels: ['Dog', 'Bark', 'Howl', 'Canidae, dogs, wolves', 'Growling', 'Bow-wow', 'Yip'],
-    defaultThreshold: 0.75,
+    yamnetLabels: ['Bark', 'Bow-wow', 'Yip'],
+    defaultThreshold: 0.80,
   ),
   vehicleHorn(
     label: 'Vehicle Horn',
@@ -107,12 +104,8 @@ enum SoundCategory {
     yamnetLabels: [
       'Vehicle horn, car horn, honking',
       'Air horn, truck horn',
-      'Car alarm',
-      'Train horn',
-      'Foghorn',
-      'Toot',
     ],
-    defaultThreshold: 0.75,
+    defaultThreshold: 0.80,
   );
 
   final String label;
@@ -137,16 +130,12 @@ enum SoundCategory {
 }
 
 extension SoundCategoryExtension on SoundCategory {
+  /// Conservative, exact case-insensitive matching between YAMNet AudioSet label and SoundCategory.
+  /// Eliminates broad substring false positives.
   static SoundCategory? fromYamnetLabel(String label) {
     final lower = label.toLowerCase().trim();
     for (final category in SoundCategory.values) {
-      if (category.yamnetLabels.any((yLabel) => yLabel.toLowerCase() == lower)) {
-        return category;
-      }
-    }
-    // Substring match
-    for (final category in SoundCategory.values) {
-      if (category.yamnetLabels.any((yLabel) => lower.contains(yLabel.toLowerCase()))) {
+      if (category.yamnetLabels.any((yLabel) => yLabel.toLowerCase().trim() == lower)) {
         return category;
       }
     }

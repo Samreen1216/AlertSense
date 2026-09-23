@@ -41,7 +41,66 @@ class AppRoutes {
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: AppRoutes.home,
+    errorBuilder: (context, state) {
+      return const HomeScreen();
+    },
+    redirect: (context, state) {
+      final uri = state.uri;
+      final path = uri.path;
+      final host = uri.host;
+
+      // Handle root '/' or empty path with custom scheme host
+      if (path == '/' || path.isEmpty) {
+        if (host.isNotEmpty) {
+          switch (host) {
+            case 'quick-scan':
+              return '${AppRoutes.quickScan}?autoStart=true';
+            case 'emergency':
+              return AppRoutes.emergencyContacts;
+            case 'sleep':
+              return AppRoutes.sleepMode;
+            case 'settings':
+              return AppRoutes.settings;
+            case 'history':
+              return AppRoutes.history;
+            case 'stats':
+              return AppRoutes.stats;
+            case 'home':
+            case 'toggle-listening':
+            default:
+              return AppRoutes.home;
+          }
+        }
+        return AppRoutes.home;
+      }
+
+      // Handle path-based aliases from deep links
+      if (path == '/emergency') {
+        return AppRoutes.emergencyContacts;
+      }
+      if (path == '/toggle-listening') {
+        return AppRoutes.home;
+      }
+
+      return null;
+    },
     routes: [
+      // Root route redirect to home
+      GoRoute(
+        path: '/',
+        redirect: (context, state) => AppRoutes.home,
+      ),
+
+      // Aliases for deep links
+      GoRoute(
+        path: '/emergency',
+        redirect: (context, state) => AppRoutes.emergencyContacts,
+      ),
+      GoRoute(
+        path: '/toggle-listening',
+        redirect: (context, state) => AppRoutes.home,
+      ),
+
       // Onboarding
       GoRoute(
         path: AppRoutes.onboarding,
@@ -87,7 +146,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Quick Scan (dedicated full screen)
       GoRoute(
         path: AppRoutes.quickScan,
-        builder: (context, state) => const QuickScanScreen(),
+        builder: (context, state) {
+          final autoStart = state.uri.queryParameters['autoStart'] == 'true';
+          return QuickScanScreen(autoStart: autoStart);
+        },
       ),
 
       // Alert Details (dedicated full screen)

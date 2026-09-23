@@ -14,6 +14,9 @@ class HomeWidgetService {
   StreamSubscription<Uri?>? _widgetClickSub;
   bool _initialized = false;
 
+  Uri? _pendingInitialUri;
+  Uri? get pendingInitialUri => _pendingInitialUri;
+
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
@@ -22,6 +25,7 @@ class HomeWidgetService {
       // Check if the app was initially launched cold from a home widget click
       final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
       if (initialUri != null) {
+        _pendingInitialUri = initialUri;
         _widgetLaunchController.add(initialUri);
       }
 
@@ -33,6 +37,15 @@ class HomeWidgetService {
       });
     } catch (e) {
       debugPrint('HomeWidgetService init warning: $e');
+    }
+  }
+
+  /// Consumes the pending initial URI if the app was launched cold from a widget
+  void consumePendingInitialUri(void Function(Uri) handler) {
+    final uri = _pendingInitialUri;
+    if (uri != null) {
+      _pendingInitialUri = null;
+      handler(uri);
     }
   }
 

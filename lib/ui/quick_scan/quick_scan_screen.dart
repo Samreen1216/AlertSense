@@ -9,7 +9,8 @@ import '../../core/router/app_router.dart';
 import '../../providers/quick_scan_provider.dart';
 
 class QuickScanScreen extends ConsumerStatefulWidget {
-  const QuickScanScreen({super.key});
+  final bool autoStart;
+  const QuickScanScreen({super.key, this.autoStart = false});
 
   @override
   ConsumerState<QuickScanScreen> createState() => _QuickScanScreenState();
@@ -26,6 +27,14 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
+
+    if (widget.autoStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(quickScanProvider.notifier).startScan();
+        }
+      });
+    }
   }
 
   @override

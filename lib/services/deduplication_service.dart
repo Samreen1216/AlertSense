@@ -72,9 +72,9 @@ class DeduplicationService {
       _ongoingEventCounts.remove(categoryName);
       _ongoingEventStartTimes.remove(categoryName);
     } else {
-      _lastAlertTimestamps.clear;
-      _ongoingEventCounts.clear;
-      _ongoingEventStartTimes.clear;
+      _lastAlertTimestamps.clear();
+      _ongoingEventCounts.clear();
+      _ongoingEventStartTimes.clear();
     }
   }
 }

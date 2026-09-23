@@ -73,14 +73,36 @@ class ListeningNotifier extends StateNotifier<bool> {
     final audioStream = _ref.read(audioStreamServiceProvider);
     await audioStream.startListening();
 
+    DateTime lastWidgetDbSync = DateTime.now();
     _dbSub = audioStream.dbLevelStream.listen((db) {
-      if (mounted) _ref.read(ambientDbProvider.notifier).state = db;
+      if (mounted) {
+        _ref.read(ambientDbProvider.notifier).state = db;
+        final now = DateTime.now();
+        if (now.difference(lastWidgetDbSync).inMilliseconds >= 2500) {
+          lastWidgetDbSync = now;
+          _syncWidget();
+        }
+      }
     });
 
     _audioSub = audioStream.audioStream.listen((buffer) async {
       if (!state) return;
+
+      // 1. Signal / Energy Validation
+      final validator = _ref.read(signalEnergyValidatorProvider);
+      final validation = validator.validate(buffer);
+      final smoother = _ref.read(temporalSmoothingServiceProvider);
+
+      if (!validation.isSufficient) {
+        smoother.purgeExpired();
+        return;
+      }
+
+      // 2. YAMNet Inference & Top-5 Candidate Search
       final result = classifier.classify(buffer);
-      if (result == null) return;
+      if (result == null) {
+        return;
+      }
 
       SoundCategory? category;
       try {
@@ -88,20 +110,19 @@ class ListeningNotifier extends StateNotifier<bool> {
       } catch (_) {}
       if (category == null) return;
 
-      // 1. Log YAMNet prediction
-      debugPrint('[YAMNet] Prediction: ${category.name} ${result.confidence.toStringAsFixed(2)}');
-
-      // 2. Category-specific threshold check
+      // 3. Category-Specific Threshold Gating & Hysteresis
       final thresholds = _ref.read(soundDetectionThresholdsProvider);
-      final threshold = thresholds.thresholdFor(category);
-      if (result.confidence < threshold) {
-        debugPrint('[Threshold] ${category.name} threshold: ${threshold.toStringAsFixed(2)} → REJECT');
+      final baselineThreshold = thresholds.thresholdFor(category);
+      final effectiveThreshold = smoother.getEffectiveThreshold(category, baselineThreshold);
+
+      if (result.confidence < effectiveThreshold) {
+        debugPrint('[Threshold] ${result.confidence.toStringAsFixed(2)} < ${effectiveThreshold.toStringAsFixed(2)} → REJECT');
+        debugPrint('[Alert] NOT TRIGGERED');
         return;
       }
-      debugPrint('[Threshold] ${category.name} threshold: ${threshold.toStringAsFixed(2)} → PASS');
+      debugPrint('[Threshold] ${result.confidence.toStringAsFixed(2)} >= ${effectiveThreshold.toStringAsFixed(2)} → PASS');
 
-      // 3. Temporal smoothing / multi-window confirmation
-      final smoother = _ref.read(temporalSmoothingServiceProvider);
+      // 4. Temporal Smoothing / Multi-Window Confirmation
       final confirmed = smoother.processPrediction(
         category: category,
         confidence: result.confidence,
@@ -109,12 +130,13 @@ class ListeningNotifier extends StateNotifier<bool> {
       );
 
       if (confirmed == null) {
+        debugPrint('[Alert] NOT TRIGGERED');
         return;
       }
 
       debugPrint('[Detection] ${category.label} CONFIRMED');
 
-      // 4. Confirmed detection passed to alert dispatcher
+      // 5. Confirmed Detection Passed to Alert Dispatcher
       final confirmedResult = ClassificationResult(
         soundCategory: confirmed.category.name,
         confidence: confirmed.aggregatedConfidence,
@@ -128,10 +150,15 @@ class ListeningNotifier extends StateNotifier<bool> {
   }
 
   Future<void> _dispatch(ClassificationResult result) async {
-    final enabledSounds = _ref.read(enabledSoundsProvider);
+    // Use currentProfileProvider as the single source of truth for enabled sounds.
+    // enabledSoundsProvider was never synced from the profile and always returned all
+    // categories — so profile filtering was silently bypassed.
+    final currentProfile = _ref.read(currentProfileProvider);
+    final enabledCategories = currentProfile.enabledCategories.toSet();
+    // Fix: profile id is 'default_sleep', not 'sleep'. Use name for reliable check.
+    final isSleep = currentProfile.name.toLowerCase() == 'sleep';
+
     final settings = _ref.read(userSettingsProvider);
-    final profile = _ref.read(activeProfileProvider);
-    final isSleep = profile == 'sleep';
 
     final dispatcher = _ref.read(alertDispatcherServiceProvider);
     final alertEvent = await dispatcher.dispatchClassification(
@@ -139,7 +166,7 @@ class ListeningNotifier extends StateNotifier<bool> {
       isSleepMode: isSleep,
       flashEnabled: settings.flashEnabled,
       vibrationEnabled: settings.vibrationEnabled,
-      enabledCategories: enabledSounds,
+      enabledCategories: enabledCategories,
     );
 
     if (alertEvent != null) {
@@ -198,6 +225,13 @@ class ListeningNotifier extends StateNotifier<bool> {
     _ref.read(temporalSmoothingServiceProvider).reset();
     if (mounted) _ref.read(detectedSoundsProvider.notifier).state = [];
     _syncWidget();
+  }
+
+  /// Clear the radar display immediately (e.g. on profile switch so stale
+  /// cross-profile sounds disappear at once).
+  void clearRadar() {
+    _clearRadarTimer?.cancel();
+    if (mounted) _ref.read(detectedSoundsProvider.notifier).state = [];
   }
 
   void _syncWidget({AlertEvent? event}) {
@@ -259,18 +293,18 @@ class EnabledSoundsNotifier extends StateNotifier<Set<String>> {
     else { state = {...state, cat}; }
   }
 
-  void setProfile(String profile) {
-    switch (profile) {
-      case 'sleep':
-        state = { SoundCategory.fireAlarm.name, SoundCategory.smokeAlarm.name,
-                  SoundCategory.emergencySiren.name, SoundCategory.babyCrying.name };
-        break;
-      case 'outdoor':
-        state = { SoundCategory.emergencySiren.name, SoundCategory.vehicleHorn.name,
-                  SoundCategory.glassBreaking.name, SoundCategory.dogBarking.name };
-        break;
-      default:
-        state = SoundCategory.values.map((c) => c.name).toSet();
+  void setProfile(String profileIdOrName) {
+    // Match by id suffix or name, e.g. 'default_sleep' or 'sleep', 'Sleep', etc.
+    final key = profileIdOrName.toLowerCase();
+    if (key.contains('sleep')) {
+      state = { SoundCategory.fireAlarm.name, SoundCategory.smokeAlarm.name,
+                SoundCategory.emergencySiren.name, SoundCategory.babyCrying.name };
+    } else if (key.contains('outdoor') || key.contains('away')) {
+      state = { SoundCategory.emergencySiren.name, SoundCategory.vehicleHorn.name,
+                SoundCategory.glassBreaking.name, SoundCategory.dogBarking.name };
+    } else {
+      // Home or any other profile — all categories enabled
+      state = SoundCategory.values.map((c) => c.name).toSet();
     }
   }
 

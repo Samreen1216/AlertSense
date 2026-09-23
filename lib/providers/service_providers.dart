@@ -8,6 +8,7 @@ import '../services/foreground_service.dart';
 import '../services/home_widget_service.dart';
 import '../services/notification_service.dart';
 import '../services/priority_engine.dart';
+import '../services/signal_energy_validator.dart';
 import '../services/temporal_smoothing_service.dart';
 import '../services/tflite_classifier_service.dart';
 import '../services/vibration_service.dart';
@@ -19,6 +20,10 @@ final soundDetectionThresholdsProvider = Provider<SoundDetectionThresholds>((ref
 
 final temporalSmoothingServiceProvider = Provider<TemporalSmoothingService>((ref) {
   return TemporalSmoothingService();
+});
+
+final signalEnergyValidatorProvider = Provider<SignalEnergyValidator>((ref) {
+  return const SignalEnergyValidator();
 });
 
 final foregroundServiceProvider = Provider<ForegroundService>((ref) {

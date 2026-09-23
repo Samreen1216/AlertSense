@@ -138,21 +138,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Section: Home Screen Widget ──
-          _buildSectionHeader(context, 'HOME SCREEN WIDGET', Icons.widgets_rounded),
-          _buildSettingsCard(
-            context,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.widgets_rounded, color: Color(0xFF00E5FF)),
-                title: const Text('Home Screen Widget (3-in-1 Slider)'),
-                subtitle: const Text('Live sound radar, alerts feed & emergency quick actions'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push(AppRoutes.widgetShowcase),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+
 
           // ── Section 5: Data Management ──
           _buildSectionHeader(context, 'DATA & STORAGE', Icons.storage_rounded),

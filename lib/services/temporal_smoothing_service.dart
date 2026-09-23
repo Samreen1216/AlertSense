@@ -28,11 +28,19 @@ class TemporalSmoothingConfig {
   /// Calculation strategy for aggregated confidence score.
   final ConfidenceAggregationMethod aggregationMethod;
 
+  /// Delta subtracted from activation threshold to obtain continuation threshold for ongoing sounds.
+  final double continuationDelta;
+
+  /// Duration an active sound detection remains in continuation state without new confirmations.
+  final Duration activeContinuationExpiry;
+
   const TemporalSmoothingConfig({
     this.historyWindow = 3,
     this.minimumConfirmations = 2,
     this.predictionExpiry = const Duration(seconds: 3),
     this.aggregationMethod = ConfidenceAggregationMethod.weightedAverage,
+    this.continuationDelta = 0.15,
+    this.activeContinuationExpiry = const Duration(seconds: 4),
   })  : assert(historyWindow >= 1, 'historyWindow must be at least 1'),
         assert(minimumConfirmations >= 1, 'minimumConfirmations must be at least 1'),
         assert(minimumConfirmations <= historyWindow, 'minimumConfirmations cannot exceed historyWindow');
@@ -61,6 +69,7 @@ class ConfirmedSoundDetection {
   final int windowSize;
   final DateTime timestamp;
   final List<TemporalPrediction> contributingPredictions;
+  final bool isContinuation;
 
   const ConfirmedSoundDetection({
     required this.category,
@@ -69,21 +78,48 @@ class ConfirmedSoundDetection {
     required this.windowSize,
     required this.timestamp,
     required this.contributingPredictions,
+    this.isContinuation = false,
   });
 }
 
-/// Temporal prediction buffer service that confirms sounds across multiple time windows.
-///
-/// Prevents isolated, transient false-positive spikes from triggering alerts by
-/// requiring multiple detections within a rolling time window before confirming.
+/// Temporal prediction buffer service that confirms sounds across multiple time windows
+/// and manages detection hysteresis (START, KEEP ACTIVE, STOP).
 class TemporalSmoothingService {
   final TemporalSmoothingConfig config;
   final List<TemporalPrediction> _predictionBuffer = [];
+  final Set<SoundCategory> _activeCategories = {};
+  final Map<SoundCategory, DateTime> _lastActiveTimes = {};
 
   TemporalSmoothingService({TemporalSmoothingConfig? config})
       : config = config ?? const TemporalSmoothingConfig();
 
-  /// Feed a new prediction into the temporal smoother.
+  /// Check whether a sound category is currently in an ongoing active confirmed state.
+  bool isCategoryActive(SoundCategory category, [DateTime? now]) {
+    final currentTime = now ?? DateTime.now();
+    _purgeExpiredHysteresis(currentTime);
+    return _activeCategories.contains(category);
+  }
+
+  /// Returns the active threshold for [category]:
+  /// - Baseline activation threshold if inactive
+  /// - Reduced continuation threshold (baseline - continuationDelta) if currently active
+  double getEffectiveThreshold(SoundCategory category, double baselineThreshold, [DateTime? now]) {
+    if (isCategoryActive(category, now)) {
+      final continuation = max(baselineThreshold - config.continuationDelta, 0.50);
+      return continuation;
+    }
+    return baselineThreshold;
+  }
+
+  /// Explicitly transition an active category to STOP (e.g. when energy drops to silence).
+  void stopCategory(SoundCategory category) {
+    if (_activeCategories.remove(category)) {
+      _lastActiveTimes.remove(category);
+      debugPrint('[Hysteresis] ${category.name} state: STOP');
+    }
+  }
+
+  /// Feed a new prediction candidate into the temporal smoother.
   ///
   /// Returns a [ConfirmedSoundDetection] if the category achieves the required
   /// confirmation count within the rolling window, or `null` if not yet confirmed.
@@ -96,6 +132,7 @@ class TemporalSmoothingService {
 
     // 1. Purge stale predictions exceeding expiration window
     _purgeExpired(now);
+    _purgeExpiredHysteresis(now);
 
     // 2. Add current candidate prediction
     final prediction = TemporalPrediction(
@@ -119,6 +156,12 @@ class TemporalSmoothingService {
     // 5. Check if confirmation threshold is achieved
     if (count >= config.minimumConfirmations) {
       final aggregatedConfidence = _computeAggregatedConfidence(matching);
+      final wasActive = _activeCategories.contains(category);
+
+      _activeCategories.add(category);
+      _lastActiveTimes[category] = now;
+
+      debugPrint('[Hysteresis] ${category.name} state: ${wasActive ? "KEEP ACTIVE" : "START"}');
 
       return ConfirmedSoundDetection(
         category: category,
@@ -127,6 +170,7 @@ class TemporalSmoothingService {
         windowSize: _predictionBuffer.length,
         timestamp: now,
         contributingPredictions: List.unmodifiable(matching),
+        isContinuation: wasActive,
       );
     }
 
@@ -138,14 +182,32 @@ class TemporalSmoothingService {
     _predictionBuffer.removeWhere((p) => now.difference(p.timestamp) > config.predictionExpiry);
   }
 
-  /// Explicitly purge expired predictions (can be called by timers or tests).
-  void purgeExpired([DateTime? now]) {
-    _purgeExpired(now ?? DateTime.now());
+  void _purgeExpiredHysteresis(DateTime now) {
+    final expired = <SoundCategory>[];
+    for (final entry in _lastActiveTimes.entries) {
+      if (now.difference(entry.value) > config.activeContinuationExpiry) {
+        expired.add(entry.key);
+      }
+    }
+    for (final cat in expired) {
+      _activeCategories.remove(cat);
+      _lastActiveTimes.remove(cat);
+      debugPrint('[Hysteresis] ${cat.name} state: STOP (timeout)');
+    }
   }
 
-  /// Reset and empty the rolling buffer (e.g. when pausing audio monitoring).
+  /// Explicitly purge expired predictions (can be called by timers or tests).
+  void purgeExpired([DateTime? now]) {
+    final t = now ?? DateTime.now();
+    _purgeExpired(t);
+    _purgeExpiredHysteresis(t);
+  }
+
+  /// Reset and empty the rolling buffer and active states.
   void reset() {
     _predictionBuffer.clear();
+    _activeCategories.clear();
+    _lastActiveTimes.clear();
   }
 
   /// Unmodifiable view of current predictions in buffer.

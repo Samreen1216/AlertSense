@@ -106,13 +106,16 @@ class TFLiteClassifierService {
     if (_isTfLiteReady && _interpreter != null) {
       try {
         final result = _classifyWithYamnet(audioData, dbLevel);
-        if (result != null) return result;
+        // Authoritative YAMNet result: if null, no alert sound is present.
+        // Do NOT fall back to DSP analyzer when YAMNet is successfully loaded and running!
+        return result;
       } catch (e) {
         debugPrint('[Classifier] YAMNet inference exception: $e');
+        debugPrint('[Classifier] Falling back to AcousticDspAnalyzer');
       }
     }
 
-    // 2. High-precision acoustic feature analyzer
+    // 2. Pure-Dart acoustic feature analyzer fallback (used ONLY when native TFLite is unavailable)
     return _analyzer.classify(audioData);
   }
 
@@ -153,7 +156,7 @@ class TFLiteClassifierService {
       scores[c] = maxScore;
     }
 
-    // Sort predictions
+    // Sort predictions descending
     final List<MapEntry<String, double>> sortedPredictions = [];
     for (int i = 0; i < scores.length; i++) {
       final label = _labels[i] ?? 'Class $i';
@@ -161,32 +164,56 @@ class TFLiteClassifierService {
     }
     sortedPredictions.sort((a, b) => b.value.compareTo(a.value));
 
-    // Map top predictions to AlertSense SoundCategory
+    // Expose top 5 raw predictions
+    final top5 = sortedPredictions.take(5).toList();
+
+    // Log raw YAMNet debug output
+    final logBuf = StringBuffer();
+    logBuf.writeln('[YAMNet]');
+    for (final pred in top5) {
+      logBuf.writeln('Class: ${pred.key}\nScore: ${pred.value.toStringAsFixed(2)}\n');
+    }
+    debugPrint(logBuf.toString().trim());
+
+    // Inspect top 3-5 predictions for monitored AlertSense categories
     SoundCategory? bestCategory;
     double bestConfidence = 0.0;
     String bestLabel = '';
 
-    for (final pred in sortedPredictions) {
+    for (final pred in top5) {
       final cat = SoundCategoryExtension.fromYamnetLabel(pred.key);
-      if (cat != null && pred.value > bestConfidence) {
-        bestCategory = cat;
-        bestConfidence = pred.value;
-        bestLabel = pred.key;
+      if (cat != null) {
+        // Priority policy: choose higher priority category, or higher score if equal priority
+        if (bestCategory == null) {
+          bestCategory = cat;
+          bestConfidence = pred.value;
+          bestLabel = pred.key;
+        } else if (cat.defaultPriority.index < bestCategory.defaultPriority.index) {
+          // In PriorityLevel enum: high=0, medium=1, low=2 (smaller index is higher priority)
+          bestCategory = cat;
+          bestConfidence = pred.value;
+          bestLabel = pred.key;
+        } else if (cat.defaultPriority.index == bestCategory.defaultPriority.index &&
+            pred.value > bestConfidence) {
+          bestCategory = cat;
+          bestConfidence = pred.value;
+          bestLabel = pred.key;
+        }
       }
     }
 
-    // If YAMNet found a monitored sound with sufficient confidence
-    if (bestCategory != null && bestConfidence >= 0.25) {
-      debugPrint('[Classifier/YAMNet] Detected ${bestCategory.label} ($bestLabel) confidence: ${(bestConfidence * 100).toStringAsFixed(1)}%');
+    if (bestCategory != null) {
+      debugPrint('[Mapping] $bestLabel → ${bestCategory.name} (${bestConfidence.toStringAsFixed(2)})');
       return ClassificationResult(
         soundCategory: bestCategory.name,
-        confidence: bestConfidence.clamp(0.50, 0.98),
+        confidence: bestConfidence, // True model probability
         timestamp: DateTime.now(),
-        topPredictions: sortedPredictions.take(5).toList(),
+        topPredictions: top5,
         ambientDbLevel: dbLevel,
       );
     }
 
+    debugPrint('AlertSense: None\nReason: No monitored category in top predictions');
     return null;
   }
 
