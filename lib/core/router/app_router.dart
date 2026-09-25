@@ -17,9 +17,11 @@ import '../../ui/sleep/sleep_mode_screen.dart';
 import '../../ui/alert/full_screen_alert.dart';
 import '../../ui/shared/app_scaffold.dart';
 import '../../ui/widget/home_widget_showcase_screen.dart';
+import '../../ui/splash/splash_screen.dart';
 
 // Route paths
 class AppRoutes {
+  static const splash = '/splash';
   static const onboarding = '/onboarding';
   static const home = '/home';
   static const history = '/history';
@@ -40,7 +42,7 @@ class AppRoutes {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: AppRoutes.home,
+    initialLocation: AppRoutes.splash,
     errorBuilder: (context, state) {
       return const HomeScreen();
     },
@@ -71,7 +73,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               return AppRoutes.home;
           }
         }
-        return AppRoutes.home;
+        return AppRoutes.splash;
       }
 
       // Handle path-based aliases from deep links
@@ -85,10 +87,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      // Root route redirect to home
+      // Root route redirect to splash
       GoRoute(
         path: '/',
-        redirect: (context, state) => AppRoutes.home,
+        redirect: (context, state) => AppRoutes.splash,
+      ),
+
+      // Splash screen
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (context, state) => const SplashScreen(),
       ),
 
       // Aliases for deep links

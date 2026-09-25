@@ -241,6 +241,14 @@ class SettingsScreen extends ConsumerWidget {
                 onTap: () => context.push(AppRoutes.onboarding),
               ),
               const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.auto_awesome_rounded),
+                title: const Text('Preview Animated Splash Screen'),
+                subtitle: const Text('Experience the interactive intro & animations'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push(AppRoutes.splash),
+              ),
+              const Divider(height: 1),
               const ListTile(
                 leading: Icon(Icons.code_rounded),
                 title: Text('Version'),
