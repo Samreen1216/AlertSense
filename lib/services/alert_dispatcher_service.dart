@@ -83,8 +83,20 @@ class AlertDispatcherService {
       customCooldowns: customCooldowns,
     );
     if (!allowed) {
-      debugPrint('[Deduplication] SUPPRESSED');
-      debugPrint('[Alert] NOT TRIGGERED');
+      debugPrint('[Deduplication] SUPPRESSED (Cooldown Active)');
+      debugPrint('[Alert] UPDATING ONGOING PERSISTENT NOTIFICATION');
+      final count = _deduplicationService.getOngoingCount(category);
+      final duration = _deduplicationService.getOngoingDurationSeconds(category);
+
+      // Proposal Section 8: Deduplicate continuous alarm triggers into single persistent alerts
+      await _notificationService.updateOngoingAlertNotification(
+        id: category.hashCode,
+        category: category,
+        priority: priority,
+        count: count,
+        durationSeconds: duration,
+      );
+
       return null;
     }
     debugPrint('[Deduplication] PASS');

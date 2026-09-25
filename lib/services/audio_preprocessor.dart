@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 
 /// High-fidelity audio preprocessing utilities for YAMNet audio recognition.
@@ -127,9 +126,13 @@ class AudioPreprocessor {
 /// Streaming FIFO audio buffer that assembles continuous samples into 15,600-sample windows.
 class AudioWindowBuffer {
   final int windowSize;
+  final int hopSize;
   final List<double> _buffer = [];
 
-  AudioWindowBuffer({this.windowSize = AudioPreprocessor.targetWindowSamples});
+  AudioWindowBuffer({
+    this.windowSize = AudioPreprocessor.targetWindowSamples,
+    int? hopSize,
+  }) : hopSize = hopSize ?? windowSize;
 
   int get availableSamples => _buffer.length;
 
@@ -141,11 +144,12 @@ class AudioWindowBuffer {
   /// Whether at least one full window is available for classification.
   bool get hasWindow => _buffer.length >= windowSize;
 
-  /// Extract the next non-overlapping 15,600-sample window, or `null` if buffer has insufficient data.
+  /// Extract the next 15,600-sample window advancing by [hopSize], or `null` if buffer has insufficient data.
   List<double>? nextWindow() {
     if (!hasWindow) return null;
     final window = _buffer.sublist(0, windowSize);
-    _buffer.removeRange(0, windowSize);
+    final removeCount = hopSize < _buffer.length ? hopSize : _buffer.length;
+    _buffer.removeRange(0, removeCount);
     return window;
   }
 

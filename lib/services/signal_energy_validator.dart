@@ -11,8 +11,8 @@ class SignalValidationConfig {
   final double minDbLevel;
 
   const SignalValidationConfig({
-    this.minRms = 0.008,
-    this.minDbLevel = 42.0,
+    this.minRms = 0.004,
+    this.minDbLevel = 36.0,
   });
 }
 

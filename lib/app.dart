@@ -7,6 +7,7 @@ import 'data/models/alert_event.dart';
 import 'providers/alert_providers.dart';
 import 'providers/audio_providers.dart';
 import 'providers/service_providers.dart';
+import 'providers/settings_providers.dart';
 import 'providers/stats_providers.dart';
 
 class AlertSenseApp extends ConsumerStatefulWidget {
@@ -113,6 +114,10 @@ class _AlertSenseAppState extends ConsumerState<AlertSenseApp> {
         ref.read(enabledSoundsProvider.notifier).setProfile(next);
         // Clear stale cross-profile sounds from the radar immediately
         ref.read(isListeningProvider.notifier).clearRadar();
+        // Update foreground service notification title/status to match new profile
+        ref.read(isListeningProvider.notifier).updateForegroundStatus();
+        // Persist active profile ID to settings repo
+        ref.read(userSettingsProvider.notifier).setActiveProfileId(next);
         _syncHomeWidget();
       }
     });

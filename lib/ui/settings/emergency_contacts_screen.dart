@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/router/app_router.dart';
 import '../../providers/settings_providers.dart';
 
 class EmergencyContactsScreen extends ConsumerStatefulWidget {
@@ -49,6 +51,17 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
     return Scaffold(
       appBar: AppBar(
         title: const Text('Emergency Contacts'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back to Home',
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.check_rounded),

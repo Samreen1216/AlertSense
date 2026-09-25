@@ -11,7 +11,7 @@ class AudioStreamService {
   static const int sampleRate = 16000;
   static const double windowDuration = 0.975;
   static const int samplesPerWindow = 15600;
-  static const double silenceThreshold = 0.008; // Configurable baseline
+  static const double silenceThreshold = 0.004; // Conservative baseline allowing real-world sounds
 
   bool _isListening = false;
   final _audioBufferController = StreamController<List<double>>.broadcast();
@@ -19,7 +19,11 @@ class AudioStreamService {
 
   final AudioRecorder _recorder = AudioRecorder();
   StreamSubscription<Uint8List>? _recorderSub;
-  final AudioWindowBuffer _windowBuffer = AudioWindowBuffer();
+  // 50% overlapping windows (15,600 samples window, 7,800 hop size = 0.487s) for responsive sound tracking
+  final AudioWindowBuffer _windowBuffer = AudioWindowBuffer(
+    windowSize: samplesPerWindow,
+    hopSize: 7800,
+  );
 
   Timer? _fallbackDbTimer; // Baseline ambient meter when mic inactive
 
@@ -33,25 +37,53 @@ class AudioStreamService {
     _windowBuffer.clear();
 
     bool micStarted = false;
+    int activeRate = sampleRate;
     try {
       final hasPermission = await _recorder.hasPermission();
       if (hasPermission) {
-        final stream = await _recorder.startStream(
-          const RecordConfig(
-            encoder: AudioEncoder.pcm16bits,
-            sampleRate: sampleRate,
-            numChannels: 1,
-          ),
-        );
+        Stream<Uint8List>? stream;
+        try {
+          stream = await _recorder.startStream(
+            const RecordConfig(
+              encoder: AudioEncoder.pcm16bits,
+              sampleRate: sampleRate,
+              numChannels: 1,
+            ),
+          );
+          activeRate = sampleRate;
+        } catch (e) {
+          debugPrint('[AudioStream] 16 kHz stream direct open failed, trying 44.1 kHz fallback: $e');
+          try {
+            stream = await _recorder.startStream(
+              const RecordConfig(
+                encoder: AudioEncoder.pcm16bits,
+                sampleRate: 44100,
+                numChannels: 1,
+              ),
+            );
+            activeRate = 44100;
+          } catch (e2) {
+            debugPrint('[AudioStream] 44.1 kHz stream failed, trying 48 kHz fallback: $e2');
+            stream = await _recorder.startStream(
+              const RecordConfig(
+                encoder: AudioEncoder.pcm16bits,
+                sampleRate: 48000,
+                numChannels: 1,
+              ),
+            );
+            activeRate = 48000;
+          }
+        }
+
         _recorderSub = stream.listen(
-          _onAudioData,
+          (data) => _onAudioData(data, inputSampleRate: activeRate),
           onError: (e) {
             debugPrint('[AudioStream] Mic error: $e');
             _startAmbientDbFallback();
           },
         );
         micStarted = true;
-        debugPrint('[AudioStream] Microphone stream active (16 kHz mono)');
+        debugPrint('[AudioStream] Microphone stream active ($activeRate Hz mono)');
       } else {
         debugPrint('[AudioStream] Microphone permission not granted');
       }
@@ -64,11 +96,11 @@ class AudioStreamService {
     }
   }
 
-  void _onAudioData(Uint8List data) {
+  void _onAudioData(Uint8List data, {int inputSampleRate = sampleRate}) {
     // 1. Preprocess incoming PCM data (PCM16 -> Float32, mono, 16 kHz)
     final samples = AudioPreprocessor.processIncomingPcm(
       pcmBytes: data,
-      inputSampleRate: sampleRate,
+      inputSampleRate: inputSampleRate,
       numChannels: 1,
     );
     _windowBuffer.addSamples(samples);

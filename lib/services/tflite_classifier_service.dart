@@ -164,8 +164,9 @@ class TFLiteClassifierService {
     }
     sortedPredictions.sort((a, b) => b.value.compareTo(a.value));
 
-    // Expose top 5 raw predictions
+    // Expose top 5 raw predictions for UI / debugging
     final top5 = sortedPredictions.take(5).toList();
+    final candidates = sortedPredictions.take(8).toList();
 
     // Log raw YAMNet debug output
     final logBuf = StringBuffer();
@@ -175,12 +176,12 @@ class TFLiteClassifierService {
     }
     debugPrint(logBuf.toString().trim());
 
-    // Inspect top 3-5 predictions for monitored AlertSense categories
+    // Inspect candidate predictions for monitored AlertSense categories
     SoundCategory? bestCategory;
     double bestConfidence = 0.0;
     String bestLabel = '';
 
-    for (final pred in top5) {
+    for (final pred in candidates) {
       final cat = SoundCategoryExtension.fromYamnetLabel(pred.key);
       if (cat != null) {
         // Priority policy: choose higher priority category, or higher score if equal priority

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../providers/alert_providers.dart';
+import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../services/sms_service.dart';
 import 'widgets/quick_response_card.dart';
@@ -26,6 +28,12 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
   bool _isSendingSms = false;
   bool _isCalling = false;
 
+  // Emergency Uplink Auto-Dispatch (Proposal Section 8)
+  int _secondsRemaining = 45;
+  Timer? _autoDispatchTimer;
+  bool _autoDispatchCancelled = false;
+  bool _autoDispatched = false;
+
   @override
   void initState() {
     super.initState();
@@ -38,10 +46,50 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
       begin: const Color(0xFFB71C1C),
       end: const Color(0xFFD32F2F),
     ).animate(_pulseController);
+
+    // Proposal Section 8: Automatically dispatch SMS alerts if unacknowledged
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _startAutoDispatchCountdown();
+    });
+  }
+
+  void _startAutoDispatchCountdown() {
+    final settings = ref.read(userSettingsProvider);
+    if (settings.emergencyContacts.isEmpty) return;
+
+    _autoDispatchTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_secondsRemaining <= 1) {
+        timer.cancel();
+        _autoDispatchTimer = null;
+        setState(() {
+          _secondsRemaining = 0;
+          _autoDispatched = true;
+        });
+        final rawCategory = widget.alertData['soundCategory'] as String? ?? 'fireAlarm';
+        final name = _resolveName(rawCategory);
+        final alertId = widget.alertData['id'] as String? ?? '';
+        _handleAlertFamily(name, alertId, isAuto: true);
+      } else {
+        setState(() => _secondsRemaining--);
+      }
+    });
+  }
+
+  void _stopHardwareAlerts() {
+    _autoDispatchTimer?.cancel();
+    _autoDispatchTimer = null;
+    try {
+      ref.read(vibrationServiceProvider).cancel();
+    } catch (_) {}
+    try {
+      ref.read(flashServiceProvider).stopStrobe();
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _stopHardwareAlerts();
     _pulseController.dispose();
     super.dispose();
   }
@@ -143,14 +191,17 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
         );
       }
 
-      // Acknowledge alert
+      // Acknowledge alert & stop active vibrations/flash
+      _stopHardwareAlerts();
       ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'called_emergency');
     }
     controller.dispose();
   }
 
   // ── Alert Family via SMS ─────────────────────────────────────────────────
-  Future<void> _handleAlertFamily(String soundName, String alertId) async {
+  Future<void> _handleAlertFamily(String soundName, String alertId, {bool isAuto = false}) async {
+    _autoDispatchTimer?.cancel();
+    _autoDispatchTimer = null;
     final settings = ref.read(userSettingsProvider);
     final savedContacts = settings.emergencyContacts;
 
@@ -159,28 +210,40 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
       setState(() => _isSendingSms = true);
       final success = await SmsService.sendEmergencySms(
         recipients: savedContacts,
-        message: SmsService.emergencyMessage(soundName),
+        message: isAuto
+            ? 'CRITICAL ALERT: $soundName detected at user location. User is currently unacknowledged. Sent automatically by AlertSense.'
+            : SmsService.emergencyMessage(soundName),
       );
       if (mounted) setState(() => _isSendingSms = false);
 
       if (mounted) {
         if (success) {
-          ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'alerted_family');
+          ref.read(alertListProvider.notifier).acknowledgeAlert(
+            alertId,
+            action: isAuto ? 'auto_sms_unacknowledged' : 'alerted_family',
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('SMS sent to ${savedContacts.length} contact(s)'),
-              backgroundColor: Colors.green.shade800,
+              content: Text(isAuto
+                  ? 'Emergency SMS auto-dispatched to ${savedContacts.length} contact(s)'
+                  : 'SMS sent to ${savedContacts.length} contact(s)'),
+              backgroundColor: isAuto ? Colors.deepOrange.shade900 : Colors.green.shade800,
               behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
             ),
           );
         } else {
-          // url_launcher returned false — fallback to manual entry
-          await _showManualSmsDialog(soundName, alertId, savedContacts);
+          // url_launcher returned false — fallback to manual entry if manual
+          if (!isAuto) {
+            await _showManualSmsDialog(soundName, alertId, savedContacts);
+          }
         }
       }
     } else {
-      // No contacts saved → let user enter number right now
-      await _showManualSmsDialog(soundName, alertId, []);
+      // No contacts saved → let user enter number right now if manual
+      if (!isAuto) {
+        await _showManualSmsDialog(soundName, alertId, []);
+      }
     }
   }
 
@@ -315,6 +378,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
 
   // ── I'm Safe ────────────────────────────────────────────────────────────
   Future<void> _handleImSafe(String soundName, String alertId) async {
+    _stopHardwareAlerts();
     final settings = ref.read(userSettingsProvider);
     final contacts = settings.emergencyContacts;
     if (contacts.isNotEmpty) {
@@ -407,6 +471,69 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
 
               const Spacer(),
 
+              // ── Emergency Auto-Uplink Banner (Proposal Section 8) ──
+              if (ref.watch(userSettingsProvider).emergencyContacts.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _autoDispatched
+                          ? Colors.orangeAccent
+                          : (_autoDispatchCancelled ? Colors.white24 : Colors.amberAccent.withValues(alpha: 0.7)),
+                      width: 1.2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _autoDispatched
+                            ? Icons.send_rounded
+                            : (_autoDispatchCancelled ? Icons.pause_circle_outline_rounded : Icons.timer_outlined),
+                        color: _autoDispatched
+                            ? Colors.orangeAccent
+                            : (_autoDispatchCancelled ? Colors.white60 : Colors.amberAccent),
+                        size: 22,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _autoDispatched
+                              ? 'Emergency SMS auto-dispatched to family'
+                              : (_autoDispatchCancelled
+                                  ? 'Auto-SMS paused'
+                                  : 'Auto-SMS to family in ${_secondsRemaining}s if unacknowledged'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (!_autoDispatched && !_autoDispatchCancelled)
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            backgroundColor: Colors.white.withValues(alpha: 0.15),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _autoDispatchCancelled = true;
+                              _autoDispatchTimer?.cancel();
+                              _autoDispatchTimer = null;
+                            });
+                          },
+                          child: const Text('Cancel', style: TextStyle(color: Colors.white, fontSize: 11)),
+                        ),
+                    ],
+                  ),
+                ),
+
               // ── Action buttons ──────────────────────────────────────────
 
               // I'm Safe
@@ -446,6 +573,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                 color: const Color(0xFF424242),
                 isLoading: false,
                 onPressed: () {
+                  _stopHardwareAlerts();
                   if (alertId.isNotEmpty) {
                     ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'dismissed');
                   }

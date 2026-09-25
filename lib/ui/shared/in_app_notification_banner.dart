@@ -181,12 +181,14 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${(widget.alert.confidence * 100).toInt()}% Confidence • Tap to view details',
+                              '${cat.description} • ${(widget.alert.confidence * 100).toInt()}%',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: isDark ? Colors.white70 : const Color(0xFF64748B),
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),

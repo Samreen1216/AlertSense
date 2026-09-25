@@ -59,9 +59,23 @@ class ListeningNotifier extends StateNotifier<bool> {
     // Start Android Foreground Service with microphone type & wake lock
     // This allows continuous background audio capture whether app is open, minimized, or screen locked.
     final foregroundService = _ref.read(foregroundServiceProvider);
+    final currentProfile = _ref.read(currentProfileProvider);
+    final isSleep = currentProfile.name.toLowerCase() == 'sleep';
+    final isOutdoor = currentProfile.name.toLowerCase() == 'outdoor';
+
+    String initialTitle = 'AlertSense Active';
+    String initialText = 'Actively monitoring surrounding sounds in real time...';
+    if (isSleep) {
+      initialTitle = 'AlertSense — Sleep Mode Active';
+      initialText = 'Monitoring life-safety alarms (Fire, Sirens, Baby Crying)...';
+    } else if (isOutdoor) {
+      initialTitle = 'AlertSense — Outdoor Mode Active';
+      initialText = 'Monitoring traffic & hazard sounds (Sirens, Horns, Glass)...';
+    }
+
     await foregroundService.startMonitoring(
-      title: 'AlertSense Active',
-      text: 'Actively monitoring surrounding sounds in real time...',
+      title: initialTitle,
+      text: initialText,
     );
 
     state = true;
@@ -177,9 +191,10 @@ class ListeningNotifier extends StateNotifier<bool> {
 
       // Update the persistent status bar notification with the latest sound event
       final foregroundService = _ref.read(foregroundServiceProvider);
+      final statusSuffix = isSleep ? 'AlertSense Sleep Mode' : 'AlertSense Active';
       await foregroundService.updateStatus(
         title: '${cat.label} Detected!',
-        text: 'Confidence: ${(alertEvent.confidence * 100).toStringAsFixed(0)}% • AlertSense Active',
+        text: 'Confidence: ${(alertEvent.confidence * 100).toStringAsFixed(0)}% • $statusSuffix',
       );
 
       if (mounted) {
@@ -234,6 +249,30 @@ class ListeningNotifier extends StateNotifier<bool> {
     if (mounted) _ref.read(detectedSoundsProvider.notifier).state = [];
   }
 
+  /// Update the foreground notification bar to match the current active profile.
+  Future<void> updateForegroundStatus() async {
+    if (!state) return;
+    final currentProfile = _ref.read(currentProfileProvider);
+    final isSleep = currentProfile.name.toLowerCase() == 'sleep';
+    final isOutdoor = currentProfile.name.toLowerCase() == 'outdoor';
+
+    String title;
+    String text;
+    if (isSleep) {
+      title = 'AlertSense — Sleep Mode Active';
+      text = 'Monitoring life-safety alarms (Fire, Sirens, Baby Crying)...';
+    } else if (isOutdoor) {
+      title = 'AlertSense — Outdoor Mode Active';
+      text = 'Monitoring traffic & hazard sounds (Sirens, Horns, Glass)...';
+    } else {
+      title = 'AlertSense Active';
+      text = 'Actively monitoring surrounding sounds in real time...';
+    }
+
+    final foregroundService = _ref.read(foregroundServiceProvider);
+    await foregroundService.updateStatus(title: title, text: text);
+  }
+
   void _syncWidget({AlertEvent? event}) {
     try {
       final widgetService = _ref.read(homeWidgetServiceProvider);
@@ -273,7 +312,9 @@ class ListeningNotifier extends StateNotifier<bool> {
 
   @override
   void dispose() {
-    _stop();
+    _audioSub?.cancel();
+    _dbSub?.cancel();
+    _clearRadarTimer?.cancel();
     super.dispose();
   }
 }

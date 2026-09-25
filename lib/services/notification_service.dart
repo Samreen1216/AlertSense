@@ -129,4 +129,59 @@ class NotificationService {
       debugPrint('[NotificationService] Show error: $e');
     }
   }
+
+  /// Updates an existing alert notification with ongoing/continuous detection status.
+  /// Fulfills Proposal Section 8: "Deduplicate continuous alarm triggers into single persistent alerts".
+  Future<void> updateOngoingAlertNotification({
+    required int id,
+    required SoundCategory category,
+    required PriorityLevel priority,
+    required int count,
+    required int durationSeconds,
+  }) async {
+    final String channelId = priority == PriorityLevel.high
+        ? channelHigh
+        : (priority == PriorityLevel.medium ? channelMedium : channelLow);
+
+    final channelName = priority == PriorityLevel.high
+        ? 'Critical Safety Alerts'
+        : (priority == PriorityLevel.medium ? 'Important Alerts' : 'Ambient Alerts');
+
+    final importance = priority == PriorityLevel.high
+        ? Importance.max
+        : (priority == PriorityLevel.medium ? Importance.high : Importance.low);
+
+    final androidDetails = AndroidNotificationDetails(
+      channelId,
+      channelName,
+      importance: importance,
+      priority: priority == PriorityLevel.high ? Priority.max : Priority.high,
+      ongoing: true,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
+      ticker: '${category.label} continues to be detected',
+      showWhen: true,
+      when: DateTime.now().millisecondsSinceEpoch,
+      styleInformation: BigTextStyleInformation(
+        '${category.label} continues to be detected ($count times over ${durationSeconds}s). AlertSense monitoring is actively ongoing.',
+        contentTitle: '${category.label} Continues to be Detected',
+        summaryText: '${priority.label.toUpperCase()} • PERSISTENT ALERT',
+      ),
+      color: category.color,
+    );
+
+    final notificationDetails = NotificationDetails(android: androidDetails);
+
+    try {
+      await _plugin.show(
+        id,
+        '${category.label} Continues to be Detected',
+        'Ongoing: detected $count times over ${durationSeconds}s',
+        notificationDetails,
+        payload: category.name,
+      );
+    } catch (e) {
+      debugPrint('[NotificationService] Ongoing update error: $e');
+    }
+  }
 }

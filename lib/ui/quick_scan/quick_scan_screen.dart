@@ -51,6 +51,18 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
       appBar: AppBar(
         title: const Text('Quick Scan'),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back to Home',
+          onPressed: () {
+            ref.read(quickScanProvider.notifier).reset();
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
+        ),
       ),
       body: SafeArea(
         child: Padding(

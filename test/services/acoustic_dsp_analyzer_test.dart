@@ -78,9 +78,9 @@ void main() {
       expect(result, isNull);
     });
 
-    test('SoundCategory.doorbell has Bell Ring label and YAMNet mappings', () {
+    test('SoundCategory.doorbell has Doorbell label and YAMNet mappings', () {
       final category = SoundCategory.doorbell;
-      expect(category.label, equals('Bell Ring'));
+      expect(category.label, equals('Doorbell'));
       expect(category.yamnetLabels, contains('Bell ring'));
       expect(category.yamnetLabels, contains('Doorbell'));
       expect(category.yamnetLabels, contains('Chime'));

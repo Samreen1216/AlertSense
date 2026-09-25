@@ -7,6 +7,7 @@ import '../../core/constants/sound_categories.dart';
 import '../../core/router/app_router.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/alert_providers.dart';
+import '../../services/pdf_export_service.dart';
 import '../shared/priority_badge.dart';
 import '../shared/sound_icon.dart';
 
@@ -19,6 +20,7 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   final List<String> _filters = ['All', 'High', 'Medium', 'Low'];
+  bool _isExporting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -55,11 +57,30 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alert History'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back to Home',
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go(AppRoutes.home);
+            }
+          },
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined),
+            icon: _isExporting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.share_outlined),
             tooltip: 'Export / Share History',
-            onPressed: alerts.isEmpty ? null : () => _exportHistory(alerts),
+            onPressed: alerts.isEmpty || _isExporting
+                ? null
+                : () => _showExportOptionsSheet(context, alerts),
           ),
           if (alerts.isNotEmpty)
             IconButton(
@@ -340,7 +361,140 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
-  Future<void> _exportHistory(List<AlertEvent> alerts) async {
+  void _showExportOptionsSheet(BuildContext context, List<AlertEvent> alerts) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Export Alert History',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Choose how you want to export your ${alerts.length} logged event(s):',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 1. PDF Report Card
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: const Color(0xFF0072FF).withValues(alpha: 0.3),
+                    ),
+                  ),
+                  tileColor: const Color(0xFF0072FF).withValues(alpha: 0.08),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0072FF).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0072FF)),
+                  ),
+                  title: const Text(
+                    'Export Formatted PDF Report',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  subtitle: const Text(
+                    'Audit-ready PDF with summary KPIs, tables, and timestamps for records or caregivers.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _exportPdf(alerts);
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // 2. Text Summary Card
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.text_snippet_rounded, color: theme.colorScheme.primary),
+                  ),
+                  title: const Text(
+                    'Share Text Summary',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  ),
+                  subtitle: const Text(
+                    'Lightweight plain text summary for quick messaging or clipboard.',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _shareTextSummary(alerts);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _exportPdf(List<AlertEvent> alerts) async {
+    setState(() => _isExporting = true);
+    try {
+      await PdfExportService.exportAndSharePdf(alerts);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to generate PDF: $e'),
+            backgroundColor: Colors.red.shade900,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
+  }
+
+  Future<void> _shareTextSummary(List<AlertEvent> alerts) async {
     final buffer = StringBuffer();
     buffer.writeln('=== AlertSense Event Log ===');
     buffer.writeln(

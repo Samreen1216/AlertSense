@@ -33,5 +33,16 @@ void main() {
       final allowed = service.shouldTriggerAlert(category: SoundCategory.fireAlarm);
       expect(allowed, isTrue);
     });
+
+    test('Tracks ongoing count and duration for continuous sound events', () {
+      service.shouldTriggerAlert(category: SoundCategory.fireAlarm);
+      expect(service.getOngoingCount(SoundCategory.fireAlarm), equals(1));
+
+      // Suppressed repetitions increment continuous count
+      service.shouldTriggerAlert(category: SoundCategory.fireAlarm);
+      service.shouldTriggerAlert(category: SoundCategory.fireAlarm);
+      expect(service.getOngoingCount(SoundCategory.fireAlarm), equals(3));
+      expect(service.getOngoingDurationSeconds(SoundCategory.fireAlarm), greaterThanOrEqualTo(0));
+    });
   });
 }

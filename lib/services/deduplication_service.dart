@@ -65,6 +65,11 @@ class DeduplicationService {
     return DateTime.now().difference(start).inSeconds;
   }
 
+  /// Get the number of times this category was detected continuously within cooldown.
+  int getOngoingCount(SoundCategory category) {
+    return _ongoingEventCounts[category.name] ?? 1;
+  }
+
   /// Reset history for all or a specific category.
   void reset([String? categoryName]) {
     if (categoryName != null) {

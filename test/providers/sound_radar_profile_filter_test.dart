@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:alertsense/core/constants/sound_categories.dart';
 import 'package:alertsense/providers/audio_providers.dart';
+import 'package:alertsense/providers/alert_providers.dart';
+import 'package:alertsense/providers/settings_providers.dart';
 import 'package:alertsense/data/models/sound_profile.dart';
 
 void main() {
@@ -156,6 +158,58 @@ void main() {
         expect(validNames, contains(cat),
             reason: '"$cat" from Outdoor profile is not a valid SoundCategory name');
       }
+    });
+  });
+
+  group('Dynamic currentProfileProvider synchronization with activeProfileProvider', () {
+    test('currentProfileProvider returns SoundProfile.sleep() when activeProfile is "sleep"', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(activeProfileProvider.notifier).state = 'sleep';
+      final current = container.read(currentProfileProvider);
+
+      expect(current.name, equals('Sleep'));
+      expect(current.enabledCategories, containsAll([
+        'fireAlarm', 'smokeAlarm', 'babyCrying', 'emergencySiren',
+      ]));
+      expect(current.enabledCategories, isNot(contains('dogBarking')));
+    });
+
+    test('currentProfileProvider returns SoundProfile.sleep() when activeProfile is "default_sleep"', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(activeProfileProvider.notifier).state = 'default_sleep';
+      final current = container.read(currentProfileProvider);
+
+      expect(current.name, equals('Sleep'));
+      expect(current.enabledCategories.length, equals(4));
+    });
+
+    test('currentProfileProvider returns SoundProfile.outdoor() when activeProfile is "outdoor"', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(activeProfileProvider.notifier).state = 'outdoor';
+      final current = container.read(currentProfileProvider);
+
+      expect(current.name, equals('Outdoor'));
+      expect(current.enabledCategories, containsAll([
+        'emergencySiren', 'vehicleHorn', 'glassBreaking',
+      ]));
+      expect(current.enabledCategories, isNot(contains('doorbell')));
+    });
+
+    test('currentProfileProvider returns SoundProfile.home() when activeProfile is "home"', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+
+      container.read(activeProfileProvider.notifier).state = 'home';
+      final current = container.read(currentProfileProvider);
+
+      expect(current.name, equals('Home'));
+      expect(current.enabledCategories.length, greaterThanOrEqualTo(7));
     });
   });
 }
