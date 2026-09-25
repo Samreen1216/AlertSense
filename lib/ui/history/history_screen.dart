@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +22,55 @@ class HistoryScreen extends ConsumerStatefulWidget {
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   final List<String> _filters = ['All', 'High', 'Medium', 'Low'];
   bool _isExporting = false;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _snackBarController;
+  Timer? _snackBarTimer;
+
+  @override
+  void dispose() {
+    _snackBarTimer?.cancel();
+    try {
+      _snackBarController?.close();
+    } catch (_) {}
+    super.dispose();
+  }
+
+  void _showDeleteSnackBar(AlertEvent alert, SoundCategory? category) {
+    _snackBarTimer?.cancel();
+    try {
+      _snackBarController?.close();
+    } catch (_) {}
+    if (!mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+
+    final label = category?.label ?? alert.soundCategory;
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        content: Text('Removed $label alert'),
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'Undo',
+          textColor: const Color(0xFF00C6FF),
+          onPressed: () {
+            _snackBarTimer?.cancel();
+            ref.read(alertListProvider.notifier).addAlert(alert);
+          },
+        ),
+      ),
+    );
+    _snackBarController = controller;
+
+    // Guaranteed auto-dismissal after 4.0s even if system accessibleNavigation disables internal timer
+    _snackBarTimer = Timer(const Duration(milliseconds: 4000), () {
+      try {
+        controller.close();
+      } catch (_) {}
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -215,20 +265,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                 ref
                                     .read(alertListProvider.notifier)
                                     .removeAlert(alert.id);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                        'Removed ${category?.label ?? alert.soundCategory} alert'),
-                                    action: SnackBarAction(
-                                      label: 'Undo',
-                                      onPressed: () {
-                                        ref
-                                            .read(alertListProvider.notifier)
-                                            .addAlert(alert);
-                                      },
-                                    ),
-                                  ),
-                                );
+                                _showDeleteSnackBar(alert, category);
                               },
                               child: Card(
                                 margin: const EdgeInsets.symmetric(
@@ -482,12 +519,28 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       await PdfExportService.exportAndSharePdf(alerts);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        _snackBarTimer?.cancel();
+        try {
+          _snackBarController?.close();
+        } catch (_) {}
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        final controller = messenger.showSnackBar(
           SnackBar(
             content: Text('Failed to generate PDF: $e'),
+            duration: const Duration(seconds: 4),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             backgroundColor: Colors.red.shade900,
           ),
         );
+        _snackBarController = controller;
+        _snackBarTimer = Timer(const Duration(milliseconds: 4000), () {
+          try {
+            controller.close();
+          } catch (_) {}
+        });
       }
     } finally {
       if (mounted) setState(() => _isExporting = false);
@@ -527,6 +580,28 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             onPressed: () {
               ref.read(alertListProvider.notifier).clear();
               Navigator.pop(ctx);
+              _snackBarTimer?.cancel();
+              try {
+                _snackBarController?.close();
+              } catch (_) {}
+              final messenger = ScaffoldMessenger.of(context);
+              messenger.clearSnackBars();
+              final controller = messenger.showSnackBar(
+                SnackBar(
+                  content: const Text('Alert history cleared'),
+                  duration: const Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              );
+              _snackBarController = controller;
+              _snackBarTimer = Timer(const Duration(milliseconds: 3000), () {
+                try {
+                  controller.close();
+                } catch (_) {}
+              });
             },
             child: const Text('Clear All'),
           ),

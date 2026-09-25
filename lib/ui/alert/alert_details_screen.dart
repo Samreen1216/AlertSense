@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,9 +46,22 @@ class AlertDetailsScreen extends ConsumerWidget {
             tooltip: 'Delete Alert',
             onPressed: () {
               ref.read(alertListProvider.notifier).removeAlert(alert.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Alert removed from history')),
+              final messenger = ScaffoldMessenger.of(context);
+              messenger.clearSnackBars();
+              final controller = messenger.showSnackBar(
+                SnackBar(
+                  content: const Text('Alert removed from history'),
+                  duration: const Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               );
+              Timer(const Duration(milliseconds: 3000), () {
+                try {
+                  controller.close();
+                } catch (_) {}
+              });
               context.pop();
             },
           ),
@@ -194,9 +208,22 @@ class AlertDetailsScreen extends ConsumerWidget {
                       ref
                           .read(alertListProvider.notifier)
                           .acknowledgeAlert(alert.id, action: 'safe');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Marked as Safe / Acknowledged')),
+                      final messenger = ScaffoldMessenger.of(context);
+                      messenger.clearSnackBars();
+                      final controller = messenger.showSnackBar(
+                        SnackBar(
+                          content: const Text('Marked as Safe / Acknowledged'),
+                          duration: const Duration(seconds: 3),
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
                       );
+                      Timer(const Duration(milliseconds: 3000), () {
+                        try {
+                          controller.close();
+                        } catch (_) {}
+                      });
                       context.pop();
                     },
                     icon: const Icon(Icons.check_circle_outline_rounded),
@@ -255,11 +282,23 @@ class AlertDetailsScreen extends ConsumerWidget {
                           .read(alertListProvider.notifier)
                           .acknowledgeAlert(alert.id, action: 'alerted_family');
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text(
-                                'No emergency contacts saved in Settings')),
+                      final messenger = ScaffoldMessenger.of(context);
+                      messenger.clearSnackBars();
+                      final controller = messenger.showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                              'No emergency contacts saved in Settings'),
+                          duration: const Duration(seconds: 3),
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
                       );
+                      Timer(const Duration(milliseconds: 3000), () {
+                        try {
+                          controller.close();
+                        } catch (_) {}
+                      });
                     }
                   },
                   icon: const Icon(Icons.sms_rounded),

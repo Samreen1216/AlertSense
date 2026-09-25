@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vibration/vibration.dart';
@@ -48,9 +49,22 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
 
   Future<void> _previewPattern() async {
     if (_recordedPattern.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Record a pattern by tapping the box first!')),
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
+      final controller = messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Record a pattern by tapping the box first!'),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
+      Timer(const Duration(milliseconds: 3000), () {
+        try {
+          controller.close();
+        } catch (_) {}
+      });
       return;
     }
 
@@ -69,9 +83,22 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
 
   void _savePattern() {
     if (_recordedPattern.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No pattern recorded')),
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
+      final controller = messenger.showSnackBar(
+        SnackBar(
+          content: const Text('No pattern recorded'),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
+      Timer(const Duration(milliseconds: 3000), () {
+        try {
+          controller.close();
+        } catch (_) {}
+      });
       return;
     }
 
@@ -80,9 +107,22 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
       _recordedPattern,
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Saved custom vibration for ${_selectedCategory.label}!')),
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    final controller = messenger.showSnackBar(
+      SnackBar(
+        content: Text('Saved custom vibration for ${_selectedCategory.label}!'),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
+    Timer(const Duration(milliseconds: 3000), () {
+      try {
+        controller.close();
+      } catch (_) {}
+    });
   }
 
   @override

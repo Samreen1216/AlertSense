@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -192,9 +193,22 @@ class SettingsScreen extends ConsumerWidget {
                           onPressed: () {
                             ref.read(alertListProvider.notifier).clear();
                             Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('History cleared successfully')),
+                            final messenger = ScaffoldMessenger.of(context);
+                            messenger.clearSnackBars();
+                            final controller = messenger.showSnackBar(
+                              SnackBar(
+                                content: const Text('History cleared successfully'),
+                                duration: const Duration(seconds: 3),
+                                behavior: SnackBarBehavior.floating,
+                                margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
                             );
+                            Timer(const Duration(milliseconds: 3000), () {
+                              try {
+                                controller.close();
+                              } catch (_) {}
+                            });
                           },
                           child: const Text('Clear'),
                         ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/sound_categories.dart';
@@ -45,9 +46,22 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
               final profile = ref.read(currentProfileProvider);
               final updatedProfile = profile.copyWith(sensitivityOverrides: {});
               ref.read(soundProfilesProvider.notifier).saveProfile(updatedProfile);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Reset to default AI thresholds')),
+              final messenger = ScaffoldMessenger.of(context);
+              messenger.clearSnackBars();
+              final controller = messenger.showSnackBar(
+                SnackBar(
+                  content: const Text('Reset to default AI thresholds'),
+                  duration: const Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               );
+              Timer(const Duration(milliseconds: 3000), () {
+                try {
+                  controller.close();
+                } catch (_) {}
+              });
             },
             child: const Text('Reset'),
           ),

@@ -109,6 +109,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                   isSelected: currentIndex == 0,
                   isDark: isDark,
                   onTap: () {
+                    ScaffoldMessenger.of(context).clearSnackBars();
                     widget.navigationShell.goBranch(0, initialLocation: currentIndex == 0);
                   },
                 ),
@@ -120,13 +121,17 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                   isSelected: currentIndex == 1,
                   isDark: isDark,
                   onTap: () {
+                    ScaffoldMessenger.of(context).clearSnackBars();
                     widget.navigationShell.goBranch(1, initialLocation: currentIndex == 1);
                   },
                 ),
 
                 // 3. Elevated Quick Scan (Center)
                 GestureDetector(
-                  onTap: () => context.push(AppRoutes.quickScan),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    context.push(AppRoutes.quickScan);
+                  },
                   behavior: HitTestBehavior.opaque,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -178,6 +183,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                   isSelected: currentIndex == 2,
                   isDark: isDark,
                   onTap: () {
+                    ScaffoldMessenger.of(context).clearSnackBars();
                     widget.navigationShell.goBranch(2, initialLocation: currentIndex == 2);
                   },
                 ),
@@ -188,7 +194,10 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                   label: 'Settings',
                   isSelected: false,
                   isDark: isDark,
-                  onTap: () => context.push(AppRoutes.settings),
+                  onTap: () {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    context.push(AppRoutes.settings);
+                  },
                 ),
               ],
             ),

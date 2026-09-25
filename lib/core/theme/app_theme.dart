@@ -38,6 +38,10 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
         centerTitle: true,
@@ -78,6 +82,11 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: const Color(0xFF1E293B),
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
@@ -144,6 +153,14 @@ class AppTheme {
           side: const BorderSide(color: Color(0xFF00FF41), width: 2),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFF00FF41), width: 2),
+        ),
+        backgroundColor: Colors.black,
+      ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
         backgroundColor: Colors.black,
@@ -186,6 +203,10 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
