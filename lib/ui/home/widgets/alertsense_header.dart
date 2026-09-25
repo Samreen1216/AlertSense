@@ -71,13 +71,7 @@ class AlertSenseHeader extends StatelessWidget {
             ),
           ),
 
-          // Action Buttons: Widget, Profile & Settings
-          _HeaderIconButton(
-            icon: Icons.widgets_rounded,
-            tooltip: 'Home Widget',
-            onTap: () => context.push(AppRoutes.widgetShowcase),
-          ),
-          const SizedBox(width: 8),
+          // Action Buttons: Profile & Settings
           _HeaderIconButton(
             icon: Icons.person_rounded,
             tooltip: 'Profiles',
