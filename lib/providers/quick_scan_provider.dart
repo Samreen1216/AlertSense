@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:uuid/uuid.dart';
 import '../core/constants/priority_levels.dart';
 import '../core/constants/sound_categories.dart';
 import '../data/models/alert_event.dart';
@@ -172,7 +173,7 @@ class QuickScanNotifier extends StateNotifier<QuickScanState> {
     } catch (_) {}
 
     final alertEvent = AlertEvent(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       soundCategory: result.soundCategory,
       priorityLevel: priority.name,
       confidence: result.confidence,

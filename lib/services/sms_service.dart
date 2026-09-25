@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Service for quick emergency responses, phone dialing, and SMS messaging.
@@ -10,10 +10,8 @@ class SmsService {
     try {
       if (await canLaunchUrl(uri)) {
         return await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        // Direct attempt fallback
-        return await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
+      return false;
     } catch (e) {
       debugPrint('[SmsService] Dial error: $e');
       return false;

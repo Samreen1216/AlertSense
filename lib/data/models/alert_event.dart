@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 class AlertEvent {
   final String id;
@@ -67,7 +67,7 @@ class AlertEvent {
       soundCategory: map['soundCategory'] ?? '',
       priorityLevel: map['priorityLevel'] ?? '',
       confidence: map['confidence']?.toDouble() ?? 0.0,
-      timestamp: DateTime.parse(map['timestamp']),
+      timestamp: DateTime.tryParse(map['timestamp'] ?? '') ?? DateTime.now(),
       acknowledged: map['acknowledged'] ?? false,
       durationSeconds: map['durationSeconds'],
       responseAction: map['responseAction'],

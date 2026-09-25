@@ -89,7 +89,7 @@ class SoundProfile {
       id: 'default_outdoor',
       name: 'Outdoor',
       emoji: '🌳',
-      enabledCategories: ['emergencySiren', 'vehicleHorn', 'glassBreaking'],
+      enabledCategories: ['emergencySiren', 'vehicleHorn', 'glassBreaking', 'dogBarking'],
       isDefault: true,
     );
   }
