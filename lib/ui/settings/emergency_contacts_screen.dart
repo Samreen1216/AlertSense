@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../providers/settings_providers.dart';
 
 class EmergencyContactsScreen extends ConsumerStatefulWidget {
@@ -61,8 +62,12 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeType = ref.watch(themeTypeProvider);
+    final isDark = theme.brightness == Brightness.dark;
+    final isHighContrast = themeType == ThemeType.highContrast;
 
     return Scaffold(
+      backgroundColor: isHighContrast ? Colors.black : null,
       appBar: AppBar(
         title: const Text('Emergency Contacts'),
         leading: IconButton(
@@ -90,21 +95,32 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+              color: isHighContrast
+                  ? Colors.black
+                  : (isDark
+                      ? const Color(0xFF1E2638)
+                      : theme.colorScheme.primaryContainer.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: theme.colorScheme.primary.withValues(alpha: 0.25),
-                width: 1.0,
+                color: isHighContrast
+                    ? const Color(0xFF00FF41)
+                    : theme.colorScheme.primary.withValues(alpha: 0.25),
+                width: isHighContrast ? 1.5 : 1.0,
               ),
             ),
             child: Row(
               children: [
-                Icon(Icons.sms_outlined, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.sms_outlined,
+                  color: isHighContrast ? const Color(0xFF00FF41) : theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'When a critical alarm fires, you can send one-tap SMS messages to these contacts directly from the alert overlay.',
-                    style: theme.textTheme.bodyMedium,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isHighContrast ? Colors.white : null,
+                    ),
                   ),
                 ),
               ],
@@ -115,6 +131,7 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
             'Trusted Phone Numbers',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: isHighContrast ? const Color(0xFF00FF41) : null,
             ),
           ),
           const SizedBox(height: 12),
@@ -130,17 +147,48 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
                     child: TextField(
                       controller: controller,
                       keyboardType: TextInputType.phone,
+                      style: TextStyle(
+                        color: isHighContrast ? Colors.white : null,
+                      ),
                       decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.phone_outlined),
+                        prefixIcon: Icon(
+                          Icons.phone_outlined,
+                          color: isHighContrast ? const Color(0xFF00FF41) : null,
+                        ),
                         labelText: 'Contact #${index + 1}',
+                        labelStyle: TextStyle(
+                          color: isHighContrast ? const Color(0xFF00FF41) : null,
+                        ),
                         hintText: '+1 (555) 000-0000',
+                        hintStyle: TextStyle(
+                          color: isHighContrast ? Colors.white38 : null,
+                        ),
+                        filled: isHighContrast,
+                        fillColor: isHighContrast ? const Color(0xFF111111) : null,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: isHighContrast ? const Color(0xFF00FF41).withValues(alpha: 0.5) : theme.colorScheme.outlineVariant,
+                            width: isHighContrast ? 1.5 : 1.0,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: isHighContrast ? const Color(0xFF00FF41) : theme.colorScheme.primary,
+                            width: 2.0,
+                          ),
+                        ),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                    icon: Icon(
+                      Icons.remove_circle_outline,
+                      color: isHighContrast ? const Color(0xFFFF5252) : Colors.red,
+                    ),
                     tooltip: 'Remove',
                     onPressed: () {
                       setState(() {
@@ -154,20 +202,47 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
             );
           }),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () {
-              setState(() {
-                _controllers.add(TextEditingController());
-              });
-            },
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add Another Contact'),
+          SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
+              style: isHighContrast
+                  ? OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF00FF41),
+                      side: const BorderSide(color: Color(0xFF00FF41), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    )
+                  : OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+              onPressed: () {
+                setState(() {
+                  _controllers.add(TextEditingController());
+                });
+              },
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Another Contact'),
+            ),
           ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: _save,
-            icon: const Icon(Icons.save_rounded),
-            label: const Text('Save Contacts'),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 50,
+            child: FilledButton.icon(
+              style: isHighContrast
+                  ? FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF00FF41),
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    )
+                  : FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+              onPressed: _save,
+              icon: const Icon(Icons.save_rounded),
+              label: const Text(
+                'Save Contacts',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
           ),
         ],
       ),

@@ -110,6 +110,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final canPop = ModalRoute.of(context)?.canPop ?? false;
 
     return Scaffold(
+      backgroundColor: themeType == ThemeType.highContrast ? Colors.black : null,
       appBar: AppBar(
         title: const Text('Alert History'),
         automaticallyImplyLeading: false,
@@ -147,17 +148,76 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           // Filter Chips
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
             child: Row(
               children: _filters.map((filter) {
                 final isSelected =
                     selectedFilter.toLowerCase() == filter.toLowerCase();
+
+                Color chipAccent;
+                if (themeType == ThemeType.colorBlindSafe) {
+                  if (filter == 'High') {
+                    chipAccent = AppColors.cbSafeHigh;
+                  } else if (filter == 'Medium') {
+                    chipAccent = AppColors.cbSafeMedium;
+                  } else if (filter == 'Low') {
+                    chipAccent = AppColors.cbSafeLow;
+                  } else {
+                    chipAccent = theme.colorScheme.primary;
+                  }
+                } else if (themeType == ThemeType.highContrast) {
+                  if (filter == 'High') {
+                    chipAccent = const Color(0xFF00FF41);
+                  } else if (filter == 'Medium') {
+                    chipAccent = const Color(0xFFFFD600);
+                  } else if (filter == 'Low') {
+                    chipAccent = const Color(0xFF00FFFF);
+                  } else {
+                    chipAccent = const Color(0xFF00FF41);
+                  }
+                } else {
+                  if (filter == 'High') {
+                    chipAccent = const Color(0xFFEF4444);
+                  } else if (filter == 'Medium') {
+                    chipAccent = const Color(0xFFF59E0B);
+                  } else if (filter == 'Low') {
+                    chipAccent = const Color(0xFF10B981);
+                  } else {
+                    chipAccent = theme.colorScheme.primary;
+                  }
+                }
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: FilterChip(
                     label: Text(
-                        filter == 'All' ? 'All Alerts' : '$filter Priority'),
+                      filter == 'All' ? 'All Alerts' : '$filter Priority',
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                        fontSize: 13,
+                        color: isSelected
+                            ? (themeType == ThemeType.highContrast ? Colors.black : chipAccent)
+                            : (isDark ? Colors.white70 : Colors.black87),
+                      ),
+                    ),
                     selected: isSelected,
+                    selectedColor: themeType == ThemeType.highContrast
+                        ? chipAccent
+                        : chipAccent.withValues(alpha: 0.18),
+                    checkmarkColor: themeType == ThemeType.highContrast
+                        ? Colors.black
+                        : chipAccent,
+                    side: BorderSide(
+                      color: isSelected
+                          ? chipAccent
+                          : (themeType == ThemeType.highContrast
+                              ? Colors.white30
+                              : theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                      width: isSelected ? 1.5 : 1.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     onSelected: (selected) {
                       ref.read(alertFilterPriorityProvider.notifier).state =
                           filter == 'All' ? null : filter.toLowerCase();
@@ -181,17 +241,23 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           Container(
                             padding: const EdgeInsets.all(24),
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? const Color(0xFF1E2638)
-                                  : theme.colorScheme.surfaceContainerHighest
-                                      .withValues(alpha: 0.5),
+                              color: themeType == ThemeType.highContrast
+                                  ? Colors.black
+                                  : (isDark
+                                      ? const Color(0xFF1E2638)
+                                      : theme.colorScheme.surfaceContainerHighest
+                                          .withValues(alpha: 0.5)),
                               shape: BoxShape.circle,
+                              border: themeType == ThemeType.highContrast
+                                  ? Border.all(color: const Color(0xFF00FF41), width: 2)
+                                  : null,
                             ),
                             child: Icon(
                               Icons.notifications_off_outlined,
                               size: 64,
-                              color: theme.colorScheme.primary
-                                  .withValues(alpha: 0.7),
+                              color: themeType == ThemeType.highContrast
+                                  ? const Color(0xFF00FF41)
+                                  : theme.colorScheme.primary.withValues(alpha: 0.7),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -199,6 +265,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             'No alerts yet',
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
+                              color: themeType == ThemeType.highContrast ? const Color(0xFF00FF41) : null,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -208,7 +275,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                 : 'No $selectedFilter priority alerts found.',
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: themeType == ThemeType.highContrast
+                                  ? Colors.white70
+                                  : theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                           if (selectedFilter == 'All') ...[
@@ -218,6 +287,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                               icon: const Icon(Icons.graphic_eq_rounded, size: 18),
                               label: const Text('Start Quick Scan'),
                               style: FilledButton.styleFrom(
+                                backgroundColor: themeType == ThemeType.highContrast ? const Color(0xFF00FF41) : null,
+                                foregroundColor: themeType == ThemeType.highContrast ? Colors.black : null,
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
@@ -227,6 +298,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           ] else ...[
                             const SizedBox(height: 16),
                             OutlinedButton(
+                              style: themeType == ThemeType.highContrast
+                                  ? OutlinedButton.styleFrom(
+                                      foregroundColor: const Color(0xFF00FF41),
+                                      side: const BorderSide(color: Color(0xFF00FF41)),
+                                    )
+                                  : null,
                               onPressed: () {
                                 ref.read(alertFilterPriorityProvider.notifier).state = null;
                               },

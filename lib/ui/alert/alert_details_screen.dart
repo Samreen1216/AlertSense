@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/settings_providers.dart';
@@ -18,7 +20,9 @@ class AlertDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final themeType = ref.watch(themeTypeProvider);
     final isDark = theme.brightness == Brightness.dark;
+    final isHighContrast = themeType == ThemeType.highContrast;
 
     SoundCategory? category;
     try {
@@ -30,9 +34,21 @@ class AlertDetailsScreen extends ConsumerWidget {
     final priority = alert.priorityLevel.toUpperCase();
     final isHigh = priority == 'HIGH';
     final isMedium = priority == 'MEDIUM';
-    final priorityColor = isHigh
-        ? const Color(0xFFEF4444)
-        : (isMedium ? const Color(0xFFF59E0B) : const Color(0xFF10B981));
+
+    Color priorityColor;
+    if (themeType == ThemeType.colorBlindSafe) {
+      priorityColor = isHigh
+          ? AppColors.cbSafeHigh
+          : (isMedium ? AppColors.cbSafeMedium : AppColors.cbSafeLow);
+    } else if (themeType == ThemeType.highContrast) {
+      priorityColor = isHigh
+          ? const Color(0xFF00FF41)
+          : (isMedium ? const Color(0xFFFFD600) : const Color(0xFF00FFFF));
+    } else {
+      priorityColor = isHigh
+          ? const Color(0xFFEF4444)
+          : (isMedium ? const Color(0xFFF59E0B) : const Color(0xFF10B981));
+    }
 
     final timeStr = DateFormat.jm().format(alert.timestamp);
     final dateStr = DateFormat.yMMMMd().format(alert.timestamp);
@@ -77,21 +93,25 @@ class AlertDetailsScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E2638)
-                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: isHighContrast
+                      ? Colors.black
+                      : (isDark
+                          ? const Color(0xFF1E2638)
+                          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: priorityColor.withValues(alpha: 0.4),
-                    width: 1.2,
+                    color: priorityColor.withValues(alpha: isHighContrast ? 1.0 : 0.4),
+                    width: isHighContrast ? 2.0 : 1.2,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: priorityColor.withValues(alpha: 0.12),
-                      blurRadius: 18,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  boxShadow: isHighContrast
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: priorityColor.withValues(alpha: 0.12),
+                            blurRadius: 18,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                 ),
                 child: Column(
                   children: [
@@ -113,9 +133,9 @@ class AlertDetailsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 5),
                       decoration: BoxDecoration(
-                        color: priorityColor.withValues(alpha: 0.18),
+                        color: priorityColor.withValues(alpha: isHighContrast ? 0.25 : 0.18),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: priorityColor, width: 1.2),
+                        border: Border.all(color: priorityColor, width: isHighContrast ? 1.5 : 1.2),
                       ),
                       child: Text(
                         '$priority PRIORITY',
@@ -135,14 +155,18 @@ class AlertDetailsScreen extends ConsumerWidget {
               // ── Details Card ──
               Card(
                 elevation: 0,
-                color: isDark
-                    ? const Color(0xFF1E2638)
-                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+                color: isHighContrast
+                    ? Colors.black
+                    : (isDark
+                        ? const Color(0xFF1E2638)
+                        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
-                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
-                    width: 1.0,
+                    color: isHighContrast
+                        ? const Color(0xFF00FF41)
+                        : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    width: isHighContrast ? 1.5 : 1.0,
                   ),
                 ),
                 child: Padding(
