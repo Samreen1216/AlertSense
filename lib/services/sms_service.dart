@@ -1,8 +1,12 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Service for quick emergency responses, phone dialing, and SMS messaging.
+/// Service for quick emergency responses, phone dialing, SMS messaging, and WhatsApp alerts.
 class SmsService {
+  static const MethodChannel _deviceChannel = MethodChannel('com.alertsense/device');
+
   /// Open the phone dialer with a specific emergency number (e.g., 1122, 911, etc.).
   static Future<bool> dialEmergencyNumber(String number) async {
     final cleanNumber = number.trim().replaceAll(' ', '');
@@ -10,15 +14,21 @@ class SmsService {
     try {
       if (await canLaunchUrl(uri)) {
         return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
-      return false;
     } catch (e) {
       debugPrint('[SmsService] Dial error: $e');
-      return false;
+      try {
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (innerErr) {
+        debugPrint('[SmsService] Direct dial fallback error: $innerErr');
+        return false;
+      }
     }
   }
 
-  /// Send an SMS message to a contact with pre-composed text.
+  /// Send an SMS message to contact(s) with pre-composed text directly via native SMS inbox.
   static Future<bool> sendEmergencySms({
     required List<String> recipients,
     required String message,
@@ -35,39 +45,170 @@ class SmsService {
 
     if (cleanRecipients.isEmpty) return false;
 
-    // Standard Android SMS intent
-    final recipientString = cleanRecipients.join(',');
-    final uri = Uri(
+    final primaryRecipient = cleanRecipients.first;
+    final allRecipients = cleanRecipients.join(',');
+    final encodedMsg = Uri.encodeComponent(message);
+
+    // 0. On Android, use native Intent with default SMS package to bypass the "Open with WhatsApp" chooser
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        final success = await _deviceChannel.invokeMethod<bool>('sendDirectSms', {
+          'recipient': primaryRecipient,
+          'message': message,
+        });
+        if (success == true) {
+          debugPrint('[SmsService] Native direct SMS successfully launched for $primaryRecipient');
+          return true;
+        }
+      } catch (e) {
+        debugPrint('[SmsService] Native direct SMS failed: $e, falling back to url_launcher');
+      }
+    }
+
+    // 1. Prioritize smsto: scheme (targets native SMS Inbox directly)
+    final rawSmstoSingleUri = Uri.parse('smsto:$primaryRecipient?body=$encodedMsg');
+    try {
+      if (await canLaunchUrl(rawSmstoSingleUri)) {
+        return await launchUrl(rawSmstoSingleUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+
+    // 2. smsto: with multiple recipients
+    final smstoAllUri = Uri(
+      scheme: 'smsto',
+      path: allRecipients,
+      queryParameters: <String, String>{
+        'body': message,
+      },
+    );
+    try {
+      if (await canLaunchUrl(smstoAllUri)) {
+        return await launchUrl(smstoAllUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+
+    // 3. Raw smsto: with multiple recipients string
+    final rawSmstoAllUri = Uri.parse('smsto:$allRecipients?body=$encodedMsg');
+    try {
+      if (await canLaunchUrl(rawSmstoAllUri)) {
+        return await launchUrl(rawSmstoAllUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+
+    // 4. iOS format (sms:number&body=...) and standard sms: fallback
+    final rawIosSmsUri = Uri.parse('sms:$primaryRecipient&body=$encodedMsg');
+    final rawSmsUri = Uri.parse('sms:$primaryRecipient?body=$encodedMsg');
+    final smsUri = Uri(
       scheme: 'sms',
-      path: recipientString,
+      path: allRecipients,
       queryParameters: <String, String>{
         'body': message,
       },
     );
 
-    try {
-      if (await canLaunchUrl(uri)) {
-        return await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        // Fallback with smsto:
-        final fallbackUri = Uri(
-          scheme: 'smsto',
-          path: recipientString,
-          queryParameters: <String, String>{
-            'body': message,
-          },
-        );
-        return await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      debugPrint('[SmsService] SMS launch error: $e');
+    for (final candidate in [rawIosSmsUri, rawSmsUri, smsUri]) {
       try {
-        // Direct attempt without canLaunchUrl check
-        return await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } catch (innerErr) {
-        debugPrint('[SmsService] Direct SMS launch fallback error: $innerErr');
+        if (await canLaunchUrl(candidate)) {
+          return await launchUrl(candidate, mode: LaunchMode.externalApplication);
+        }
+      } catch (_) {}
+    }
+
+    // 5. Final fallback: direct smsto launch without pre-flight check
+    try {
+      return await launchUrl(rawSmstoSingleUri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[SmsService] SMS direct launch fallback error: $e');
+      try {
+        return await launchUrl(smsUri, mode: LaunchMode.externalApplication);
+      } catch (_) {
         return false;
       }
+    }
+  }
+
+  /// Format phone numbers into clean international format suitable for WhatsApp.
+  /// Handles local formats (e.g. 03001234567 -> 923001234567), +92..., 0092..., etc.
+  static String formatForWhatsApp(String phone, {String defaultCountryCode = '92'}) {
+    final raw = phone.trim();
+    if (raw.isEmpty) return '';
+
+    // Remove punctuation, spaces, dashes, parentheses
+    String cleaned = raw.replaceAll(RegExp(r'[\s\-\(\)\.]'), '');
+
+    if (cleaned.startsWith('+')) {
+      cleaned = cleaned.substring(1);
+    } else if (cleaned.startsWith('00')) {
+      cleaned = cleaned.substring(2);
+    } else if (cleaned.startsWith('0') && cleaned.length >= 10) {
+      // Convert local leading 0 (e.g., 03001234567) to country code (e.g., 923001234567)
+      cleaned = '$defaultCountryCode${cleaned.substring(1)}';
+    }
+
+    // Retain only digits
+    cleaned = cleaned.replaceAll(RegExp(r'\D'), '');
+    return cleaned;
+  }
+
+  /// Send an alert via WhatsApp.
+  /// If [phoneNumber] is provided, formats it accurately to avoid invite/joining screens.
+  /// If [phoneNumber] is empty or fails, opens WhatsApp chat picker directly.
+  static Future<bool> sendEmergencyWhatsApp({
+    String? phoneNumber,
+    required String message,
+  }) async {
+    final cleanPhone = phoneNumber != null ? formatForWhatsApp(phoneNumber) : '';
+
+    // 1. If phone number is available, attempt direct WhatsApp chat URL
+    if (cleanPhone.isNotEmpty) {
+      final whatsappDirectUri = Uri.parse(
+        'whatsapp://send?phone=$cleanPhone&text=${Uri.encodeComponent(message)}',
+      );
+      final apiDirectUri = Uri.parse(
+        'https://api.whatsapp.com/send?phone=$cleanPhone&text=${Uri.encodeComponent(message)}',
+      );
+      final waMeUri = Uri.parse(
+        'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}',
+      );
+
+      try {
+        if (await canLaunchUrl(whatsappDirectUri)) {
+          return await launchUrl(whatsappDirectUri, mode: LaunchMode.externalApplication);
+        } else if (await canLaunchUrl(apiDirectUri)) {
+          return await launchUrl(apiDirectUri, mode: LaunchMode.externalApplication);
+        } else if (await canLaunchUrl(waMeUri)) {
+          return await launchUrl(waMeUri, mode: LaunchMode.externalApplication);
+        }
+      } catch (e) {
+        debugPrint('[SmsService] WhatsApp direct phone error: $e');
+      }
+    }
+
+    // 2. Open WhatsApp Contact/Group Chooser with pre-filled message (No phone needed, zero invite errors)
+    final whatsappShareUri = Uri.parse(
+      'whatsapp://send?text=${Uri.encodeComponent(message)}',
+    );
+    final apiShareUri = Uri.parse(
+      'https://api.whatsapp.com/send?text=${Uri.encodeComponent(message)}',
+    );
+
+    try {
+      if (await canLaunchUrl(whatsappShareUri)) {
+        return await launchUrl(whatsappShareUri, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(apiShareUri)) {
+        return await launchUrl(apiShareUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('[SmsService] WhatsApp general launch error: $e');
+    }
+
+    // 3. Fallback: System Share sheet so user can send via WhatsApp or any installed messenger
+    try {
+      await Share.share(message, subject: 'AlertSense Emergency Alert');
+      return true;
+    } catch (e) {
+      debugPrint('[SmsService] Share fallback error: $e');
+      return false;
     }
   }
 

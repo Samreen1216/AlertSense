@@ -4,13 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../services/sms_service.dart';
+import 'widgets/alert_family_choice_dialog.dart';
 import 'widgets/quick_response_card.dart';
 
 class FullScreenAlert extends ConsumerStatefulWidget {
@@ -25,7 +25,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<Color?> _colorAnimation;
-  bool _isSendingSms = false;
+  bool _isSending = false;
   bool _isCalling = false;
 
   // Emergency Uplink Auto-Dispatch (Proposal Section 8)
@@ -69,7 +69,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
         final rawCategory = widget.alertData['soundCategory'] as String? ?? 'fireAlarm';
         final name = _resolveName(rawCategory);
         final alertId = widget.alertData['id'] as String? ?? '';
-        _handleAlertFamily(name, alertId, isAuto: true);
+        _handleAlertFamilySms(name, alertId, isAuto: true);
       } else {
         setState(() => _secondsRemaining--);
       }
@@ -105,79 +105,15 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
 
   // ── Emergency Call ───────────────────────────────────────────────────────
   Future<void> _handleEmergencyCall(String alertId) async {
-    // Show a dialog so user can confirm/change the number (supports all countries)
-    final controller = TextEditingController(text: '1122');
-    final confirmed = await showDialog<bool>(
+    // Show self-contained dialog so user can confirm/change the number safely
+    final number = await showDialog<String>(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Colors.white24, width: 1.0),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.local_phone_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 12),
-            Text('Emergency Call', style: TextStyle(color: Colors.white, fontSize: 20)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Confirm emergency number to dial:',
-              style: TextStyle(color: Colors.white70),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.phone,
-              autofocus: true,
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
-              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.phone, color: Colors.red),
-                hintText: 'e.g. 1122 / 115 / 911',
-                hintStyle: const TextStyle(color: Colors.white38),
-                filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Pakistan: 1122 (Rescue) · 115 (Edhi) · 15 (Police)\nUS/Canada: 911 · UK: 999 · EU: 112',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('CALL NOW'),
-          ),
-        ],
-      ),
+      barrierDismissible: true,
+      builder: (ctx) => const _EmergencyCallDialog(initialNumber: '1122'),
     );
 
-    if (confirmed == true && mounted) {
+    if (number != null && number.isNotEmpty && mounted) {
       setState(() => _isCalling = true);
-      final number = controller.text.trim().replaceAll(' ', '');
       final success = await SmsService.dialEmergencyNumber(number);
       if (mounted) setState(() => _isCalling = false);
 
@@ -195,29 +131,125 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
       _stopHardwareAlerts();
       ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'called_emergency');
     }
-    controller.dispose();
   }
 
-  // ── Alert Family via SMS ─────────────────────────────────────────────────
-  Future<void> _handleAlertFamily(String soundName, String alertId, {bool isAuto = false}) async {
+  // ── Alert Family with 2-Choice Dialog (WhatsApp vs Messages with Just Once) ──
+  Future<void> _handleAlertFamilyWithChoice(String soundName, String alertId) async {
+    _autoDispatchTimer?.cancel();
+    _autoDispatchTimer = null;
+    final settings = ref.read(userSettingsProvider);
+    final savedContacts = settings.emergencyContacts;
+
+    // Show the interactive dialog with WhatsApp and Messages options
+    final choice = await showDialog<AlertChannel>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertFamilyChoiceDialog(
+        savedContacts: savedContacts,
+        soundName: soundName,
+        initialChannel: AlertChannel.whatsapp,
+      ),
+    );
+
+    if (choice == null || !mounted) return;
+
+    if (choice == AlertChannel.whatsapp) {
+      await _handleAlertFamilyWhatsApp(soundName, alertId);
+    } else if (choice == AlertChannel.sms) {
+      await _handleAlertFamilySms(soundName, alertId);
+    }
+  }
+
+  // ── Alert Family via WhatsApp ─────────────────────────────────────────────
+  Future<void> _handleAlertFamilyWhatsApp(String soundName, String alertId) async {
     _autoDispatchTimer?.cancel();
     _autoDispatchTimer = null;
     final settings = ref.read(userSettingsProvider);
     final savedContacts = settings.emergencyContacts;
 
     if (savedContacts.isNotEmpty) {
-      // Has saved contacts → send immediately, show confirmation
-      setState(() => _isSendingSms = true);
+      setState(() => _isSending = true);
+      final success = await SmsService.sendEmergencyWhatsApp(
+        phoneNumber: savedContacts.first,
+        message: SmsService.emergencyMessage(soundName),
+      );
+      if (mounted) setState(() => _isSending = false);
+
+      if (mounted && success) {
+        _stopHardwareAlerts();
+        ref.read(alertListProvider.notifier).acknowledgeAlert(
+          alertId,
+          action: 'alerted_family_whatsapp',
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('WhatsApp alert opened for ${savedContacts.first}'),
+            backgroundColor: const Color(0xFF25D366),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } else if (mounted) {
+        await _showManualWhatsAppDialog(soundName, alertId, savedContacts);
+      }
+    } else {
+      await _showManualWhatsAppDialog(soundName, alertId, []);
+    }
+  }
+
+  Future<void> _showManualWhatsAppDialog(
+    String soundName,
+    String alertId,
+    List<String> prefill,
+  ) async {
+    final result = await showDialog<({String? phone, String message})>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => _ManualWhatsAppDialog(
+        initialPhone: prefill.isNotEmpty ? prefill.first : '',
+        defaultMessage: SmsService.emergencyMessage(soundName),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() => _isSending = true);
+      final success = await SmsService.sendEmergencyWhatsApp(
+        phoneNumber: result.phone,
+        message: result.message,
+      );
+      if (mounted) {
+        setState(() => _isSending = false);
+        if (success) {
+          _stopHardwareAlerts();
+          ref.read(alertListProvider.notifier).acknowledgeAlert(
+            alertId,
+            action: 'alerted_family_whatsapp',
+          );
+        }
+      }
+    }
+  }
+
+  // ── Alert Family via SMS ─────────────────────────────────────────────────
+  Future<void> _handleAlertFamilySms(String soundName, String alertId, {bool isAuto = false}) async {
+    _autoDispatchTimer?.cancel();
+    _autoDispatchTimer = null;
+    final settings = ref.read(userSettingsProvider);
+    final savedContacts = settings.emergencyContacts;
+
+    if (savedContacts.isNotEmpty) {
+      setState(() => _isSending = true);
       final success = await SmsService.sendEmergencySms(
         recipients: savedContacts,
         message: isAuto
             ? 'CRITICAL ALERT: $soundName detected at user location. User is currently unacknowledged. Sent automatically by AlertSense.'
             : SmsService.emergencyMessage(soundName),
       );
-      if (mounted) setState(() => _isSendingSms = false);
+      if (mounted) setState(() => _isSending = false);
 
       if (mounted) {
         if (success) {
+          _stopHardwareAlerts();
           ref.read(alertListProvider.notifier).acknowledgeAlert(
             alertId,
             action: isAuto ? 'auto_sms_unacknowledged' : 'alerted_family',
@@ -233,14 +265,12 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
             ),
           );
         } else {
-          // url_launcher returned false — fallback to manual entry if manual
           if (!isAuto) {
             await _showManualSmsDialog(soundName, alertId, savedContacts);
           }
         }
       }
     } else {
-      // No contacts saved → let user enter number right now if manual
       if (!isAuto) {
         await _showManualSmsDialog(soundName, alertId, []);
       }
@@ -248,132 +278,31 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
   }
 
   Future<void> _showManualSmsDialog(String soundName, String alertId, List<String> prefill) async {
-    final message = SmsService.emergencyMessage(soundName);
-    final phoneController = TextEditingController(
-      text: prefill.isNotEmpty ? prefill.first : '',
-    );
-    final messageController = TextEditingController(text: message);
-
-    final confirmed = await showDialog<bool>(
+    final result = await showDialog<({String phone, String message})>(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Colors.white24, width: 1.0),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.sms_rounded, color: Color(0xFFE65100), size: 28),
-            SizedBox(width: 12),
-            Text('Alert Family', style: TextStyle(color: Colors.white, fontSize: 20)),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Phone number to SMS:',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                autofocus: true,
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.phone, color: Color(0xFFE65100)),
-                  hintText: 'Enter phone number',
-                  hintStyle: const TextStyle(color: Colors.white38),
-                  filled: true,
-                  fillColor: const Color(0xFF2C2C2C),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE65100)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE65100)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Message (editable):',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: messageController,
-                maxLines: 4,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: const Color(0xFF2C2C2C),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white24),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white24),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => Navigator.pop(ctx, false),
-                child: const Text(
-                  'Tip: Save contacts in Settings → Emergency Contacts for one-tap sending.',
-                  style: TextStyle(color: Colors.white38, fontSize: 11),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE65100)),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('SEND SMS'),
-          ),
-        ],
+      barrierDismissible: true,
+      builder: (ctx) => _ManualSmsDialog(
+        initialPhone: prefill.isNotEmpty ? prefill.first : '',
+        defaultMessage: SmsService.emergencyMessage(soundName),
       ),
     );
 
-    if (confirmed == true && mounted) {
-      final number = phoneController.text.trim();
-      final msg = messageController.text.trim();
-      if (number.isNotEmpty) {
-        setState(() => _isSendingSms = true);
+    if (result != null && mounted) {
+      if (result.phone.isNotEmpty) {
+        setState(() => _isSending = true);
         final success = await SmsService.sendEmergencySms(
-          recipients: [number],
-          message: msg,
+          recipients: [result.phone],
+          message: result.message,
         );
         if (mounted) {
-          setState(() => _isSendingSms = false);
+          setState(() => _isSending = false);
           if (success) {
+            _stopHardwareAlerts();
             ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'alerted_family');
-          } else {
-            // Last resort: open generic SMS app
-            final uri = Uri(scheme: 'sms', path: number, queryParameters: {'body': msg});
-            if (await canLaunchUrl(uri)) await launchUrl(uri);
           }
         }
       }
     }
-
-    phoneController.dispose();
-    messageController.dispose();
   }
 
   // ── I'm Safe ────────────────────────────────────────────────────────────
@@ -382,12 +311,12 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
     final settings = ref.read(userSettingsProvider);
     final contacts = settings.emergencyContacts;
     if (contacts.isNotEmpty) {
-      setState(() => _isSendingSms = true);
+      setState(() => _isSending = true);
       await SmsService.sendEmergencySms(
         recipients: contacts,
         message: SmsService.safeMessage(soundName),
       );
-      if (mounted) setState(() => _isSendingSms = false);
+      if (mounted) setState(() => _isSending = false);
     }
     ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'safe');
     if (mounted) context.pop();
@@ -411,7 +340,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
               width: double.infinity,
               height: double.infinity,
               color: _colorAnimation.value,
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 36.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
               child: SafeArea(child: child!),
             );
           },
@@ -427,19 +356,19 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
 
                         // SVG Alert Icon
                         AppSvgIcon(
                           iconKey: rawCategory,
-                          size: 84,
+                          size: 78,
                           color: Colors.white,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
                         // Badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(24),
@@ -450,35 +379,37 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                               color: Color(0xFFD32F2F),
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1.5,
-                              fontSize: 14,
+                              fontSize: 13,
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
 
                         // Sound name
                         Text(
                           name,
                           style: const TextStyle(
-                            fontSize: 32,
+                            fontSize: 30,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
 
                         // Confidence + time
                         Text(
                           '$confidence% Confidence  •  ${DateFormat.jm().format(timestamp)}',
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             color: Colors.white70,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 16),
 
                     // ── Bottom action area ───────────────────────────────────
                     Column(
@@ -487,8 +418,8 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                         // Emergency Auto-Uplink Banner
                         if (ref.watch(userSettingsProvider).emergencyContacts.isNotEmpty)
                           Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.black.withValues(alpha: 0.35),
                               borderRadius: BorderRadius.circular(16),
@@ -508,7 +439,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                                   color: _autoDispatched
                                       ? Colors.orangeAccent
                                       : (_autoDispatchCancelled ? Colors.white60 : Colors.amberAccent),
-                                  size: 22,
+                                  size: 20,
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
@@ -520,7 +451,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                                             : 'Auto-SMS to family in ${_secondsRemaining}s if unacknowledged'),
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -528,7 +459,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                                 if (!_autoDispatched && !_autoDispatchCancelled)
                                   TextButton(
                                     style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                       minimumSize: Size.zero,
                                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                       backgroundColor: Colors.white.withValues(alpha: 0.15),
@@ -557,7 +488,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                           isLoading: false,
                           onPressed: () => _handleImSafe(name, alertId),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
 
                         // Call Emergency
                         QuickResponseCard(
@@ -567,17 +498,17 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                           isLoading: _isCalling,
                           onPressed: _isCalling ? null : () => _handleEmergencyCall(alertId),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
 
-                        // Alert Family
+                        // Alert Family (WhatsApp / Messages Dialog with Just Once)
                         QuickResponseCard(
-                          label: _isSendingSms ? 'Sending SMS…' : 'Alert Family via SMS',
+                          label: _isSending ? 'Sending Alert…' : 'Alert Family (WhatsApp / SMS)',
                           icon: Icons.family_restroom_rounded,
                           color: const Color(0xFFE65100),
-                          isLoading: _isSendingSms,
-                          onPressed: _isSendingSms ? null : () => _handleAlertFamily(name, alertId),
+                          isLoading: _isSending,
+                          onPressed: _isSending ? null : () => _handleAlertFamilyWithChoice(name, alertId),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
 
                         // Dismiss
                         QuickResponseCard(
@@ -593,7 +524,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                             context.pop();
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                       ],
                     ),
                   ],
@@ -603,6 +534,375 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
           ),
         ),
       ),
+    );
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dedicated Safe Dialog Widgets (prevents controller disposal crash on cancel)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _EmergencyCallDialog extends StatefulWidget {
+  final String initialNumber;
+  const _EmergencyCallDialog({required this.initialNumber});
+
+  @override
+  State<_EmergencyCallDialog> createState() => _EmergencyCallDialogState();
+}
+
+class _EmergencyCallDialogState extends State<_EmergencyCallDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialNumber);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1A1A1A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white24, width: 1.0),
+      ),
+      title: const Row(
+        children: [
+          Icon(Icons.local_phone_rounded, color: Colors.red, size: 28),
+          SizedBox(width: 12),
+          Text('Emergency Call', style: TextStyle(color: Colors.white, fontSize: 20)),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Confirm emergency number to dial:',
+              style: TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              keyboardType: TextInputType.phone,
+              autofocus: true,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
+              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.phone, color: Colors.red),
+                hintText: 'e.g. 1122 / 115 / 911',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Pakistan: 1122 (Rescue) · 115 (Edhi) · 15 (Police)\nUS/Canada: 911 · UK: 999 · EU: 112',
+              style: TextStyle(color: Colors.white38, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () {
+            final number = _controller.text.trim();
+            Navigator.of(context).pop(number.isNotEmpty ? number : null);
+          },
+          child: const Text('CALL NOW'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ManualWhatsAppDialog extends StatefulWidget {
+  final String initialPhone;
+  final String defaultMessage;
+
+  const _ManualWhatsAppDialog({
+    required this.initialPhone,
+    required this.defaultMessage,
+  });
+
+  @override
+  State<_ManualWhatsAppDialog> createState() => _ManualWhatsAppDialogState();
+}
+
+class _ManualWhatsAppDialogState extends State<_ManualWhatsAppDialog> {
+  late final TextEditingController _phoneController;
+  late final TextEditingController _messageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController = TextEditingController(text: widget.initialPhone);
+    _messageController = TextEditingController(text: widget.defaultMessage);
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1A1A1A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white24, width: 1.0),
+      ),
+      title: const Row(
+        children: [
+          Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 28),
+          SizedBox(width: 12),
+          Text('Alert via WhatsApp', style: TextStyle(color: Colors.white, fontSize: 20)),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Recipient phone number (Optional):',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.phone, color: Color(0xFF25D366)),
+                hintText: 'e.g. 0300 1234567 or +92 300 1234567',
+                hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF25D366)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF25D366)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'Emergency message:',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _messageController,
+              maxLines: 4,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Tip: You can send directly to a number, or choose any contact/group inside WhatsApp.',
+              style: TextStyle(color: Colors.white38, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+        ),
+        OutlinedButton(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF25D366),
+            side: const BorderSide(color: Color(0xFF25D366)),
+          ),
+          onPressed: () {
+            final msg = _messageController.text.trim();
+            Navigator.of(context).pop((phone: null, message: msg));
+          },
+          child: const Text('Choose in WhatsApp'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: const Color(0xFF25D366)),
+          onPressed: () {
+            final phone = _phoneController.text.trim();
+            final msg = _messageController.text.trim();
+            Navigator.of(context).pop((phone: phone.isNotEmpty ? phone : null, message: msg));
+          },
+          child: const Text('SEND'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ManualSmsDialog extends StatefulWidget {
+  final String initialPhone;
+  final String defaultMessage;
+
+  const _ManualSmsDialog({
+    required this.initialPhone,
+    required this.defaultMessage,
+  });
+
+  @override
+  State<_ManualSmsDialog> createState() => _ManualSmsDialogState();
+}
+
+class _ManualSmsDialogState extends State<_ManualSmsDialog> {
+  late final TextEditingController _phoneController;
+  late final TextEditingController _messageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _phoneController = TextEditingController(text: widget.initialPhone);
+    _messageController = TextEditingController(text: widget.defaultMessage);
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1A1A1A),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white24, width: 1.0),
+      ),
+      title: const Row(
+        children: [
+          Icon(Icons.sms_rounded, color: Color(0xFFE65100), size: 28),
+          SizedBox(width: 12),
+          Text('Alert Family via SMS', style: TextStyle(color: Colors.white, fontSize: 20)),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Phone number to SMS:',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              autofocus: true,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.phone, color: Color(0xFFE65100)),
+                hintText: 'Enter phone number',
+                hintStyle: const TextStyle(color: Colors.white38),
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE65100)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE65100)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Message (editable):',
+              style: TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _messageController,
+              maxLines: 4,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Tip: Save contacts in Settings → Emergency Contacts for one-tap sending.',
+              style: TextStyle(color: Colors.white38, fontSize: 11),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE65100)),
+          onPressed: () {
+            final phone = _phoneController.text.trim();
+            final msg = _messageController.text.trim();
+            if (phone.isNotEmpty) {
+              Navigator.of(context).pop((phone: phone, message: msg));
+            }
+          },
+          child: const Text('SEND SMS'),
+        ),
+      ],
     );
   }
 }

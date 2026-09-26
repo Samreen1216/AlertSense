@@ -11,6 +11,7 @@ import '../../data/models/alert_event.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../services/sms_service.dart';
+import 'widgets/alert_family_choice_dialog.dart';
 
 class AlertDetailsScreen extends ConsumerWidget {
   final AlertEvent alert;
@@ -272,10 +273,22 @@ class AlertDetailsScreen extends ConsumerWidget {
                     ),
                   ),
                   onPressed: () async {
-                    await SmsService.dialEmergencyNumber('1122');
-                    ref
-                        .read(alertListProvider.notifier)
-                        .acknowledgeAlert(alert.id, action: 'called_emergency');
+                    final success = await SmsService.dialEmergencyNumber('1122');
+                    if (context.mounted) {
+                      if (success) {
+                        ref
+                            .read(alertListProvider.notifier)
+                            .acknowledgeAlert(alert.id, action: 'called_emergency');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Could not open phone dialer'),
+                            backgroundColor: Colors.red.shade900,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
                   },
                   icon: const Icon(Icons.phone_rounded),
                   label: const Text('Call Emergency Services',
@@ -284,7 +297,59 @@ class AlertDetailsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // Alert Family action
+              // Alert Family via WhatsApp action
+              SizedBox(
+                height: 50,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF25D366),
+                    side: const BorderSide(color: Color(0xFF25D366), width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () async {
+                    final settings = ref.read(userSettingsProvider);
+                    final contact = settings.emergencyContacts.isNotEmpty
+                        ? settings.emergencyContacts.first
+                        : null;
+                    final success = await SmsService.sendEmergencyWhatsApp(
+                      phoneNumber: contact,
+                      message: SmsService.emergencyMessage(label),
+                    );
+                    if (context.mounted) {
+                      if (success) {
+                        ref
+                            .read(alertListProvider.notifier)
+                            .acknowledgeAlert(alert.id, action: 'alerted_family_whatsapp');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(contact != null
+                                ? 'WhatsApp opened for $contact'
+                                : 'WhatsApp alert ready to send'),
+                            backgroundColor: const Color(0xFF25D366),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Could not launch WhatsApp'),
+                            backgroundColor: Colors.red.shade900,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.chat_rounded),
+                  label: const Text('Send WhatsApp to Family',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Alert Family via SMS / Choice action
               SizedBox(
                 height: 50,
                 child: OutlinedButton.icon(
@@ -297,15 +362,8 @@ class AlertDetailsScreen extends ConsumerWidget {
                   ),
                   onPressed: () async {
                     final settings = ref.read(userSettingsProvider);
-                    if (settings.emergencyContacts.isNotEmpty) {
-                      await SmsService.sendEmergencySms(
-                        recipients: settings.emergencyContacts,
-                        message: SmsService.emergencyMessage(label),
-                      );
-                      ref
-                          .read(alertListProvider.notifier)
-                          .acknowledgeAlert(alert.id, action: 'alerted_family');
-                    } else {
+                    final contacts = settings.emergencyContacts;
+                    if (contacts.isEmpty) {
                       final messenger = ScaffoldMessenger.of(context);
                       messenger.clearSnackBars();
                       final controller = messenger.showSnackBar(
@@ -323,6 +381,58 @@ class AlertDetailsScreen extends ConsumerWidget {
                           controller.close();
                         } catch (_) {}
                       });
+                      return;
+                    }
+
+                    // Show the 2-choice dialog (WhatsApp vs Messages with "JUST ONCE")
+                    final choice = await showDialog<AlertChannel>(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (ctx) => AlertFamilyChoiceDialog(
+                        savedContacts: contacts,
+                        soundName: label,
+                        initialChannel: AlertChannel.sms,
+                      ),
+                    );
+
+                    if (choice == null || !context.mounted) return;
+
+                    if (choice == AlertChannel.sms) {
+                      await SmsService.sendEmergencySms(
+                        recipients: contacts,
+                        message: SmsService.emergencyMessage(label),
+                      );
+                      if (context.mounted) {
+                        ref
+                            .read(alertListProvider.notifier)
+                            .acknowledgeAlert(alert.id, action: 'alerted_family');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Messages (SMS) opened for ${contacts.first}'),
+                            backgroundColor: const Color(0xFFE65100),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    } else if (choice == AlertChannel.whatsapp) {
+                      final success = await SmsService.sendEmergencyWhatsApp(
+                        phoneNumber: contacts.first,
+                        message: SmsService.emergencyMessage(label),
+                      );
+                      if (context.mounted && success) {
+                        ref
+                            .read(alertListProvider.notifier)
+                            .acknowledgeAlert(alert.id, action: 'alerted_family_whatsapp');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('WhatsApp opened for ${contacts.first}'),
+                            backgroundColor: const Color(0xFF25D366),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
                     }
                   },
                   icon: const Icon(Icons.sms_rounded),

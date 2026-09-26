@@ -20,7 +20,7 @@
     <uses-feature android:name="android.hardware.microphone" android:required="true" />
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
 
-        <!-- Required for url_launcher to dial and send SMS on Android 11+ -->
+    <!-- Required for url_launcher to dial, send SMS, and open WhatsApp on Android 11+ -->
     <queries>
         <intent>
             <action android:name="android.intent.action.DIAL" />
@@ -31,9 +31,27 @@
             <data android:scheme="smsto" />
         </intent>
         <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="sms" />
+        </intent>
+        <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="sms" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="smsto" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="whatsapp" />
+        </intent>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
     </queries>
 
     <application

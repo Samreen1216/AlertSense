@@ -4,9 +4,11 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
+import android.provider.Telephony
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -35,8 +37,49 @@ class MainActivity: FlutterActivity() {
                     val isIgnoring = isIgnoringBatteryOptimizations()
                     result.success(isIgnoring)
                 }
+                "sendDirectSms" -> {
+                    val recipient = call.argument<String>("recipient") ?: ""
+                    val message = call.argument<String>("message") ?: ""
+                    val success = sendDirectSms(recipient, message)
+                    result.success(success)
+                }
                 else -> result.notImplemented()
             }
+        }
+    }
+
+    private fun sendDirectSms(recipient: String, message: String): Boolean {
+        return try {
+            val defaultSmsPackage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                Telephony.Sms.getDefaultSmsPackage(applicationContext)
+            } else null
+
+            val cleanRecipient = recipient.trim().replace(" ", "")
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("smsto:" + Uri.encode(cleanRecipient))
+                putExtra("sms_body", message)
+                putExtra(Intent.EXTRA_TEXT, message)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (!defaultSmsPackage.isNullOrEmpty()) {
+                    setPackage(defaultSmsPackage)
+                }
+            }
+
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(intent)
+                true
+            } else {
+                val fallbackIntent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = Uri.parse("smsto:" + Uri.encode(cleanRecipient))
+                    putExtra("sms_body", message)
+                    putExtra(Intent.EXTRA_TEXT, message)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(fallbackIntent)
+                true
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 
