@@ -19,10 +19,48 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
   DateTime? _tapStartTime;
   DateTime? _lastTapEndTime;
   bool _isRecording = false;
+  bool _isPlaying = false;
+  int _activePlayingIndex = -1;
+  Timer? _playbackTimer;
+  final List<Timer> _stepTimers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Load existing custom vibration if user previously configured one
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadPatternForCategory(_selectedCategory);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _stopPlayback();
+    super.dispose();
+  }
+
+  void _loadPatternForCategory(SoundCategory cat) {
+    _stopPlayback();
+    final customVibrations = ref.read(userSettingsProvider).customVibrationPatterns;
+    final saved = customVibrations[cat.name];
+    setState(() {
+      _recordedPattern.clear();
+      if (saved != null && saved.isNotEmpty) {
+        _recordedPattern.addAll(saved);
+      }
+      _isRecording = false;
+      _lastTapEndTime = null;
+      _tapStartTime = null;
+    });
+  }
 
   void _onTapDown(TapDownDetails details) {
+    if (_isPlaying) _stopPlayback();
+
     final now = DateTime.now();
-    Vibration.vibrate(duration: 50); // Feedback while tapping
+    Vibration.vibrate(duration: 50); // Haptic feedback while tapping
 
     if (_lastTapEndTime != null && _isRecording) {
       final pauseDuration = now.difference(_lastTapEndTime!).inMilliseconds;
@@ -47,6 +85,32 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
     }
   }
 
+  void _finishRecording() {
+    setState(() {
+      _isRecording = false;
+      _tapStartTime = null;
+      _lastTapEndTime = null;
+    });
+  }
+
+  void _stopPlayback() {
+    _playbackTimer?.cancel();
+    _playbackTimer = null;
+    for (final t in _stepTimers) {
+      t.cancel();
+    }
+    _stepTimers.clear();
+    try {
+      Vibration.cancel();
+    } catch (_) {}
+    if (mounted) {
+      setState(() {
+        _isPlaying = false;
+        _activePlayingIndex = -1;
+      });
+    }
+  }
+
   Future<void> _previewPattern() async {
     if (_recordedPattern.isEmpty) {
       final messenger = ScaffoldMessenger.of(context);
@@ -68,6 +132,17 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
       return;
     }
 
+    if (_isPlaying) {
+      _stopPlayback();
+      return;
+    }
+
+    setState(() {
+      _isRecording = false;
+      _isPlaying = true;
+      _activePlayingIndex = 0;
+    });
+
     try {
       final hasVibrator = await Vibration.hasVibrator();
       if (hasVibrator == true) {
@@ -79,9 +154,31 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
     } catch (e) {
       debugPrint('Vibration error: $e');
     }
+
+    // Synchronize visual playback highlights with each pattern step
+    int accumulatedTime = 0;
+    for (int i = 0; i < _recordedPattern.length; i++) {
+      final duration = _recordedPattern[i];
+      accumulatedTime += duration;
+      final stepIndex = i;
+      final timer = Timer(Duration(milliseconds: accumulatedTime), () {
+        if (mounted && _isPlaying) {
+          setState(() {
+            _activePlayingIndex = stepIndex + 1;
+          });
+        }
+      });
+      _stepTimers.add(timer);
+    }
+
+    final totalTime = _recordedPattern.fold<int>(0, (p, c) => p + c);
+    _playbackTimer = Timer(Duration(milliseconds: totalTime + 100), () {
+      _stopPlayback();
+    });
   }
 
   void _savePattern() {
+    _stopPlayback();
     if (_recordedPattern.isEmpty) {
       final messenger = ScaffoldMessenger.of(context);
       messenger.clearSnackBars();
@@ -128,6 +225,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasCustomSaved = ref.watch(userSettingsProvider).customVibrationPatterns.containsKey(_selectedCategory.name);
 
     return Scaffold(
       appBar: AppBar(
@@ -161,13 +259,12 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                 if (cat != null) {
                   setState(() {
                     _selectedCategory = cat;
-                    _recordedPattern.clear();
-                    _isRecording = false;
+                    _loadPatternForCategory(cat);
                   });
                 }
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Tap Pad
             Expanded(
@@ -181,7 +278,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: _isRecording ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
-                      width: _isRecording ? 2.0 : 1.0,
+                      width: _isRecording ? 2.5 : 1.0,
                     ),
                   ),
                   child: Center(
@@ -195,7 +292,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          _isRecording ? 'Recording! Keep tapping rhythm...' : 'Tap out your vibration rhythm here',
+                          _isRecording ? 'Recording! Tap out your rhythm...' : 'Tap out your vibration rhythm here',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: _isRecording ? theme.colorScheme.primary : theme.colorScheme.onSurface,
@@ -208,6 +305,14 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
+                        if (_isRecording) ...[
+                          const SizedBox(height: 16),
+                          FilledButton.tonalIcon(
+                            onPressed: _finishRecording,
+                            icon: const Icon(Icons.check_rounded, size: 18),
+                            label: const Text('Done Recording'),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -229,9 +334,31 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Recorded Pulses: ${_recordedPattern.length ~/ 2}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      Row(
+                        children: [
+                          Text(
+                            'Recorded Pulses: ${_recordedPattern.length ~/ 2}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                          if (hasCustomSaved) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00FF41).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'Saved Pattern',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF00FF41),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       if (_recordedPattern.isNotEmpty)
                         Text(
@@ -240,22 +367,48 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                         ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   SizedBox(
-                    height: 16,
+                    height: 20,
                     child: _recordedPattern.isEmpty
-                        ? const Center(child: Text('No taps recorded yet', style: TextStyle(fontSize: 11, color: Colors.grey)))
+                        ? const Center(
+                            child: Text(
+                              'No taps recorded yet',
+                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                          )
                         : Row(
                             children: _recordedPattern.asMap().entries.map((entry) {
                               final isBuzz = entry.key % 2 == 1;
-                              final flex = (entry.value / 50).clamp(1, 40).toInt();
+                              final flex = (entry.value / 40).clamp(1, 40).toInt();
+                              final isCurrentStep = _activePlayingIndex == entry.key;
+
+                              Color blockColor;
+                              if (isCurrentStep) {
+                                blockColor = const Color(0xFF00FF41); // Active playback highlight
+                              } else if (isBuzz) {
+                                blockColor = theme.colorScheme.primary;
+                              } else {
+                                blockColor = theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
+                              }
+
                               return Expanded(
                                 flex: flex,
-                                child: Container(
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 100),
                                   margin: const EdgeInsets.symmetric(horizontal: 1),
+                                  height: isCurrentStep ? 20 : 14,
                                   decoration: BoxDecoration(
-                                    color: isBuzz ? theme.colorScheme.primary : Colors.transparent,
+                                    color: blockColor,
                                     borderRadius: BorderRadius.circular(4),
+                                    boxShadow: isCurrentStep
+                                        ? [
+                                            BoxShadow(
+                                              color: const Color(0xFF00FF41).withValues(alpha: 0.8),
+                                              blurRadius: 8,
+                                            ),
+                                          ]
+                                        : null,
                                   ),
                                 ),
                               );
@@ -273,6 +426,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
+                      _stopPlayback();
                       setState(() {
                         _recordedPattern.clear();
                         _isRecording = false;
@@ -287,8 +441,8 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                 Expanded(
                   child: FilledButton.tonalIcon(
                     onPressed: _previewPattern,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('Preview'),
+                    icon: Icon(_isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded),
+                    label: Text(_isPlaying ? 'Playing…' : 'Preview'),
                   ),
                 ),
               ],

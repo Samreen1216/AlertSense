@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/theme_provider.dart';
 import 'widgets/alertsense_header.dart';
 import 'widgets/hero_sound_radar.dart';
 import 'widgets/hero_listening_card.dart';
@@ -17,10 +18,14 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final themeType = ref.watch(themeTypeProvider);
+    final isHighContrast = themeType == ThemeType.highContrast;
     final isDark = theme.brightness == Brightness.dark;
 
+    final scaffoldBg = isHighContrast ? Colors.black : const Color(0xFF070F26);
+
     return Scaffold(
-      backgroundColor: const Color(0xFF070F26),
+      backgroundColor: scaffoldBg,
       endDrawer: const ProfileSideNavigation(),
       body: SafeArea(
         bottom: false,
@@ -91,23 +96,34 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 14),
 
-              // 3. WHITE / LIGHT CONTENT CONTAINER (Radius 28)
+              // 3. WHITE / LIGHT / HIGH CONTRAST CONTENT CONTAINER (Radius 28)
               Container(
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                  color: isHighContrast
+                      ? Colors.black
+                      : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
-                      blurRadius: 16,
-                      offset: const Offset(0, -4),
-                    ),
-                  ],
+                  border: isHighContrast
+                      ? const Border(
+                          top: BorderSide(color: Color(0xFF00FF41), width: 2.0),
+                          left: BorderSide(color: Color(0xFF00FF41), width: 1.0),
+                          right: BorderSide(color: Color(0xFF00FF41), width: 1.0),
+                        )
+                      : null,
+                  boxShadow: isHighContrast
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
                 ),
                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
-                child: Column(
+                child: const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     // Segmented Profile Selector (Home / Sleep / Outdoor)
                     SegmentedProfileSelector(),
                     SizedBox(height: 22),

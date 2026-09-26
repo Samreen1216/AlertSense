@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:go_router/go_router.dart';
 import '../../core/constants/app_svg_icons.dart';
-import '../../core/router/app_router.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/stats_providers.dart';
 
@@ -24,21 +22,19 @@ class StatsScreen extends ConsumerWidget {
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Insights & Analytics'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: 'Back to Home',
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              context.go(AppRoutes.home);
-            }
-          },
-        ),
+        automaticallyImplyLeading: false,
+        leading: canPop
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                tooltip: 'Back',
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
       ),
       body: alerts.isEmpty
           ? Center(

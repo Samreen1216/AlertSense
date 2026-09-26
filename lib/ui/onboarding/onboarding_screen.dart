@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -11,6 +12,14 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isMicGranted = false;
+  bool _isNotificationGranted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermissions();
+  }
 
   @override
   void dispose() {
@@ -18,14 +27,49 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _onNextPage() {
+  Future<void> _checkPermissions() async {
+    final micStatus = await Permission.microphone.status;
+    final notifStatus = await Permission.notification.status;
+    if (mounted) {
+      setState(() {
+        _isMicGranted = micStatus.isGranted;
+        _isNotificationGranted = notifStatus.isGranted;
+      });
+    }
+  }
+
+  Future<void> _requestMicPermission() async {
+    final status = await Permission.microphone.request();
+    if (mounted) {
+      setState(() {
+        _isMicGranted = status.isGranted;
+      });
+    }
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    final status = await Permission.notification.request();
+    if (mounted) {
+      setState(() {
+        _isNotificationGranted = status.isGranted;
+      });
+    }
+  }
+
+  Future<void> _onNextPage() async {
     if (_currentPage < 2) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      context.go('/home');
+      // If microphone is not yet granted, request it so core sound detection works
+      if (!_isMicGranted) {
+        await _requestMicPermission();
+      }
+      if (mounted) {
+        context.go('/home');
+      }
     }
   }
 
@@ -40,16 +84,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               setState(() {
                 _currentPage = index;
               });
+              if (index == 2) {
+                _checkPermissions();
+              }
             },
-            children: const [
-              _OnboardingPage(
+            children: [
+              const _OnboardingPage(
                 icon: Icons.hearing,
                 title: 'Sounds You Can See',
                 description:
                     'AlertSense continuously listens for important sounds in your environment and converts them into visual notifications you can easily see.',
                 gradientColors: [Color(0xFF1E88E5), Color(0xFF1565C0)],
               ),
-              _OnboardingPage(
+              const _OnboardingPage(
                 icon: Icons.vibration,
                 title: 'Alerts You Can Feel',
                 description:
@@ -61,8 +108,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 title: 'Let\'s Set Up',
                 description:
                     'To get started, we need permission to use your microphone to detect sounds and send notifications.',
-                gradientColors: [Color(0xFF3949AB), Color(0xFF283593)],
+                gradientColors: const [Color(0xFF3949AB), Color(0xFF283593)],
                 isFinalPage: true,
+                isMicGranted: _isMicGranted,
+                isNotificationGranted: _isNotificationGranted,
+                onRequestMic: _requestMicPermission,
+                onRequestNotification: _requestNotificationPermission,
               ),
             ],
           ),
@@ -159,6 +210,10 @@ class _OnboardingPage extends StatelessWidget {
   final String description;
   final List<Color> gradientColors;
   final bool isFinalPage;
+  final bool isMicGranted;
+  final bool isNotificationGranted;
+  final VoidCallback? onRequestMic;
+  final VoidCallback? onRequestNotification;
 
   const _OnboardingPage({
     required this.icon,
@@ -166,6 +221,10 @@ class _OnboardingPage extends StatelessWidget {
     required this.description,
     required this.gradientColors,
     this.isFinalPage = false,
+    this.isMicGranted = false,
+    this.isNotificationGranted = false,
+    this.onRequestMic,
+    this.onRequestNotification,
   });
 
   @override
@@ -178,16 +237,16 @@ class _OnboardingPage extends StatelessWidget {
           colors: gradientColors,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+      padding: const EdgeInsets.symmetric(horizontal: 28.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             icon,
-            size: 128,
+            size: 110,
             color: Colors.white,
           ),
-          const SizedBox(height: 48),
+          const SizedBox(height: 36),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -197,51 +256,145 @@ class _OnboardingPage extends StatelessWidget {
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
           Text(
             description,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 18,
-              color: Colors.white,
-              height: 1.5,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white.withValues(alpha: 0.9),
+              height: 1.4,
             ),
           ),
           if (isFinalPage) ...[
-            const SizedBox(height: 40),
-            _buildPermissionRow(Icons.mic, 'Microphone'),
-            const SizedBox(height: 16),
-            _buildPermissionRow(Icons.notifications, 'Notifications'),
+            const SizedBox(height: 32),
+            _buildPermissionRow(
+              icon: Icons.mic_rounded,
+              title: 'Microphone',
+              description: 'Required to detect sounds & alerts',
+              isGranted: isMicGranted,
+              onTap: onRequestMic,
+            ),
+            const SizedBox(height: 12),
+            _buildPermissionRow(
+              icon: Icons.notifications_active_rounded,
+              title: 'Notifications',
+              description: 'Required for emergency alerts',
+              isGranted: isNotificationGranted,
+              onTap: onRequestNotification,
+            ),
           ],
-          const SizedBox(height: 120),
+          const SizedBox(height: 100),
         ],
       ),
     );
   }
 
-  Widget _buildPermissionRow(IconData icon, String title) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.white, size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
+  Widget _buildPermissionRow({
+    required IconData icon,
+    required String title,
+    required String description,
+    required bool isGranted,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isGranted ? null : onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: isGranted
+                ? Colors.white.withValues(alpha: 0.15)
+                : Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isGranted
+                  ? const Color(0xFF00FF41).withValues(alpha: 0.6)
+                  : Colors.white.withValues(alpha: 0.2),
+              width: 1.2,
             ),
           ),
-          const Icon(Icons.check_circle, color: Colors.greenAccent),
-        ],
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isGranted
+                      ? const Color(0xFF00FF41).withValues(alpha: 0.15)
+                      : Colors.white.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: isGranted ? const Color(0xFF00FF41) : Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      description,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isGranted)
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Granted',
+                      style: TextStyle(
+                        color: Color(0xFF00FF41),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Icon(
+                      Icons.check_circle_rounded,
+                      color: Color(0xFF00FF41),
+                      size: 20,
+                    ),
+                  ],
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Grant',
+                    style: TextStyle(
+                      color: Color(0xFF283593),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

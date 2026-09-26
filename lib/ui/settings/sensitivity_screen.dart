@@ -78,11 +78,11 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: theme.colorScheme.primary),
+                Icon(Icons.tune_rounded, color: theme.colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Higher sensitivity triggers alerts more readily. Lower sensitivity requires higher AI confidence to reduce false positives.',
+                    'Lower confidence thresholds catch faint or distant sounds with more alerts. Higher thresholds filter out background ambient noise and require high AI certainty.',
                     style: theme.textTheme.bodySmall,
                   ),
                 ),
@@ -93,6 +93,14 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
           ...SoundCategory.values.map((category) {
             final threshold = _localThresholds[category.name] ?? category.defaultThreshold;
             final percent = (threshold * 100).toInt();
+
+            final sensitivityLabel = percent < 55
+                ? 'High Sensitivity (Faint Sounds)'
+                : (percent > 75 ? 'Strict Certainty (Fewer Alerts)' : 'Balanced Detection');
+
+            final sensitivityColor = percent < 55
+                ? const Color(0xFFF59E0B)
+                : (percent > 75 ? const Color(0xFF0072FF) : const Color(0xFF10B981));
 
             return Card(
               margin: const EdgeInsets.only(bottom: 12.0),
@@ -141,15 +149,23 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Required Confidence: $percent%', style: const TextStyle(fontWeight: FontWeight.w600)),
                         Text(
-                          percent < 60 ? 'Very Sensitive' : (percent > 80 ? 'Strict' : 'Balanced'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: percent < 60
-                                ? Colors.orange
-                                : (percent > 80 ? Colors.blue : Colors.green),
-                            fontWeight: FontWeight.w600,
+                          'Required Confidence: $percent%',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: sensitivityColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            sensitivityLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: sensitivityColor,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -171,6 +187,31 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                         ref.read(soundProfilesProvider.notifier).saveProfile(updatedProfile);
                         ref.read(priorityEngineProvider).setThreshold(category.name, val);
                       },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '◀ More Alerts\n(Sensitive)',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            'Fewer False Alarms ▶\n(Strict Certainty)',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

@@ -126,10 +126,19 @@ class ProfileSideNavigation extends ConsumerWidget {
                               SnackBar(
                                 content: Text('Switched profile to ${p.title}'),
                                 behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 2),
+                                duration: Duration(seconds: p.id == 'sleep' ? 4 : 2),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
+                                action: p.id == 'sleep'
+                                    ? SnackBarAction(
+                                        label: 'Open Bedside Clock',
+                                        textColor: const Color(0xFF00C6FF),
+                                        onPressed: () {
+                                          context.push(AppRoutes.sleepMode);
+                                        },
+                                      )
+                                    : null,
                               ),
                             );
                           },
@@ -154,65 +163,116 @@ class ProfileSideNavigation extends ConsumerWidget {
                                 width: 1.0,
                               ),
                             ),
-                            child: Row(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: p.color.withValues(alpha: 0.15),
-                                  ),
-                                  child: Center(
-                                    child: AppSvgIcon(
-                                      iconKey: p.id,
-                                      size: 22,
-                                      color: p.color,
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: p.color.withValues(alpha: 0.15),
+                                      ),
+                                      child: Center(
+                                        child: AppSvgIcon(
+                                          iconKey: p.id,
+                                          size: 22,
+                                          color: p.color,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            p.title,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : const Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            p.subtitle,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: isDark
+                                                  ? Colors.white60
+                                                  : const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      const Icon(
+                                        Icons.check_circle_rounded,
+                                        color: Color(0xFF0055D4),
+                                        size: 22,
+                                      )
+                                    else
+                                      Icon(
+                                        Icons.circle_outlined,
+                                        color: isDark
+                                            ? Colors.white24
+                                            : const Color(0xFFCBD5E1),
+                                        size: 22,
+                                      ),
+                                  ],
+                                ),
+                                if (isSelected && p.id == 'sleep') ...[
+                                  const SizedBox(height: 10),
+                                  InkWell(
+                                    onTap: () {
+                                      Navigator.of(context).pop();
+                                      context.push(AppRoutes.sleepMode);
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.nightlight_round,
+                                            size: 15,
+                                            color: Color(0xFF8B5CF6),
+                                          ),
+                                          SizedBox(width: 6),
+                                          Text(
+                                            'Launch Bedside Screen',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF8B5CF6),
+                                            ),
+                                          ),
+                                          SizedBox(width: 4),
+                                          Icon(
+                                            Icons.arrow_forward_rounded,
+                                            size: 14,
+                                            color: Color(0xFF8B5CF6),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        p.title,
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: isDark
-                                              ? Colors.white
-                                              : const Color(0xFF1E293B),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        p.subtitle,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: isDark
-                                              ? Colors.white60
-                                              : const Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (isSelected)
-                                  const Icon(
-                                    Icons.check_circle_rounded,
-                                    color: Color(0xFF0055D4),
-                                    size: 22,
-                                  )
-                                else
-                                  Icon(
-                                    Icons.circle_outlined,
-                                    color: isDark
-                                        ? Colors.white24
-                                        : const Color(0xFFCBD5E1),
-                                    size: 22,
-                                  ),
+                                ],
                               ],
                             ),
                           ),

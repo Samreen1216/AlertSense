@@ -104,20 +104,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     // Remove empty groups
     grouped.removeWhere((key, list) => list.isEmpty);
 
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alert History'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: 'Back to Home',
-          onPressed: () {
-            if (Navigator.of(context).canPop()) {
-              Navigator.of(context).pop();
-            } else {
-              context.go(AppRoutes.home);
-            }
-          },
-        ),
+        automaticallyImplyLeading: false,
+        leading: canPop
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                tooltip: 'Back',
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
         actions: [
           IconButton(
             icon: _isExporting
