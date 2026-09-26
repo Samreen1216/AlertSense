@@ -77,16 +77,18 @@ final textScaleProvider = StateNotifierProvider<TextScaleNotifier, double>((ref)
 
 final themeModeProvider = Provider<ThemeData>((ref) {
   final themeType = ref.watch(themeTypeProvider);
-  final textScale = ref.watch(textScaleProvider);
-
+  // textScaleProvider is intentionally NOT watched here.
+  // Font scaling is applied at the MediaQuery level in app.dart via
+  // TextScaler.linear(textScale), preventing double-scaling.
   switch (themeType) {
     case ThemeType.light:
-      return AppTheme.getLight(textScale);
+      return AppTheme.getLight();
     case ThemeType.dark:
-      return AppTheme.getDark(textScale);
+      return AppTheme.getDark();
     case ThemeType.highContrast:
-      return AppTheme.getHighContrast(textScale);
+      return AppTheme.getHighContrast();
     case ThemeType.colorBlindSafe:
-      return AppTheme.getColorBlindSafe(textScale);
+      return AppTheme.getColorBlindSafe();
   }
 });
+

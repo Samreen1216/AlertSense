@@ -64,7 +64,7 @@ class SoundCategoryCardsSection extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
-        // Horizontal Scrollable Cards
+        // Horizontal Scrollable Cards — fixed height matches original design.
         SizedBox(
           height: 146,
           child: ListView.separated(
@@ -138,96 +138,122 @@ class _VerticalSoundCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = _getCardBg(category, isDark);
+    final label = _formatLabel(category);
 
-    return Container(
-      width: 98,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : category.color.withValues(alpha: 0.2),
-          width: 1.0,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.2)
-                : category.color.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Icon Avatar
-          Container(
-            width: 42,
-            height: 42,
+    // Semantics wraps the whole card so screen readers announce a single
+    // cohesive element: label + toggle state.
+    return Semantics(
+      label: '$label sound detection, ${isEnabled ? 'enabled' : 'disabled'}',
+      button: true,
+      onTap: onToggle,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          // Full-card tap — the entire 98×146dp card is now tappable.
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: category.color.withValues(alpha: 0.12),
+          highlightColor: category.color.withValues(alpha: 0.06),
+          child: Container(
+            width: 98,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: category.color.withValues(alpha: 0.15),
+              color: bgColor,
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: category.color.withValues(alpha: 0.3),
-                width: 1,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : category.color.withValues(alpha: 0.2),
+                width: 1.0,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.2)
+                      : category.color.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            child: Center(
-              child: AppSvgIcon(
-                iconKey: category.name,
-                size: 20,
-                color: category.color,
-              ),
-            ),
-          ),
-
-          // Label
-          Text(
-            _formatLabel(category),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
-              height: 1.15,
-            ),
-          ),
-
-          // Switch
-          GestureDetector(
-            onTap: onToggle,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 38,
-              height: 22,
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: isEnabled
-                    ? const Color(0xFF0055D4)
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
-              ),
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 200),
-                alignment: isEnabled ? Alignment.centerRight : Alignment.centerLeft,
-                child: Container(
-                  width: 18,
-                  height: 18,
-                  decoration: const BoxDecoration(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Icon Avatar
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white,
+                    color: category.color.withValues(alpha: 0.15),
+                    border: Border.all(
+                      color: category.color.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Center(
+                    child: AppSvgIcon(
+                      iconKey: category.name,
+                      size: 20,
+                      color: category.color,
+                    ),
                   ),
                 ),
-              ),
+
+                // Label
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : const Color(0xFF1E293B),
+                    height: 1.15,
+                  ),
+                ),
+
+                // Toggle — visual size stays 38×22dp (design aesthetic).
+                // The outer ConstrainedBox expands the hit area to 48×48dp
+                // (WCAG 2.1 SC 2.5.5) without changing the visual appearance.
+                // ExcludeSemantics prevents double-announcement alongside the
+                // card-level Semantics node above.
+                ExcludeSemantics(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                    child: Center(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 38,
+                        height: 22,
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: isEnabled
+                              ? const Color(0xFF0055D4)
+                              : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
+                        ),
+                        child: AnimatedAlign(
+                          duration: const Duration(milliseconds: 200),
+                          alignment: isEnabled ? Alignment.centerRight : Alignment.centerLeft,
+                          child: Container(
+                            width: 18,
+                            height: 18,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

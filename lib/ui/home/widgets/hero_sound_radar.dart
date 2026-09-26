@@ -1,9 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/constants/priority_levels.dart';
+import '../../../core/theme/theme_provider.dart';
 import '../../../providers/audio_providers.dart';
+
 
 class HeroSoundRadar extends ConsumerStatefulWidget {
   const HeroSoundRadar({super.key});
@@ -163,12 +166,28 @@ class _HeroSoundRadarState extends ConsumerState<HeroSoundRadar>
   }
 }
 
-class _RadarSoundNode extends StatelessWidget {
+class _RadarSoundNode extends ConsumerWidget {
   final DetectedSound sound;
 
   const _RadarSoundNode({required this.sound});
 
-  Color _getNodeColor(PriorityLevel priority) {
+  /// Returns the node color for [priority] based on the active [themeType].
+  ///
+  /// - **colorBlindSafe** → IBM palette (Pink / Orange / Blue) that remains
+  ///   distinguishable for protanopia, deuteranopia, and tritanopia.
+  /// - **All other themes** → high-saturation Red / Amber / Green to pop
+  ///   against the dark radar background.
+  Color _priorityColor(ThemeType themeType, PriorityLevel priority) {
+    if (themeType == ThemeType.colorBlindSafe) {
+      switch (priority) {
+        case PriorityLevel.high:
+          return AppColors.cbSafeHigh; // Pink #D81B60
+        case PriorityLevel.medium:
+          return AppColors.cbSafeMedium; // Orange #F57C00
+        case PriorityLevel.low:
+          return AppColors.cbSafeLow; // Blue #1E88E5
+      }
+    }
     switch (priority) {
       case PriorityLevel.high:
         return const Color(0xFFEF4444); // Red
@@ -180,8 +199,9 @@ class _RadarSoundNode extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final color = _getNodeColor(sound.priority);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeType = ref.watch(themeTypeProvider);
+    final color = _priorityColor(themeType, sound.priority);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -241,6 +261,8 @@ class _RadarSoundNode extends StatelessWidget {
     );
   }
 }
+
+
 
 class _RadarBackgroundPainter extends CustomPainter {
   final double sweepAngle;

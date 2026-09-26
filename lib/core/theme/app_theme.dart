@@ -4,8 +4,9 @@ import 'app_typography.dart';
 class AppTheme {
   static const EdgeInsets _minTouchTarget = EdgeInsets.symmetric(horizontal: 24, vertical: 16);
 
-  static ThemeData getLight(double textScale) {
-    final textTheme = AppTypography.scaledTextTheme(textScale);
+  // ── Light Theme ─────────────────────────────────────────────────────────────
+  static ThemeData getLight() {
+    final textTheme = AppTypography.baseTextTheme;
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
@@ -49,8 +50,9 @@ class AppTheme {
     );
   }
 
-  static ThemeData getDark(double textScale) {
-    final textTheme = AppTypography.scaledTextTheme(textScale);
+  // ── Dark Theme ───────────────────────────────────────────────────────────────
+  static ThemeData getDark() {
+    final textTheme = AppTypography.baseTextTheme;
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -95,17 +97,19 @@ class AppTheme {
     );
   }
 
-  static ThemeData getHighContrast(double textScale) {
-    final baseTextTheme = AppTypography.scaledTextTheme(textScale);
-    final textTheme = baseTextTheme.copyWith(
-      headlineLarge: baseTextTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
-      headlineMedium: baseTextTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
-      titleLarge: baseTextTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
-      titleMedium: baseTextTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, color: Colors.white),
-      bodyLarge: baseTextTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
-      bodyMedium: baseTextTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
-      labelLarge: baseTextTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
-      labelSmall: baseTextTheme.labelSmall?.copyWith(fontWeight: FontWeight.w800, color: Colors.white),
+  // ── High Contrast Theme (WCAG AAA) ───────────────────────────────────────────
+  static ThemeData getHighContrast() {
+    // FontWeight & color overrides retained for AAA legibility.
+    // Font SIZE is intentionally absent — delegated to MediaQuery.textScaler.
+    final textTheme = AppTypography.baseTextTheme.copyWith(
+      headlineLarge: AppTypography.headlineLarge.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
+      headlineMedium: AppTypography.headlineMedium.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
+      titleLarge: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
+      titleMedium: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w800, color: Colors.white),
+      bodyLarge: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+      bodyMedium: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+      labelLarge: AppTypography.labelLarge.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
+      labelSmall: AppTypography.labelSmall.copyWith(fontWeight: FontWeight.w800, color: Colors.white),
     );
 
     return ThemeData(
@@ -170,8 +174,9 @@ class AppTheme {
     );
   }
 
-  static ThemeData getColorBlindSafe(double textScale) {
-    final textTheme = AppTypography.scaledTextTheme(textScale);
+  // ── Color-Blind Safe Theme (IBM Palette) ────────────────────────────────────
+  static ThemeData getColorBlindSafe() {
+    final textTheme = AppTypography.baseTextTheme;
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,

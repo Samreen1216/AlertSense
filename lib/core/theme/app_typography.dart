@@ -51,16 +51,23 @@ class AppTypography {
         fontWeight: FontWeight.w500,
       );
 
-  static TextTheme scaledTextTheme(double scaleFactor) {
-    return TextTheme(
-      headlineLarge: headlineLarge.copyWith(fontSize: headlineLarge.fontSize! * scaleFactor),
-      headlineMedium: headlineMedium.copyWith(fontSize: headlineMedium.fontSize! * scaleFactor),
-      titleLarge: titleLarge.copyWith(fontSize: titleLarge.fontSize! * scaleFactor),
-      titleMedium: titleMedium.copyWith(fontSize: titleMedium.fontSize! * scaleFactor),
-      bodyLarge: bodyLarge.copyWith(fontSize: bodyLarge.fontSize! * scaleFactor),
-      bodyMedium: bodyMedium.copyWith(fontSize: bodyMedium.fontSize! * scaleFactor),
-      labelLarge: labelLarge.copyWith(fontSize: labelLarge.fontSize! * scaleFactor),
-      labelSmall: labelSmall.copyWith(fontSize: labelSmall.fontSize! * scaleFactor),
-    );
-  }
+  /// Canonical base text theme — font sizes are design-token values only.
+  /// Actual user-facing scaling is handled exclusively by the MediaQuery
+  /// TextScaler in app.dart, preventing exponential double-scaling.
+  static TextTheme get baseTextTheme => TextTheme(
+        headlineLarge: headlineLarge,
+        headlineMedium: headlineMedium,
+        titleLarge: titleLarge,
+        titleMedium: titleMedium,
+        bodyLarge: bodyLarge,
+        bodyMedium: bodyMedium,
+        labelLarge: labelLarge,
+        labelSmall: labelSmall,
+      );
+
+  /// Deprecated alias retained for API compatibility.
+  /// Returns [baseTextTheme] — the [scaleFactor] parameter is intentionally
+  /// ignored because scaling is delegated to MediaQuery.textScaler.
+  @Deprecated('Use AppTypography.baseTextTheme. Scaling is handled by MediaQuery.textScaler.')
+  static TextTheme scaledTextTheme(double scaleFactor) => baseTextTheme;
 }

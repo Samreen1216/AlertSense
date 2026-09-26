@@ -102,28 +102,36 @@ class _HeaderIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.12),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.18),
-                width: 1,
+    // SizedBox expands the physical tap target to 48×48dp (WCAG 2.1 SC 2.5.5)
+    // while the visual 40dp circular badge remains centered and unchanged.
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Tooltip(
+        message: tooltip,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(24),
+            child: Center(
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-            ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
             ),
           ),
         ),

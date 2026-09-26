@@ -415,172 +415,190 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
               child: SafeArea(child: child!),
             );
           },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // ── Info section (icon + badge + name + confidence) ──────
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 16),
 
-              // SVG Alert Icon
-              AppSvgIcon(
-                iconKey: rawCategory,
-                size: 84,
-                color: Colors.white,
-              ),
-              const SizedBox(height: 16),
+                        // SVG Alert Icon
+                        AppSvgIcon(
+                          iconKey: rawCategory,
+                          size: 84,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(height: 16),
 
-              // Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: const Text(
-                  'CRITICAL ALERT DETECTED',
-                  style: TextStyle(
-                    color: Color(0xFFD32F2F),
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Sound name
-              Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-
-              // Confidence + time
-              Text(
-                '$confidence% Confidence  •  ${DateFormat.jm().format(timestamp)}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-
-              const Spacer(),
-
-              // ── Emergency Auto-Uplink Banner (Proposal Section 8) ──
-              if (ref.watch(userSettingsProvider).emergencyContacts.isNotEmpty)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _autoDispatched
-                          ? Colors.orangeAccent
-                          : (_autoDispatchCancelled ? Colors.white24 : Colors.amberAccent.withValues(alpha: 0.7)),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        _autoDispatched
-                            ? Icons.send_rounded
-                            : (_autoDispatchCancelled ? Icons.pause_circle_outline_rounded : Icons.timer_outlined),
-                        color: _autoDispatched
-                            ? Colors.orangeAccent
-                            : (_autoDispatchCancelled ? Colors.white60 : Colors.amberAccent),
-                        size: 22,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _autoDispatched
-                              ? 'Emergency SMS auto-dispatched to family'
-                              : (_autoDispatchCancelled
-                                  ? 'Auto-SMS paused'
-                                  : 'Auto-SMS to family in ${_secondsRemaining}s if unacknowledged'),
-                          style: const TextStyle(
+                        // Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
                             color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: const Text(
+                            'CRITICAL ALERT DETECTED',
+                            style: TextStyle(
+                              color: Color(0xFFD32F2F),
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                      ),
-                      if (!_autoDispatched && !_autoDispatchCancelled)
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            backgroundColor: Colors.white.withValues(alpha: 0.15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        const SizedBox(height: 16),
+
+                        // Sound name
+                        Text(
+                          name,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
                           ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Confidence + time
+                        Text(
+                          '$confidence% Confidence  •  ${DateFormat.jm().format(timestamp)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // ── Bottom action area ───────────────────────────────────
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Emergency Auto-Uplink Banner
+                        if (ref.watch(userSettingsProvider).emergencyContacts.isNotEmpty)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: _autoDispatched
+                                    ? Colors.orangeAccent
+                                    : (_autoDispatchCancelled ? Colors.white24 : Colors.amberAccent.withValues(alpha: 0.7)),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _autoDispatched
+                                      ? Icons.send_rounded
+                                      : (_autoDispatchCancelled ? Icons.pause_circle_outline_rounded : Icons.timer_outlined),
+                                  color: _autoDispatched
+                                      ? Colors.orangeAccent
+                                      : (_autoDispatchCancelled ? Colors.white60 : Colors.amberAccent),
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _autoDispatched
+                                        ? 'Emergency SMS auto-dispatched to family'
+                                        : (_autoDispatchCancelled
+                                            ? 'Auto-SMS paused'
+                                            : 'Auto-SMS to family in ${_secondsRemaining}s if unacknowledged'),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                if (!_autoDispatched && !_autoDispatchCancelled)
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      backgroundColor: Colors.white.withValues(alpha: 0.15),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _autoDispatchCancelled = true;
+                                        _autoDispatchTimer?.cancel();
+                                        _autoDispatchTimer = null;
+                                      });
+                                    },
+                                    child: const Text('Cancel', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                  ),
+                              ],
+                            ),
+                          ),
+
+                        // ── Action buttons ───────────────────────────────────
+
+                        // I'm Safe
+                        QuickResponseCard(
+                          label: "I'm Safe (False Alarm)",
+                          icon: Icons.check_circle_outline_rounded,
+                          color: const Color(0xFF2E7D32),
+                          isLoading: false,
+                          onPressed: () => _handleImSafe(name, alertId),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Call Emergency
+                        QuickResponseCard(
+                          label: _isCalling ? 'Opening dialer…' : 'Call Emergency Services',
+                          icon: Icons.local_phone_rounded,
+                          color: const Color(0xFFC62828),
+                          isLoading: _isCalling,
+                          onPressed: _isCalling ? null : () => _handleEmergencyCall(alertId),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Alert Family
+                        QuickResponseCard(
+                          label: _isSendingSms ? 'Sending SMS…' : 'Alert Family via SMS',
+                          icon: Icons.family_restroom_rounded,
+                          color: const Color(0xFFE65100),
+                          isLoading: _isSendingSms,
+                          onPressed: _isSendingSms ? null : () => _handleAlertFamily(name, alertId),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Dismiss
+                        QuickResponseCard(
+                          label: 'Acknowledge & Dismiss',
+                          icon: Icons.close_rounded,
+                          color: const Color(0xFF424242),
+                          isLoading: false,
                           onPressed: () {
-                            setState(() {
-                              _autoDispatchCancelled = true;
-                              _autoDispatchTimer?.cancel();
-                              _autoDispatchTimer = null;
-                            });
+                            _stopHardwareAlerts();
+                            if (alertId.isNotEmpty) {
+                              ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'dismissed');
+                            }
+                            context.pop();
                           },
-                          child: const Text('Cancel', style: TextStyle(color: Colors.white, fontSize: 11)),
                         ),
-                    ],
-                  ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ],
                 ),
-
-              // ── Action buttons ──────────────────────────────────────────
-
-              // I'm Safe
-              QuickResponseCard(
-                label: "I'm Safe (False Alarm)",
-                icon: Icons.check_circle_outline_rounded,
-                color: const Color(0xFF2E7D32),
-                isLoading: false,
-                onPressed: () => _handleImSafe(name, alertId),
               ),
-              const SizedBox(height: 12),
-
-              // Call Emergency
-              QuickResponseCard(
-                label: _isCalling ? 'Opening dialer…' : 'Call Emergency Services',
-                icon: Icons.local_phone_rounded,
-                color: const Color(0xFFC62828),
-                isLoading: _isCalling,
-                onPressed: _isCalling ? null : () => _handleEmergencyCall(alertId),
-              ),
-              const SizedBox(height: 12),
-
-              // Alert Family
-              QuickResponseCard(
-                label: _isSendingSms ? 'Sending SMS…' : 'Alert Family via SMS',
-                icon: Icons.family_restroom_rounded,
-                color: const Color(0xFFE65100),
-                isLoading: _isSendingSms,
-                onPressed: _isSendingSms ? null : () => _handleAlertFamily(name, alertId),
-              ),
-              const SizedBox(height: 12),
-
-              // Dismiss
-              QuickResponseCard(
-                label: 'Acknowledge & Dismiss',
-                icon: Icons.close_rounded,
-                color: const Color(0xFF424242),
-                isLoading: false,
-                onPressed: () {
-                  _stopHardwareAlerts();
-                  if (alertId.isNotEmpty) {
-                    ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'dismissed');
-                  }
-                  context.pop();
-                },
-              ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
