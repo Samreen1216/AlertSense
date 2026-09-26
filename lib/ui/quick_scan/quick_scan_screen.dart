@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../core/router/app_router.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../providers/quick_scan_provider.dart';
 
 class QuickScanScreen extends ConsumerStatefulWidget {
@@ -272,6 +274,8 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
   Widget _buildResultState(
       BuildContext context, WidgetRef ref, QuickScanState state) {
     final theme = Theme.of(context);
+    final themeType = ref.watch(themeTypeProvider);
+    final isHighContrast = themeType == ThemeType.highContrast;
     final alert = state.createdAlert!;
     final result = state.bestResult!;
 
@@ -283,54 +287,143 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
 
     final label = category?.label ?? result.soundCategory;
     final priority = alert.priorityLevel.toUpperCase();
-    final isHigh = priority == 'HIGH';
-    final priorityColor = isHigh
-        ? const Color(0xFFEF4444)
-        : (priority == 'MEDIUM' ? const Color(0xFFF59E0B) : const Color(0xFF10B981));
+
+    Color priorityColor;
+    Color textColor = Colors.white;
+
+    if (themeType == ThemeType.colorBlindSafe) {
+      switch (priority) {
+        case 'HIGH':
+          priorityColor = AppColors.cbSafeHigh;
+          break;
+        case 'MEDIUM':
+          priorityColor = AppColors.cbSafeMedium;
+          break;
+        default:
+          priorityColor = AppColors.cbSafeLow;
+      }
+    } else if (isHighContrast) {
+      switch (priority) {
+        case 'HIGH':
+          priorityColor = const Color(0xFF00FF41);
+          textColor = Colors.black;
+          break;
+        case 'MEDIUM':
+          priorityColor = const Color(0xFFFFD600);
+          textColor = Colors.black;
+          break;
+        default:
+          priorityColor = const Color(0xFF00FFFF);
+          textColor = Colors.black;
+      }
+    } else {
+      switch (priority) {
+        case 'HIGH':
+          priorityColor = const Color(0xFFEF4444);
+          break;
+        case 'MEDIUM':
+          priorityColor = const Color(0xFFF59E0B);
+          break;
+        default:
+          priorityColor = const Color(0xFF10B981);
+      }
+    }
+
+    final confidencePercent = (result.confidence * 100).toInt();
 
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AppSvgIcon(
-            iconKey: category?.name ?? 'alert',
-            size: 84,
-            color: priorityColor,
-          ),
-          const SizedBox(height: 16),
+          // Elevated Glowing Squircle
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            width: 124,
+            height: 124,
             decoration: BoxDecoration(
-              color: priorityColor.withValues(alpha: 0.15),
+              color: isHighContrast
+                  ? Colors.black
+                  : priorityColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: isHighContrast ? Colors.white : priorityColor.withValues(alpha: 0.4),
+                width: isHighContrast ? 2.0 : 1.5,
+              ),
+              boxShadow: isHighContrast
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: priorityColor.withValues(alpha: 0.28),
+                        blurRadius: 28,
+                        spreadRadius: 2,
+                      ),
+                    ],
+            ),
+            child: Center(
+              child: AppSvgIcon(
+                iconKey: category?.name ?? 'alert',
+                size: 68,
+                color: priorityColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: isHighContrast ? priorityColor : priorityColor.withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: priorityColor, width: 1.0),
+              border: Border.all(
+                color: isHighContrast ? Colors.white : priorityColor.withValues(alpha: 0.5),
+                width: isHighContrast ? 1.5 : 1.0,
+              ),
             ),
             child: Text(
               '$priority PRIORITY DETECTED',
               style: TextStyle(
-                color: priorityColor,
+                color: isHighContrast ? textColor : priorityColor,
                 fontWeight: FontWeight.w900,
                 fontSize: 12,
-                letterSpacing: 1.2,
+                letterSpacing: 1.1,
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Text(
             label,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '${(result.confidence * 100).toStringAsFixed(0)}% Confidence • Detected Just Now',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isHighContrast
+                      ? Colors.white.withValues(alpha: 0.1)
+                      : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.verified_rounded, size: 14, color: priorityColor),
+                    const SizedBox(width: 5),
+                    Text(
+                      '$confidencePercent% AI Confidence',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isHighContrast ? Colors.white : theme.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 36),
           SizedBox(
             width: double.infinity,
             height: 54,

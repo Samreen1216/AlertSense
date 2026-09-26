@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/priority_levels.dart';
 import '../../core/constants/sound_categories.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../providers/audio_providers.dart';
 import '../shared/sound_icon.dart';
 
@@ -11,8 +13,27 @@ class SoundManagementScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final enabledSounds = ref.watch(enabledSoundsProvider);
+    final themeType = ref.watch(themeTypeProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+
+    Color highColor;
+    Color medColor;
+    Color lowColor;
+
+    if (themeType == ThemeType.colorBlindSafe) {
+      highColor = AppColors.cbSafeHigh; // Pink (#D81B60)
+      medColor = AppColors.cbSafeMedium; // Orange (#F57C00)
+      lowColor = AppColors.cbSafeLow; // Blue (#1E88E5)
+    } else if (themeType == ThemeType.highContrast) {
+      highColor = const Color(0xFF00FF41);
+      medColor = const Color(0xFFFFD600);
+      lowColor = const Color(0xFF00FFFF);
+    } else {
+      highColor = const Color(0xFFEF4444);
+      medColor = const Color(0xFFF59E0B);
+      lowColor = const Color(0xFF10B981);
+    }
 
     final highPriority = SoundCategory.values
         .where((c) => c.defaultPriority == PriorityLevel.high)
@@ -96,7 +117,8 @@ class SoundManagementScreen extends ConsumerWidget {
             title: 'HIGH PRIORITY ALARMS',
             categories: highPriority,
             enabledSounds: enabledSounds,
-            priorityColor: const Color(0xFFEF4444),
+            priorityColor: highColor,
+            themeType: themeType,
           ),
           const SizedBox(height: 16),
 
@@ -107,7 +129,8 @@ class SoundManagementScreen extends ConsumerWidget {
             title: 'MEDIUM ATTENTION SOUNDS',
             categories: medPriority,
             enabledSounds: enabledSounds,
-            priorityColor: const Color(0xFFF59E0B),
+            priorityColor: medColor,
+            themeType: themeType,
           ),
           const SizedBox(height: 16),
 
@@ -118,7 +141,8 @@ class SoundManagementScreen extends ConsumerWidget {
             title: 'LOW AMBIENT SOUNDS',
             categories: lowPriority,
             enabledSounds: enabledSounds,
-            priorityColor: const Color(0xFF10B981),
+            priorityColor: lowColor,
+            themeType: themeType,
           ),
           const SizedBox(height: 24),
         ],
@@ -133,9 +157,11 @@ class SoundManagementScreen extends ConsumerWidget {
     required List<SoundCategory> categories,
     required Set<String> enabledSounds,
     required Color priorityColor,
+    required ThemeType themeType,
   }) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final activeCount = categories.where((c) => enabledSounds.contains(c.name)).length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,13 +179,34 @@ class SoundManagementScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: priorityColor,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: priorityColor,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: priorityColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: priorityColor.withValues(alpha: 0.3),
+                    width: 0.8,
+                  ),
+                ),
+                child: Text(
+                  '$activeCount/${categories.length} Active',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: priorityColor,
+                  ),
                 ),
               ),
             ],
@@ -190,16 +237,46 @@ class SoundManagementScreen extends ConsumerWidget {
                       iconName: cat.name,
                       color: cat.color.withValues(alpha: 0.15),
                     ),
-                    title: Text(
-                      cat.label,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            cat.label,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isEnabled
+                                ? (themeType == ThemeType.highContrast
+                                    ? const Color(0xFF00FF41).withValues(alpha: 0.2)
+                                    : const Color(0xFF10B981).withValues(alpha: 0.15))
+                                : (isDark ? Colors.white10 : Colors.black12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isEnabled ? 'Active' : 'Muted',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: isEnabled
+                                  ? (themeType == ThemeType.highContrast
+                                      ? const Color(0xFF00FF41)
+                                      : const Color(0xFF10B981))
+                                  : (isDark ? Colors.white54 : Colors.black54),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     subtitle: Text(
                       cat.description,
                       style: const TextStyle(fontSize: 12),
                     ),
                     value: isEnabled,
-                    activeTrackColor: cat.color.withValues(alpha: 0.5), activeThumbColor: cat.color,
+                    activeTrackColor: cat.color.withValues(alpha: 0.5),
+                    activeThumbColor: cat.color,
                     onChanged: (val) {
                       ref.read(enabledSoundsProvider.notifier).toggle(cat.name);
                     },

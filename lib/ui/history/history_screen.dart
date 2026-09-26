@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../core/router/app_router.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/alert_providers.dart';
 import '../../services/pdf_export_service.dart';
@@ -76,6 +78,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget build(BuildContext context) {
     final selectedFilter = ref.watch(alertFilterPriorityProvider) ?? 'All';
     final alerts = ref.watch(filteredAlertsProvider);
+    final themeType = ref.watch(themeTypeProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -208,6 +211,28 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
+                          if (selectedFilter == 'All') ...[
+                            const SizedBox(height: 20),
+                            FilledButton.icon(
+                              onPressed: () => context.push(AppRoutes.quickScan),
+                              icon: const Icon(Icons.graphic_eq_rounded, size: 18),
+                              label: const Text('Start Quick Scan'),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: () {
+                                ref.read(alertFilterPriorityProvider.notifier).state = null;
+                              },
+                              child: const Text('Show All Alerts'),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -237,7 +262,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           ...groupAlerts.map((alert) {
                             final category = _getCategory(alert.soundCategory);
                             final borderColor =
-                                _getPriorityColor(alert.priorityLevel);
+                                _getPriorityColor(alert.priorityLevel, themeType);
 
                             return Dismissible(
                               key: Key(alert.id),
@@ -385,8 +410,31 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     }
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority.toLowerCase()) {
+  Color _getPriorityColor(String priority, ThemeType themeType) {
+    final p = priority.toLowerCase();
+    if (themeType == ThemeType.colorBlindSafe) {
+      switch (p) {
+        case 'high':
+          return AppColors.cbSafeHigh; // #D81B60
+        case 'medium':
+          return AppColors.cbSafeMedium; // #F57C00
+        case 'low':
+        default:
+          return AppColors.cbSafeLow; // #1E88E5
+      }
+    } else if (themeType == ThemeType.highContrast) {
+      switch (p) {
+        case 'high':
+          return const Color(0xFF00FF41);
+        case 'medium':
+          return const Color(0xFFFFD600);
+        case 'low':
+        default:
+          return const Color(0xFF00FFFF);
+      }
+    }
+
+    switch (p) {
       case 'high':
         return const Color(0xFFEF4444);
       case 'medium':

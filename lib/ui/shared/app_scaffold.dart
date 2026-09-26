@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../../core/router/app_router.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/service_providers.dart';
 import 'in_app_notification_banner.dart';
@@ -16,14 +17,31 @@ class AppScaffold extends ConsumerStatefulWidget {
   ConsumerState<AppScaffold> createState() => _AppScaffoldState();
 }
 
-class _AppScaffoldState extends ConsumerState<AppScaffold> {
+class _AppScaffoldState extends ConsumerState<AppScaffold>
+    with SingleTickerProviderStateMixin {
   StreamSubscription? _urgentSub;
   StreamSubscription? _allAlertsSub;
   AlertEvent? _activeBannerAlert;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseScaleAnimation;
+  late Animation<double> _pulseOpacityAnimation;
 
   @override
   void initState() {
     super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat(reverse: true);
+
+    _pulseScaleAnimation = Tween<double>(begin: 1.0, end: 1.16).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _pulseOpacityAnimation = Tween<double>(begin: 0.38, end: 0.06).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _subscribeToAlerts());
   }
 
@@ -54,6 +72,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
 
   @override
   void dispose() {
+    _pulseController.dispose();
     _urgentSub?.cancel();
     _allAlertsSub?.cancel();
     super.dispose();
@@ -62,6 +81,8 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
   @override
   Widget build(BuildContext context) {
     final currentIndex = widget.navigationShell.currentIndex;
+    final themeType = ref.watch(themeTypeProvider);
+    final isHighContrast = themeType == ThemeType.highContrast;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return WithForegroundTask(
@@ -86,14 +107,21 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
         ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF0D1424) : Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
+          color: isHighContrast
+              ? Colors.black
+              : (isDark ? const Color(0xFF0D1424) : Colors.white),
+          border: isHighContrast
+              ? const Border(top: BorderSide(color: Colors.white, width: 2.0))
+              : null,
+          boxShadow: isHighContrast
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
         ),
         child: SafeArea(
           top: false,
@@ -126,7 +154,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                   },
                 ),
 
-                // 3. Elevated Quick Scan (Center)
+                // 3. Elevated Quick Scan (Center) with Breathing Pulse Glow
                 GestureDetector(
                   onTap: () {
                     ScaffoldMessenger.of(context).clearSnackBars();
@@ -136,32 +164,64 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF0072FF), Color(0xFF00C6FF)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0072FF).withValues(alpha: 0.45),
-                              blurRadius: 12,
-                              spreadRadius: 1,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.graphic_eq_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
+                      AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) {
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              if (!isHighContrast)
+                                Transform.scale(
+                                  scale: _pulseScaleAnimation.value,
+                                  child: Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: const Color(0xFF0072FF).withValues(
+                                        alpha: _pulseOpacityAnimation.value,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: isHighContrast
+                                      ? null
+                                      : const LinearGradient(
+                                          colors: [Color(0xFF0072FF), Color(0xFF00C6FF)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                  color: isHighContrast ? const Color(0xFF00FF41) : null,
+                                  border: isHighContrast
+                                      ? Border.all(color: Colors.white, width: 2)
+                                      : null,
+                                  boxShadow: isHighContrast
+                                      ? null
+                                      : [
+                                          BoxShadow(
+                                            color: const Color(0xFF0072FF).withValues(alpha: 0.45),
+                                            blurRadius: 12,
+                                            spreadRadius: 1,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                ),
+                                child: Center(
+                                  child: Icon(
+                                    Icons.graphic_eq_rounded,
+                                    color: isHighContrast ? Colors.black : Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 3),
                       Text(
@@ -169,7 +229,9 @@ class _AppScaffoldState extends ConsumerState<AppScaffold> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white70 : const Color(0xFF334155),
+                          color: isHighContrast
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : const Color(0xFF334155)),
                         ),
                       ),
                     ],

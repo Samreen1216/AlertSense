@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants/app_svg_icons.dart';
+import '../../core/router/app_router.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/stats_providers.dart';
 
@@ -71,6 +73,18 @@ class StatsScreen extends ConsumerWidget {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton.tonalIcon(
+                      onPressed: () => context.push(AppRoutes.quickScan),
+                      icon: const Icon(Icons.graphic_eq_rounded, size: 18),
+                      label: const Text('Perform Quick Scan'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                   ],
