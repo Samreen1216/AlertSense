@@ -433,18 +433,18 @@ class SettingsScreen extends ConsumerWidget {
         title: 'Standard Light',
         subtitle: 'Crisp slate canvas with sapphire accents',
         tag: 'Modern',
-        tagColor: const Color(0xFF0055D4),
-        swatches: [Colors.white, const Color(0xFF0055D4), const Color(0xFFEF4444), const Color(0xFF10B981)],
-        cardBg: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        tagColor: const Color(0xFF0062FF),
+        swatches: [const Color(0xFFF8FAFC), const Color(0xFF0062FF), const Color(0xFFEF4444), const Color(0xFF10B981)],
+        cardBg: isDark ? const Color(0xFF111C35) : const Color(0xFFF8FAFC),
       ),
       (
         type: ThemeType.dark,
         title: 'Cyber Dark',
         subtitle: 'Midnight obsidian canvas with luminous cyan accents',
         tag: 'Popular',
-        tagColor: const Color(0xFF00C6FF),
-        swatches: [const Color(0xFF070F26), const Color(0xFF4FC3F7), const Color(0xFF0072FF), const Color(0xFF10B981)],
-        cardBg: isDark ? const Color(0xFF162035) : const Color(0xFFF1F5F9),
+        tagColor: const Color(0xFF38BDF8),
+        swatches: [const Color(0xFF070F26), const Color(0xFF38BDF8), const Color(0xFF0062FF), const Color(0xFF10B981)],
+        cardBg: isDark ? const Color(0xFF111C35) : const Color(0xFFF1F5F9),
       ),
       (
         type: ThemeType.highContrast,
@@ -452,7 +452,7 @@ class SettingsScreen extends ConsumerWidget {
         subtitle: 'Pure #000000 black canvas with matrix neon green',
         tag: 'WCAG AAA',
         tagColor: const Color(0xFF00FF41),
-        swatches: [Colors.black, const Color(0xFF00FF41), const Color(0xFFFFD600), Colors.white],
+        swatches: [Colors.black, const Color(0xFF00FF41), const Color(0xFFFFD600), const Color(0xFF00FFFF)],
         cardBg: isDark ? Colors.black : const Color(0xFF0F172A),
       ),
       (
@@ -462,7 +462,7 @@ class SettingsScreen extends ConsumerWidget {
         tag: 'Universal',
         tagColor: const Color(0xFFD81B60),
         swatches: [Colors.white, const Color(0xFF0077BB), const Color(0xFFD81B60), const Color(0xFFF57C00)],
-        cardBg: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        cardBg: isDark ? const Color(0xFF111C35) : const Color(0xFFF8FAFC),
       ),
     ];
 

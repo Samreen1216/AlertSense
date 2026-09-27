@@ -136,6 +136,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                   label: 'Home',
                   isSelected: currentIndex == 0,
                   isDark: isDark,
+                  themeType: themeType,
                   onTap: () {
                     ScaffoldMessenger.of(context).clearSnackBars();
                     widget.navigationShell.goBranch(0, initialLocation: currentIndex == 0);
@@ -148,6 +149,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                   label: 'Insights',
                   isSelected: currentIndex == 1,
                   isDark: isDark,
+                  themeType: themeType,
                   onTap: () {
                     ScaffoldMessenger.of(context).clearSnackBars();
                     widget.navigationShell.goBranch(1, initialLocation: currentIndex == 1);
@@ -192,7 +194,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                                   gradient: isHighContrast
                                       ? null
                                       : const LinearGradient(
-                                          colors: [Color(0xFF0072FF), Color(0xFF00C6FF)],
+                                          colors: [Color(0xFF0062FF), Color(0xFF00C6FF)],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),
@@ -204,7 +206,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                                       ? null
                                       : [
                                           BoxShadow(
-                                            color: const Color(0xFF0072FF).withValues(alpha: 0.45),
+                                            color: const Color(0xFF0062FF).withValues(alpha: 0.45),
                                             blurRadius: 12,
                                             spreadRadius: 1,
                                             offset: const Offset(0, 3),
@@ -244,6 +246,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                   label: 'History',
                   isSelected: currentIndex == 2,
                   isDark: isDark,
+                  themeType: themeType,
                   onTap: () {
                     ScaffoldMessenger.of(context).clearSnackBars();
                     widget.navigationShell.goBranch(2, initialLocation: currentIndex == 2);
@@ -256,6 +259,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                   label: 'Settings',
                   isSelected: false,
                   isDark: isDark,
+                  themeType: themeType,
                   onTap: () {
                     ScaffoldMessenger.of(context).clearSnackBars();
                     context.push(AppRoutes.settings);
@@ -276,6 +280,7 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isSelected;
   final bool isDark;
+  final ThemeType themeType;
   final VoidCallback onTap;
 
   const _NavItem({
@@ -283,12 +288,23 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.isSelected,
     required this.isDark,
+    required this.themeType,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = Color(0xFF0055D4);
+    Color activeColor;
+    if (themeType == ThemeType.highContrast) {
+      activeColor = const Color(0xFF00FF41);
+    } else if (themeType == ThemeType.colorBlindSafe) {
+      activeColor = const Color(0xFF0077BB);
+    } else if (isDark) {
+      activeColor = const Color(0xFF38BDF8);
+    } else {
+      activeColor = const Color(0xFF0062FF);
+    }
+
     final inactiveColor = isDark ? Colors.white60 : const Color(0xFF64748B);
 
     return InkWell(

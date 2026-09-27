@@ -14,7 +14,7 @@ class SoundCategoryCardsSection extends ConsumerWidget {
     final enabledSounds = ref.watch(enabledSoundsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final categories = SoundCategory.values;
+    const categories = SoundCategory.values;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,14 +46,14 @@ class SoundCategoryCardsSection extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF0055D4),
+                          color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF),
                         ),
                       ),
                       const SizedBox(width: 4),
                       Icon(
                         Icons.tune_rounded,
                         size: 16,
-                        color: const Color(0xFF0055D4),
+                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF),
                       ),
                     ],
                   ),
@@ -107,26 +107,26 @@ class _VerticalSoundCard extends StatelessWidget {
 
   Color _getCardBg(SoundCategory cat, bool dark) {
     if (dark) {
-      return const Color(0xFF1E2638);
+      return const Color(0xFF111C35);
     }
     switch (cat) {
       case SoundCategory.fireAlarm:
       case SoundCategory.smokeAlarm:
-        return const Color(0xFFFFF0F0);
-      case SoundCategory.doorbell:
-        return const Color(0xFFFFFDF0);
-      case SoundCategory.babyCrying:
-        return const Color(0xFFF8F0FF);
-      case SoundCategory.vehicleHorn:
-        return const Color(0xFFF0FFF4);
-      case SoundCategory.knocking:
-        return const Color(0xFFFFF5ED);
-      case SoundCategory.dogBarking:
-        return const Color(0xFFF0FDFA);
+        return const Color(0xFFFEF2F2);
       case SoundCategory.emergencySiren:
-        return const Color(0xFFF0F4FF);
+        return const Color(0xFFFFF1F2);
       case SoundCategory.glassBreaking:
+        return const Color(0xFFF5F3FF);
+      case SoundCategory.doorbell:
         return const Color(0xFFF0F9FF);
+      case SoundCategory.knocking:
+        return const Color(0xFFFFFBEB);
+      case SoundCategory.babyCrying:
+        return const Color(0xFFECFEFF);
+      case SoundCategory.dogBarking:
+        return const Color(0xFFFFF7ED);
+      case SoundCategory.vehicleHorn:
+        return const Color(0xFFF0FDF4);
     }
   }
 

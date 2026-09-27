@@ -95,7 +95,7 @@ class SegmentedProfileSelector extends ConsumerWidget {
                       boxShadow: isSelected && !isDark
                           ? [
                               BoxShadow(
-                                color: const Color(0xFF0055D4).withValues(alpha: 0.08),
+                                color: const Color(0xFF0062FF).withValues(alpha: 0.08),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -112,7 +112,7 @@ class SegmentedProfileSelector extends ConsumerWidget {
                               p.icon,
                               size: 18,
                               color: isSelected
-                                  ? const Color(0xFF0055D4)
+                                  ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF))
                                   : (isDark ? Colors.white70 : const Color(0xFF475569)),
                             ),
                             const SizedBox(width: 6),
@@ -124,7 +124,7 @@ class SegmentedProfileSelector extends ConsumerWidget {
                                   fontSize: 14,
                                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                                   color: isSelected
-                                      ? const Color(0xFF0055D4)
+                                      ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF))
                                       : (isDark ? Colors.white : const Color(0xFF1E293B)),
                                 ),
                               ),
@@ -138,11 +138,11 @@ class SegmentedProfileSelector extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 11,
                             fontWeight: FontWeight.w500,
                             color: isSelected
-                                ? const Color(0xFF0055D4).withValues(alpha: 0.85)
-                                : (isDark ? Colors.white54 : const Color(0xFF64748B)),
+                                ? (isDark ? const Color(0xFF7DD3FC) : const Color(0xFF0062FF))
+                                : (isDark ? Colors.white60 : const Color(0xFF64748B)),
                           ),
                         ),
                         if (isSelected) ...[
@@ -151,7 +151,7 @@ class SegmentedProfileSelector extends ConsumerWidget {
                             width: 24,
                             height: 2.5,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0055D4),
+                              color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),

@@ -10,10 +10,13 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF0055D4),
-        primary: const Color(0xFF0055D4),
+        seedColor: const Color(0xFF0062FF),
+        primary: const Color(0xFF0062FF),
+        secondary: const Color(0xFF06B6D4),
         surface: Colors.white,
+        surfaceContainerHighest: const Color(0xFFF1F5F9),
         brightness: Brightness.light,
       ),
       textTheme: textTheme,
@@ -30,6 +33,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: _minTouchTarget,
           minimumSize: const Size(48, 48),
+          backgroundColor: const Color(0xFF0062FF),
+          foregroundColor: Colors.white,
         ),
       ),
       chipTheme: ChipThemeData(
@@ -37,14 +42,19 @@ class AppTheme {
         padding: const EdgeInsets.all(8),
       ),
       navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: Colors.white,
+        indicatorColor: const Color(0xFF0062FF).withValues(alpha: 0.12),
         indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        backgroundColor: const Color(0xFF0F172A),
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
+        backgroundColor: Color(0xFFF8FAFC),
+        foregroundColor: Color(0xFF0F172A),
         centerTitle: true,
       ),
     );
@@ -56,26 +66,31 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF070F26),
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF4FC3F7),
-        primary: const Color(0xFF4FC3F7),
-        surface: const Color(0xFF1E1E1E),
+        seedColor: const Color(0xFF38BDF8),
+        primary: const Color(0xFF38BDF8),
+        secondary: const Color(0xFF818CF8),
+        surface: const Color(0xFF111C35),
+        surfaceContainerHighest: const Color(0xFF182544),
         brightness: Brightness.dark,
       ),
       textTheme: textTheme,
       cardTheme: CardThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFF1E2D4A), width: 1.0),
+          side: const BorderSide(color: Color(0xFF1E2D4E), width: 1.0),
         ),
         elevation: 0,
-        color: const Color(0xFF162035),
+        color: const Color(0xFF111C35),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: _minTouchTarget,
           minimumSize: const Size(48, 48),
+          backgroundColor: const Color(0xFF38BDF8),
+          foregroundColor: const Color(0xFF070F26),
         ),
       ),
       chipTheme: ChipThemeData(
@@ -83,6 +98,8 @@ class AppTheme {
         padding: const EdgeInsets.all(8),
       ),
       navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: const Color(0xFF0D1424),
+        indicatorColor: const Color(0xFF38BDF8).withValues(alpha: 0.18),
         indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -92,6 +109,8 @@ class AppTheme {
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,
+        backgroundColor: Color(0xFF070F26),
+        foregroundColor: Colors.white,
         centerTitle: true,
       ),
     );
