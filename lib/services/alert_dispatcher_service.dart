@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
 import '../core/constants/priority_levels.dart';
 import '../core/constants/sound_categories.dart';
@@ -50,6 +51,7 @@ class AlertDispatcherService {
   Future<AlertEvent?> dispatchClassification({
     required ClassificationResult result,
     bool isSleepMode = false,
+    bool isBackground = false,
     bool flashEnabled = true,
     bool vibrationEnabled = true,
     Set<String>? enabledCategories,
@@ -126,27 +128,38 @@ class AlertDispatcherService {
       );
     }
 
-    // 6. Trigger camera flash if high priority and enabled
-    if (flashEnabled && priority.enableFlash) {
+    // 6. Trigger camera flash if high priority, enabled, and not in sleep mode
+    if (flashEnabled && priority.enableFlash && !isSleepMode) {
       _flashService.triggerStrobe(
         frequencyHz: priority.flashFrequencyHz,
         duration: const Duration(seconds: 3),
       );
     }
 
-    // 7. Post system notification
+    // Determine whether to suppress the full-screen alert overlay:
+    // When the app is in sleep mode, or when running in the background / closed:
+    // Only the notification is shown ("just notifaication shwn not th alert screen and othr option etc").
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    final bool isAppInBackground = isBackground ||
+        (lifecycle != null && lifecycle != AppLifecycleState.resumed);
+    final bool suppressAlertScreen = isSleepMode || isAppInBackground;
+
+    // 7. Post system notification (with fullScreenIntent suppressed if in sleep mode or background)
     await _notificationService.showAlertNotification(
       id: alertEvent.id.hashCode,
       category: category,
       priority: priority,
       confidence: result.confidence,
+      suppressFullScreenIntent: suppressAlertScreen,
     );
 
-    // 8. Broadcast to all-alerts stream for in-app on-screen notification overlay
-    _allAlertsController.add(alertEvent);
+    // 8. Broadcast to all-alerts stream for in-app on-screen notification overlay (when in normal active foreground)
+    if (!suppressAlertScreen) {
+      _allAlertsController.add(alertEvent);
+    }
 
-    // 9. If High priority, push to the urgent stream for the full-screen overlay
-    if (priority == PriorityLevel.high) {
+    // 9. If High priority, push to the urgent stream for the full-screen overlay ONLY when in daytime foreground
+    if (priority == PriorityLevel.high && !suppressAlertScreen) {
       _urgentAlertController.add(alertEvent);
     }
 

@@ -56,16 +56,16 @@ class NotificationService {
           ),
         );
 
-        // Low priority channel
+        // Low priority channel — ambient alerts like Dog Barking and Vehicle Horns
         await androidPlugin.createNotificationChannel(
           const AndroidNotificationChannel(
             channelLow,
-            'Ambient Sound Updates',
-            description: 'Dog Barking, Vehicle Horns',
-            importance: Importance.low,
-            enableVibration: false,
+            'Ambient Sound Alerts',
+            description: 'Dog Barking, Vehicle Horns, and ambient sounds',
+            importance: Importance.high,
+            enableVibration: true,
             playSound: false,
-            showBadge: false,
+            showBadge: true,
           ),
         );
       }
@@ -82,6 +82,7 @@ class NotificationService {
     required SoundCategory category,
     required PriorityLevel priority,
     required double confidence,
+    bool suppressFullScreenIntent = false,
   }) async {
     final String channelId = priority == PriorityLevel.high
         ? channelHigh
@@ -93,14 +94,18 @@ class NotificationService {
 
     final importance = priority == PriorityLevel.high
         ? Importance.max
-        : (priority == PriorityLevel.medium ? Importance.high : Importance.low);
+        : (priority == PriorityLevel.medium ? Importance.high : Importance.high);
+
+    final priorityValue = priority == PriorityLevel.high
+        ? Priority.max
+        : (priority == PriorityLevel.medium ? Priority.high : Priority.high);
 
     final androidDetails = AndroidNotificationDetails(
       channelId,
       channelName,
       importance: importance,
-      priority: priority == PriorityLevel.high ? Priority.max : Priority.high,
-      fullScreenIntent: priority == PriorityLevel.high,
+      priority: priorityValue,
+      fullScreenIntent: priority == PriorityLevel.high && !suppressFullScreenIntent,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
       enableVibration: true,

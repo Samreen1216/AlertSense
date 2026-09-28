@@ -177,28 +177,76 @@ class TFLiteClassifierService {
     debugPrint(logBuf.toString().trim());
 
     // Inspect candidate predictions for monitored AlertSense categories
+    // 1. Group candidate predictions by AlertSense SoundCategory
+    final Map<SoundCategory, List<MapEntry<String, double>>> categoryMatches = {};
+    for (final pred in candidates) {
+      final cat = SoundCategoryExtension.fromYamnetLabel(pred.key);
+      if (cat != null) {
+        categoryMatches.putIfAbsent(cat, () => []).add(pred);
+      }
+    }
+
+    // 2. Aggregate confidence scores per category using independent probability & resolve priority
     SoundCategory? bestCategory;
     double bestConfidence = 0.0;
     String bestLabel = '';
 
-    for (final pred in candidates) {
-      final cat = SoundCategoryExtension.fromYamnetLabel(pred.key);
-      if (cat != null) {
-        // Priority policy: choose higher priority category, or higher score if equal priority
-        if (bestCategory == null) {
+    for (final entry in categoryMatches.entries) {
+      final cat = entry.key;
+      final matches = entry.value;
+
+      // Find the highest scoring individual label for this category
+      String catBestLabel = matches.first.key;
+      double catMaxScore = matches.first.value;
+      for (final m in matches) {
+        if (m.value > catMaxScore) {
+          catMaxScore = m.value;
+          catBestLabel = m.key;
+        }
+      }
+
+      // Combine probability across co-occurring hierarchical AudioSet labels
+      // P = 1.0 - product(1.0 - s_i)
+      double uncombinedComplement = 1.0;
+      for (final m in matches) {
+        uncombinedComplement *= (1.0 - m.value.clamp(0.0, 0.999));
+      }
+      final double catAggConfidence = (1.0 - uncombinedComplement).clamp(catMaxScore, 1.0);
+
+      if (bestCategory == null) {
+        bestCategory = cat;
+        bestConfidence = catAggConfidence;
+        bestLabel = catBestLabel;
+        continue;
+      }
+
+      final int bestPri = bestCategory.defaultPriority.index; // 0=high, 1=medium, 2=low
+      final int curPri = cat.defaultPriority.index;
+
+      if (curPri < bestPri) {
+        // Current candidate has higher priority than existing best.
+        // It takes precedence if it has genuine confidence (>= 0.40)
+        // and is within 0.25 of the current best confidence.
+        if (catAggConfidence >= 0.40 && catAggConfidence >= (bestConfidence - 0.25)) {
           bestCategory = cat;
-          bestConfidence = pred.value;
-          bestLabel = pred.key;
-        } else if (cat.defaultPriority.index < bestCategory.defaultPriority.index) {
-          // In PriorityLevel enum: high=0, medium=1, low=2 (smaller index is higher priority)
+          bestConfidence = catAggConfidence;
+          bestLabel = catBestLabel;
+        }
+      } else if (curPri > bestPri) {
+        // Current candidate has lower priority than existing best.
+        // It overrides existing best ONLY if the existing best was merely background noise (< 0.40)
+        // and current has noticeably stronger evidence.
+        if (bestConfidence < 0.40 && catAggConfidence > bestConfidence) {
           bestCategory = cat;
-          bestConfidence = pred.value;
-          bestLabel = pred.key;
-        } else if (cat.defaultPriority.index == bestCategory.defaultPriority.index &&
-            pred.value > bestConfidence) {
+          bestConfidence = catAggConfidence;
+          bestLabel = catBestLabel;
+        }
+      } else {
+        // Equal priority: higher confidence wins.
+        if (catAggConfidence > bestConfidence) {
           bestCategory = cat;
-          bestConfidence = pred.value;
-          bestLabel = pred.key;
+          bestConfidence = catAggConfidence;
+          bestLabel = catBestLabel;
         }
       }
     }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -80,7 +81,8 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
           ref.read(activeProfileProvider.notifier).state = _previousProfile;
         }
       },
-      child: Scaffold(
+      child: WithForegroundTask(
+        child: Scaffold(
         backgroundColor: const Color(0xFF090D16),
         body: SafeArea(
           child: LayoutBuilder(
@@ -374,8 +376,9 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildAlarmItem({
     required String iconKey,

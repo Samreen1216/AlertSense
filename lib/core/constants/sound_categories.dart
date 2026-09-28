@@ -59,6 +59,7 @@ enum SoundCategory {
     yamnetLabels: [
       'Shatter',
       'Glass',
+      'Breaking',
     ],
     defaultThreshold: 0.80,
   ),
@@ -75,6 +76,8 @@ enum SoundCategory {
       'Bell ring',
       'Chime',
       'Bell',
+      'Jingle bell',
+      'Bicycle bell',
     ],
     defaultThreshold: 0.75,
   ),
@@ -118,6 +121,9 @@ enum SoundCategory {
       'Yip',
       'Howl',
       'Dog',
+      'Canidae, dogs, wolves',
+      'Growling',
+      'Whimper (dog)',
     ],
     defaultThreshold: 0.80,
   ),
@@ -130,9 +136,11 @@ enum SoundCategory {
     icon: Icons.directions_car,
     yamnetLabels: [
       'Vehicle horn, car horn, honking',
+      'Honk',
       'Air horn, truck horn',
       'Train horn',
       'Foghorn',
+      'Reversing beeps',
     ],
     defaultThreshold: 0.80,
   );

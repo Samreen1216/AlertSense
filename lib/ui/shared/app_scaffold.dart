@@ -7,6 +7,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/service_providers.dart';
+import '../../providers/settings_providers.dart';
 import 'in_app_notification_banner.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
@@ -48,9 +49,12 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
   void _subscribeToAlerts() {
     final dispatcher = ref.read(alertDispatcherServiceProvider);
 
-    // 1. High-priority full-screen overlay for critical alarms
+    // 1. High-priority full-screen overlay for critical alarms (suppressed in Sleep Mode)
     _urgentSub = dispatcher.urgentAlertStream.listen((alert) {
       if (!mounted) return;
+      final currentProfile = ref.read(currentProfileProvider);
+      final isSleep = currentProfile.name.toLowerCase() == 'sleep';
+      if (isSleep) return;
 
       context.push(AppRoutes.fullScreenAlert, extra: {
         'id': alert.id,

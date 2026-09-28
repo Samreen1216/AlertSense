@@ -16,6 +16,7 @@ import 'package:alertsense/services/notification_service.dart';
 // Mock NotificationService
 class MockNotificationService extends NotificationService {
   final List<String> notificationsShown = [];
+  bool lastSuppressedFullScreenIntent = false;
 
   @override
   Future<void> showAlertNotification({
@@ -23,7 +24,9 @@ class MockNotificationService extends NotificationService {
     required SoundCategory category,
     required PriorityLevel priority,
     required double confidence,
+    bool suppressFullScreenIntent = false,
   }) async {
+    lastSuppressedFullScreenIntent = suppressFullScreenIntent;
     notificationsShown.add('${category.name}:${priority.name}:$confidence');
   }
 }
@@ -118,6 +121,102 @@ void main() {
 
       expect(alert, isNull);
       expect(mockNotifications.notificationsShown.isEmpty, isTrue);
+    });
+
+    test('In Sleep Mode, notification is shown but full-screen alert overlay is suppressed', () async {
+      final result = ClassificationResult(
+        soundCategory: 'fireAlarm',
+        confidence: 0.92,
+        timestamp: DateTime.now(),
+        topPredictions: const [MapEntry('Fire alarm', 0.92)],
+        ambientDbLevel: 72.0,
+      );
+
+      bool urgentEmitted = false;
+      final sub = dispatcher.urgentAlertStream.listen((_) {
+        urgentEmitted = true;
+      });
+
+      final alert = await dispatcher.dispatchClassification(
+        result: result,
+        isSleepMode: true,
+        flashEnabled: false,
+        vibrationEnabled: true,
+        enabledCategories: SoundProfile.sleep().enabledCategories.toSet(),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 50));
+      await sub.cancel();
+
+      expect(alert, isNotNull);
+      expect(alert!.soundCategory, equals('fireAlarm'));
+      expect(mockNotifications.notificationsShown.length, equals(1));
+      expect(mockNotifications.lastSuppressedFullScreenIntent, isTrue);
+      expect(urgentEmitted, isFalse); // Full screen alert route NOT triggered
+    });
+
+    test('In Background, notification is shown but full-screen alert overlay is suppressed', () async {
+      final result = ClassificationResult(
+        soundCategory: 'emergencySiren',
+        confidence: 0.88,
+        timestamp: DateTime.now(),
+        topPredictions: const [MapEntry('Siren', 0.88)],
+        ambientDbLevel: 70.0,
+      );
+
+      bool urgentEmitted = false;
+      final sub = dispatcher.urgentAlertStream.listen((_) {
+        urgentEmitted = true;
+      });
+
+      final alert = await dispatcher.dispatchClassification(
+        result: result,
+        isSleepMode: false,
+        isBackground: true,
+        flashEnabled: true,
+        vibrationEnabled: true,
+        enabledCategories: SoundCategory.values.map((c) => c.name).toSet(),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 50));
+      await sub.cancel();
+
+      expect(alert, isNotNull);
+      expect(mockNotifications.notificationsShown.length, equals(1));
+      expect(mockNotifications.lastSuppressedFullScreenIntent, isTrue);
+      expect(urgentEmitted, isFalse); // Full screen alert route NOT triggered
+    });
+
+    test('In Normal Daytime Foreground, high priority sounds emit urgentAlert for full-screen overlay', () async {
+      final result = ClassificationResult(
+        soundCategory: 'fireAlarm',
+        confidence: 0.90,
+        timestamp: DateTime.now(),
+        topPredictions: const [MapEntry('Fire alarm', 0.90)],
+        ambientDbLevel: 75.0,
+      );
+
+      bool urgentEmitted = false;
+      final sub = dispatcher.urgentAlertStream.listen((_) {
+        urgentEmitted = true;
+      });
+
+      final alert = await dispatcher.dispatchClassification(
+        result: result,
+        isSleepMode: false,
+        isBackground: false,
+        flashEnabled: true,
+        vibrationEnabled: true,
+        enabledCategories: SoundCategory.values.map((c) => c.name).toSet(),
+      );
+
+      await Future.delayed(const Duration(milliseconds: 50));
+      await sub.cancel();
+
+      expect(alert, isNotNull);
+      expect(mockNotifications.notificationsShown.length, equals(1));
+      expect(mockNotifications.lastSuppressedFullScreenIntent, isFalse);
+      expect(urgentEmitted, isTrue); // Full screen alert route triggered in normal daytime foreground
     });
   });
 }

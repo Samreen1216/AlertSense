@@ -102,50 +102,54 @@ class AcousticDspAnalyzer {
     // 1. Smoke Alarm: very high-pitched ~3300-4800 Hz pure tone
     if (peakHz >= 3300 && peakHz <= 4800 && eVeryHigh > 0.28 && flatness < 0.35 && zcr < 0.25) {
       category = SoundCategory.smokeAlarm;
-      confidence = _mapConfidence(eVeryHigh, 0.28, 0.65);
+      confidence = _mapConfidence(eVeryHigh, 0.28, 0.65, base: 0.75, maxConf: 0.95);
     }
     // 2. Fire Alarm: ~2850-3350 Hz continuous/pulsing loud tonal alarm
     else if (peakHz >= 2850 && peakHz <= 3350 && eHigh > 0.38 && flatness < 0.35 && rms > 0.04) {
       category = SoundCategory.fireAlarm;
-      confidence = _mapConfidence(eHigh, 0.38, 0.75);
+      confidence = _mapConfidence(eHigh, 0.38, 0.75, base: 0.76, maxConf: 0.95);
     }
-    // 3. Bell Ring / Doorbell / Chime:
-    // Pure harmonic decaying tone in 400 Hz to 3200 Hz range with low spectral flatness & strong peak prominence
-    else if (peakHz >= 400 && peakHz <= 3200 && (flatness < 0.48 || peakProminence > 3.0) && zcr < 0.35) {
+    // 3. Vehicle Horn: low-mid tonal honk (200-750 Hz)
+    // Vehicle horns typically have fundamental frequency between 250 Hz and 700 Hz (e.g. dual tone F4/A4 ~350/440 Hz)
+    // with strong low/mid energy and harmonic flatness < 0.45.
+    // Evaluated BEFORE general bell/doorbell so low-mid vehicle horns are never misclassified as doorbell!
+    else if (peakHz >= 200 && peakHz <= 750 && (eLow > 0.24 || (eLow + eMid) > 0.48) && flatness < 0.45 && rms > 0.025) {
+      category = SoundCategory.vehicleHorn;
+      confidence = _mapConfidence(eLow + eMid * 0.4, 0.24, 0.70, base: 0.80, maxConf: 0.96);
+    }
+    // 4. Bell Ring / Doorbell / Chime:
+    // Pure harmonic decaying tone in 600 Hz to 3200 Hz range with low spectral flatness & strong peak prominence
+    else if (peakHz >= 600 && peakHz <= 3200 && (flatness < 0.48 || peakProminence > 3.0) && zcr < 0.35) {
       category = SoundCategory.doorbell;
       final promScore = (peakProminence / 8.0).clamp(0.0, 1.0);
       final flatnessScore = (1.0 - (flatness / 0.50)).clamp(0.0, 1.0);
-      confidence = (0.75 + 0.12 * promScore + 0.10 * flatnessScore).clamp(0.75, 0.96);
-    }
-    // 4. Vehicle Horn: low-mid tonal honk (200-750 Hz)
-    else if (peakHz >= 200 && peakHz <= 750 && eLow > 0.28 && flatness < 0.45 && rms > 0.035) {
-      category = SoundCategory.vehicleHorn;
-      confidence = _mapConfidence(eLow, 0.28, 0.65);
+      confidence = (0.76 + 0.12 * promScore + 0.10 * flatnessScore).clamp(0.76, 0.96);
     }
     // 5. Knocking: low-frequency percussive impulse burst
-    else if (eLow > 0.36 && peakHz < 650 && zcr < 0.16 && rms > 0.015) {
+    else if (eLow > 0.36 && peakHz < 650 && centroid < 850 && zcr < 0.16 && rms > 0.015) {
       category = SoundCategory.knocking;
-      confidence = _mapConfidence(eLow, 0.36, 0.75);
+      confidence = _mapConfidence(eLow, 0.36, 0.75, base: 0.76, maxConf: 0.95);
     }
     // 6. Siren: sweeping pitch, mid-high energy, sustained
-    else if (centroid > 1100 && centroid < 3500 && (eMid + eHigh) > 0.42 && flatness < 0.55 && rms > 0.04) {
+    else if (centroid > 1100 && centroid < 3500 && (eMid + eHigh) > 0.42 && flatness < 0.55 && rms > 0.03) {
       category = SoundCategory.emergencySiren;
-      confidence = _mapConfidence(eMid + eHigh, 0.42, 0.80);
+      confidence = _mapConfidence(eMid + eHigh, 0.42, 0.80, base: 0.76, maxConf: 0.95);
     }
     // 7. Glass Breaking: high ZCR, very high freq, impulsive noisy
-    else if (zcr > 0.26 && (eHigh + eVeryHigh) > 0.40 && flatness > 0.45 && rms > 0.03) {
+    else if (zcr > 0.25 && (eHigh + eVeryHigh) > 0.38 && flatness > 0.40 && rms > 0.025) {
       category = SoundCategory.glassBreaking;
-      confidence = _mapConfidence((eHigh + eVeryHigh) * flatness, 0.18, 0.55);
+      confidence = _mapConfidence((eHigh + eVeryHigh) * flatness, 0.16, 0.55, base: 0.80, maxConf: 0.96);
     }
     // 8. Baby Crying: mid-high harmonic vocal cries
-    else if (centroid > 700 && centroid < 2200 && eMid > 0.30 && zcr > 0.12 && zcr < 0.35 && rms > 0.02) {
+    else if (centroid > 700 && centroid < 2400 && eMid > 0.28 && zcr > 0.10 && zcr < 0.35 && rms > 0.018) {
       category = SoundCategory.babyCrying;
-      confidence = _mapConfidence(eMid, 0.30, 0.60);
+      confidence = _mapConfidence(eMid, 0.28, 0.60, base: 0.72, maxConf: 0.95);
     }
-    // 9. Dog Barking: mid burst pattern
-    else if (eMid > 0.30 && eLow > 0.15 && zcr > 0.08 && zcr < 0.26 && flatness > 0.35 && rms > 0.02) {
+    // 9. Dog Barking: mid burst pattern with broad harmonic spectrum
+    // Dog barks have fundamental around 250-1000 Hz, centroid 350-3200 Hz, burst energy in low-mid
+    else if (centroid > 350 && centroid < 3200 && (eMid + eLow) > 0.35 && zcr > 0.04 && zcr < 0.32 && rms > 0.015) {
       category = SoundCategory.dogBarking;
-      confidence = _mapConfidence(eMid, 0.30, 0.65);
+      confidence = _mapConfidence(eMid + eLow, 0.35, 0.80, base: 0.80, maxConf: 0.96);
     }
 
     if (category == null) return null;
@@ -253,8 +257,14 @@ class AcousticDspAnalyzer {
     return peak * _binHz;
   }
 
-  double _mapConfidence(double value, double min, double max) {
+  double _mapConfidence(
+    double value,
+    double min,
+    double max, {
+    double base = 0.76,
+    double maxConf = 0.96,
+  }) {
     final t = ((value - min) / (max - min)).clamp(0.0, 1.0);
-    return 0.50 + t * 0.48;
+    return (base + t * (maxConf - base)).clamp(base, maxConf);
   }
 }

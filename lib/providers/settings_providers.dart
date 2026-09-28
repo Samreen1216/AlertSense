@@ -87,18 +87,7 @@ final soundProfilesProvider = StateNotifierProvider<SoundProfilesNotifier, List<
 final currentProfileProvider = Provider<SoundProfile>((ref) {
   final activeKey = ref.watch(activeProfileProvider).toLowerCase();
 
-  // 1. Fast-path standard profiles (works without requiring repository overrides in tests)
-  if (activeKey.contains('sleep')) {
-    return SoundProfile.sleep();
-  }
-  if (activeKey.contains('outdoor') || activeKey.contains('away')) {
-    return SoundProfile.outdoor();
-  }
-  if (activeKey == 'home' || activeKey == 'default_home') {
-    return SoundProfile.home();
-  }
-
-  // 2. Try looking up in custom soundProfilesProvider if available
+  // 1. Try looking up in custom / persisted soundProfilesProvider if available
   try {
     final profiles = ref.watch(soundProfilesProvider);
     for (final p in profiles) {
@@ -113,6 +102,17 @@ final currentProfileProvider = Provider<SoundProfile>((ref) {
       }
     }
   } catch (_) {}
+
+  // 2. Fast-path standard profiles fallback
+  if (activeKey.contains('sleep')) {
+    return SoundProfile.sleep();
+  }
+  if (activeKey.contains('outdoor') || activeKey.contains('away')) {
+    return SoundProfile.outdoor();
+  }
+  if (activeKey == 'home' || activeKey == 'default_home') {
+    return SoundProfile.home();
+  }
 
   // 3. Try checking saved settings activeProfileId if available
   try {

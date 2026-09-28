@@ -81,6 +81,17 @@ class AudioStreamService {
             debugPrint('[AudioStream] Mic error: $e');
             _startAmbientDbFallback();
           },
+          onDone: () {
+            debugPrint('[AudioStream] Stream completed / closed');
+            if (_isListening) {
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (_isListening) {
+                  debugPrint('[AudioStream] Attempting automatic mic stream recovery...');
+                  startListening();
+                }
+              });
+            }
+          },
         );
         micStarted = true;
         debugPrint('[AudioStream] Microphone stream active ($activeRate Hz mono)');

@@ -78,12 +78,67 @@ void main() {
       expect(result, isNull);
     });
 
+    test('Vehicle Horn (~420-500 Hz honk) is accurately identified as vehicleHorn, not doorbell', () {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      // Dual-tone vehicle horn around 420 Hz and 500 Hz
+      for (int i = 1000; i < 14000; i++) {
+        final t = (i - 1000) / sampleRate;
+        audioData[i] = 0.20 * sin(2 * pi * 420 * t) + 0.15 * sin(2 * pi * 500 * t);
+      }
+
+      final result = analyzer.classify(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.vehicleHorn.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.80));
+    });
+
+    test('Dog Barking burst is accurately identified as dogBarking', () {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      // Bark burst with rich harmonics (fundamental ~380Hz, harmonics 760Hz, 1140Hz)
+      final rng = Random(42);
+      for (int i = 3000; i < 8000; i++) {
+        final t = (i - 3000) / sampleRate;
+        final envelope = sin(pi * (i - 3000) / 5000);
+        final harmonics = 0.18 * sin(2 * pi * 380 * t) +
+            0.12 * sin(2 * pi * 760 * t) +
+            0.08 * sin(2 * pi * 1140 * t) +
+            0.05 * (rng.nextDouble() * 2 - 1);
+        audioData[i] = envelope * harmonics;
+      }
+
+      final result = analyzer.classify(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.dogBarking.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.80));
+    });
+
     test('SoundCategory.doorbell has Doorbell label and YAMNet mappings', () {
       final category = SoundCategory.doorbell;
       expect(category.label, equals('Doorbell'));
       expect(category.yamnetLabels, contains('Bell ring'));
       expect(category.yamnetLabels, contains('Doorbell'));
       expect(category.yamnetLabels, contains('Chime'));
+      expect(category.yamnetLabels, contains('Jingle bell'));
+    });
+
+    test('SoundCategory mappings include expanded AudioSet classes', () {
+      expect(SoundCategoryExtension.fromYamnetLabel('Honk'), equals(SoundCategory.vehicleHorn));
+      expect(SoundCategoryExtension.fromYamnetLabel('Vehicle horn, car horn, honking'), equals(SoundCategory.vehicleHorn));
+      expect(SoundCategoryExtension.fromYamnetLabel('Reversing beeps'), equals(SoundCategory.vehicleHorn));
+      expect(SoundCategoryExtension.fromYamnetLabel('Bark'), equals(SoundCategory.dogBarking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Canidae, dogs, wolves'), equals(SoundCategory.dogBarking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Whimper (dog)'), equals(SoundCategory.dogBarking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Growling'), equals(SoundCategory.dogBarking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Breaking'), equals(SoundCategory.glassBreaking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Bicycle bell'), equals(SoundCategory.doorbell));
     });
   });
 }
