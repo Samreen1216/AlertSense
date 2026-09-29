@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
+import '../../core/utils/responsive_utils.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/alert_providers.dart';
 import '../../services/pdf_export_service.dart';
@@ -314,10 +315,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       ),
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.only(top: 8, bottom: 24),
-                    itemCount: grouped.keys.length,
-                    itemBuilder: (context, groupIndex) {
+                : Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: context.isTablet ? 800 : double.infinity,
+                      ),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(top: 8, bottom: 24),
+                        itemCount: grouped.keys.length,
+                        itemBuilder: (context, groupIndex) {
                       final groupTitle = grouped.keys.elementAt(groupIndex);
                       final groupAlerts = grouped[groupTitle]!;
 
@@ -445,13 +452,17 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                                         size: 13,
                                                         color: Colors.green),
                                                     const SizedBox(width: 4),
-                                                    Text(
-                                                      'Acknowledged (${alert.responseAction ?? "checked"})',
-                                                      style: const TextStyle(
-                                                          fontSize: 11,
-                                                          color: Colors.green,
-                                                          fontWeight:
-                                                              FontWeight.w500),
+                                                    Expanded(
+                                                      child: Text(
+                                                        'Acknowledged (${alert.responseAction ?? "checked"})',
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 1,
+                                                        style: const TextStyle(
+                                                            fontSize: 11,
+                                                            color: Colors.green,
+                                                            fontWeight:
+                                                                FontWeight.w500),
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
@@ -472,6 +483,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       );
                     },
                   ),
+                ),
+              ),
           ),
         ],
       ),

@@ -185,84 +185,95 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ],
           ),
           Positioned(
-            top: 50,
-            right: 20,
-            child: TextButton(
-              onPressed: _handleSkip,
-              child: const Text(
-                'Skip',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+            top: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, right: 16),
+                child: TextButton(
+                  onPressed: _handleSkip,
+                  child: const Text(
+                    'Skip',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
           Positioned(
-            bottom: 50,
-            left: 20,
-            right: 20,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    3,
-                    (index) => AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      height: 10,
-                      width: _currentPage == index ? 24 : 10,
-                      decoration: BoxDecoration(
-                        color: _currentPage == index
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(5),
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        3,
+                        (index) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          height: 8,
+                          width: _currentPage == index ? 24 : 8,
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? Colors.white
+                                : Colors.white.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 20),
+                    if (_currentPage == 2)
+                      ElevatedButton(
+                        onPressed: _onNextPage,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF283593),
+                          minimumSize: const Size(double.infinity, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: const Text(
+                          'Get Started',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
+                    else
+                      ElevatedButton(
+                        onPressed: _onNextPage,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.2),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                        ),
+                        child: const Text(
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 32),
-                if (_currentPage == 2)
-                  ElevatedButton(
-                    onPressed: _onNextPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF283593),
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: const Text(
-                      'Get Started',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: _onNextPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
-                      ),
-                    ),
-                    child: const Text(
-                      'Next',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ],
@@ -296,6 +307,11 @@ class _OnboardingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isShort = MediaQuery.sizeOf(context).height < 550;
+    final iconSize = isShort ? 60.0 : 110.0;
+    final topSpacing = isShort ? 16.0 : 36.0;
+    final bottomSpacing = isShort ? 130.0 : 160.0;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -304,55 +320,68 @@ class _OnboardingPage extends StatelessWidget {
           colors: gradientColors,
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 28.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 110,
-            color: Colors.white,
-          ),
-          const SizedBox(height: 36),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(height: isShort ? 40 : 60),
+                    Icon(
+                      icon,
+                      size: iconSize,
+                      color: Colors.white,
+                    ),
+                    SizedBox(height: topSpacing),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: isShort ? 22 : 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: isShort ? 10 : 18),
+                    Text(
+                      description,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: isShort ? 14 : 16,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        height: 1.4,
+                      ),
+                    ),
+                    if (isFinalPage) ...[
+                      SizedBox(height: isShort ? 18 : 32),
+                      _buildPermissionRow(
+                        icon: Icons.mic_rounded,
+                        title: 'Microphone',
+                        description: 'Required to detect sounds & alerts',
+                        isGranted: isMicGranted,
+                        onTap: onRequestMic,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildPermissionRow(
+                        icon: Icons.notifications_active_rounded,
+                        title: 'Notifications',
+                        description: 'Required for emergency alerts',
+                        isGranted: isNotificationGranted,
+                        onTap: onRequestNotification,
+                      ),
+                    ],
+                    SizedBox(height: bottomSpacing),
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.9),
-              height: 1.4,
-            ),
-          ),
-          if (isFinalPage) ...[
-            const SizedBox(height: 32),
-            _buildPermissionRow(
-              icon: Icons.mic_rounded,
-              title: 'Microphone',
-              description: 'Required to detect sounds & alerts',
-              isGranted: isMicGranted,
-              onTap: onRequestMic,
-            ),
-            const SizedBox(height: 12),
-            _buildPermissionRow(
-              icon: Icons.notifications_active_rounded,
-              title: 'Notifications',
-              description: 'Required for emergency alerts',
-              isGranted: isNotificationGranted,
-              onTap: onRequestNotification,
-            ),
-          ],
-          const SizedBox(height: 100),
-        ],
+          );
+        },
       ),
     );
   }

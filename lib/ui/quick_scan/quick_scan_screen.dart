@@ -67,24 +67,34 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: switch (scanState.status) {
-              QuickScanStatus.idle => _buildIdleState(context, ref),
-              QuickScanStatus.scanning =>
-                _buildScanningState(context, scanState),
-              QuickScanStatus.result =>
-                _buildResultState(context, ref, scanState),
-              QuickScanStatus.noResult =>
-                _buildNoResultState(context, ref),
-              QuickScanStatus.error =>
-                _buildErrorState(context, ref, scanState),
-              QuickScanStatus.permissionDenied =>
-                _buildPermissionDeniedState(context, ref),
-            },
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: switch (scanState.status) {
+                      QuickScanStatus.idle => _buildIdleState(context, ref),
+                      QuickScanStatus.scanning =>
+                        _buildScanningState(context, scanState),
+                      QuickScanStatus.result =>
+                        _buildResultState(context, ref, scanState),
+                      QuickScanStatus.noResult =>
+                        _buildNoResultState(context, ref),
+                      QuickScanStatus.error =>
+                        _buildErrorState(context, ref, scanState),
+                      QuickScanStatus.permissionDenied =>
+                        _buildPermissionDeniedState(context, ref),
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -93,14 +103,17 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
   // ── 1. IDLE STATE ──────────────────────────────────────────────────────────
   Widget _buildIdleState(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final isShort = MediaQuery.sizeOf(context).height < 500;
+    final iconContainerSize = isShort ? 64.0 : 120.0;
+    final iconSize = isShort ? 32.0 : 60.0;
 
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 120,
-            height: 120,
+            width: iconContainerSize,
+            height: iconContainerSize,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
@@ -111,15 +124,15 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF0055D4).withValues(alpha: 0.35),
-                  blurRadius: 24,
-                  spreadRadius: 4,
+                  blurRadius: isShort ? 12 : 24,
+                  spreadRadius: isShort ? 2 : 4,
                 ),
               ],
             ),
-            child: const Icon(Icons.graphic_eq_rounded,
-                size: 60, color: Colors.white),
+            child: Icon(Icons.graphic_eq_rounded,
+                size: iconSize, color: Colors.white),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: isShort ? 16 : 32),
           Text(
             'Quick Environmental Scan',
             style: theme.textTheme.headlineSmall?.copyWith(
@@ -127,7 +140,7 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: isShort ? 8 : 12),
           Text(
             'Check your surroundings for critical safety sounds (alarms, sirens, glass breaking, crying). AlertSense will analyze audio for 4 seconds.',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -135,7 +148,7 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 48),
+          SizedBox(height: isShort ? 20 : 48),
           SizedBox(
             width: double.infinity,
             height: 56,
@@ -330,6 +343,9 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
     }
 
     final confidencePercent = (result.confidence * 100).toInt();
+    final isShort = MediaQuery.sizeOf(context).height < 500;
+    final squircleSize = isShort ? 72.0 : 124.0;
+    final iconSize = isShort ? 40.0 : 68.0;
 
     return Center(
       child: Column(
@@ -337,13 +353,13 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
         children: [
           // Elevated Glowing Squircle
           Container(
-            width: 124,
-            height: 124,
+            width: squircleSize,
+            height: squircleSize,
             decoration: BoxDecoration(
               color: isHighContrast
                   ? Colors.black
                   : priorityColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(isShort ? 18 : 30),
               border: Border.all(
                 color: isHighContrast ? Colors.white : priorityColor.withValues(alpha: 0.4),
                 width: isHighContrast ? 2.0 : 1.5,
@@ -353,7 +369,7 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
                   : [
                       BoxShadow(
                         color: priorityColor.withValues(alpha: 0.28),
-                        blurRadius: 28,
+                        blurRadius: isShort ? 16 : 28,
                         spreadRadius: 2,
                       ),
                     ],
@@ -361,12 +377,12 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
             child: Center(
               child: AppSvgIcon(
                 iconKey: category?.name ?? 'alert',
-                size: 68,
+                size: iconSize,
                 color: priorityColor,
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: isShort ? 12 : 20),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
