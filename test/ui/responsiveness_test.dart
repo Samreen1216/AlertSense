@@ -13,11 +13,15 @@ import 'package:alertsense/data/repositories/settings_repository.dart';
 import 'package:alertsense/main.dart';
 import 'package:alertsense/providers/alert_providers.dart';
 import 'package:alertsense/providers/audio_providers.dart';
+import 'package:alertsense/providers/service_providers.dart';
 import 'package:alertsense/providers/settings_providers.dart';
+import 'package:alertsense/services/notification_service.dart';
 import 'package:alertsense/ui/alert/widgets/quick_response_card.dart';
 import 'package:alertsense/ui/alert/full_screen_alert.dart';
 import 'package:alertsense/ui/alert/alert_details_screen.dart';
 import 'package:alertsense/ui/sleep/sleep_mode_screen.dart';
+
+class _MockNotificationService extends NotificationService {}
 
 class MockListeningNotifier extends ListeningNotifier {
   MockListeningNotifier(super.ref, [bool initial = true]) {
@@ -189,6 +193,7 @@ void main() {
           localStorageProvider.overrideWithValue(localStorage),
           alertRepositoryProvider.overrideWithValue(alertRepo),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
           userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
             ..state = const UserSettings(onboardingCompleted: true)),
         ],
@@ -214,7 +219,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
       expect(find.text('Home'), findsOneWidget);
@@ -243,7 +249,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
       expect(find.text('Quick Scan'), findsOneWidget);
@@ -268,7 +275,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
       // All 5 destinations exist in the side navigation rail
@@ -298,7 +306,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
     });
@@ -322,7 +331,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
       expect(find.text('Home'), findsOneWidget);
@@ -439,6 +449,7 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
           userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
             ..state = UserSettings(
               onboardingCompleted: true,
@@ -542,6 +553,7 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
           isListeningProvider.overrideWith((ref) => MockListeningNotifier(ref, true)),
         ],
       );
@@ -656,6 +668,7 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
         ],
       );
       addTearDown(container.dispose);
@@ -684,6 +697,7 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
         ],
       );
       addTearDown(container.dispose);
@@ -710,6 +724,7 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
         ],
       );
       addTearDown(container.dispose);

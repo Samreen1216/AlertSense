@@ -389,15 +389,19 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
             children: [
               const Icon(Icons.shield_rounded, color: Colors.amberAccent, size: 20),
               const SizedBox(width: 8),
-              const Text(
-                'Monitored Life-Safety Alarms',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+              const Expanded(
+                child: Text(
+                  'Monitored Life-Safety Alarms',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -415,20 +419,26 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildAlarmItem(
-                iconKey: 'fireAlarm',
-                label: 'Fire Alarm',
-                color: Colors.redAccent,
+              Expanded(
+                child: _buildAlarmItem(
+                  iconKey: 'fireAlarm',
+                  label: 'Fire Alarm',
+                  color: Colors.redAccent,
+                ),
               ),
-              _buildAlarmItem(
-                iconKey: 'emergencySiren',
-                label: 'Siren',
-                color: Colors.redAccent,
+              Expanded(
+                child: _buildAlarmItem(
+                  iconKey: 'emergencySiren',
+                  label: 'Siren',
+                  color: Colors.redAccent,
+                ),
               ),
-              _buildAlarmItem(
-                iconKey: 'babyCrying',
-                label: 'Baby Crying',
-                color: Colors.amberAccent,
+              Expanded(
+                child: _buildAlarmItem(
+                  iconKey: 'babyCrying',
+                  label: 'Baby Crying',
+                  color: Colors.amberAccent,
+                ),
               ),
             ],
           ),
@@ -458,9 +468,11 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
   }
 
   Widget _buildExitButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minWidth: double.infinity,
+        minHeight: 52,
+      ),
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.amber.shade200,
@@ -470,9 +482,14 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
         ),
         onPressed: _exitSleepMode,
         icon: const Icon(Icons.exit_to_app_rounded, size: 20),
-        label: const Text(
-          'Exit Sleep Mode',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        label: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Exit Sleep Mode',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+          ),
         ),
       ),
     );
@@ -498,12 +515,17 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

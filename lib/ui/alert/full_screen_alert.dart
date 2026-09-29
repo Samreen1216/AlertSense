@@ -427,13 +427,16 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    child: const Text(
-                      'CRITICAL ALERT DETECTED',
-                      style: TextStyle(
-                        color: Color(0xFFD32F2F),
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.5,
-                        fontSize: 13,
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'CRITICAL ALERT DETECTED',
+                        style: TextStyle(
+                          color: Color(0xFFD32F2F),
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
@@ -514,19 +517,24 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      'CRITICAL ALERT DETECTED',
-                      style: TextStyle(
-                        color: Color(0xFFD32F2F),
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                        fontSize: 11,
+                    child: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'CRITICAL ALERT DETECTED',
+                        style: TextStyle(
+                          color: Color(0xFFD32F2F),
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
