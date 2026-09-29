@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/device_service.dart';
@@ -27,6 +27,8 @@ class BatteryStatus {
     required this.isOptimized,
     this.requiresAction = false,
   });
+
+  bool get isUnrestricted => isOptimized;
 }
 
 /// Dynamic battery / background optimization status.
@@ -36,14 +38,15 @@ final batteryStatusProvider = FutureProvider<BatteryStatus>((ref) async {
 
   if (isIgnoring) {
     return const BatteryStatus(
-      title: 'Battery Optimized',
-      subtitle: 'Running in background',
+      title: '24/7 Protection',
+      subtitle: 'Active when locked',
       isOptimized: true,
+      requiresAction: false,
     );
   } else {
     return const BatteryStatus(
-      title: 'Background Active',
-      subtitle: 'Tap to optimize battery',
+      title: 'Background Limited',
+      subtitle: 'Tap to enable 24/7 alerts',
       isOptimized: false,
       requiresAction: true,
     );

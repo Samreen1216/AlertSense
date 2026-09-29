@@ -1,4 +1,4 @@
-﻿import 'package:flutter/services.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class DeviceService {
@@ -30,8 +30,12 @@ class DeviceService {
   /// Requests user to whitelist AlertSense from battery optimizations.
   Future<bool> requestIgnoreBatteryOptimizations() async {
     try {
-      final status = await Permission.ignoreBatteryOptimizations.request();
-      return status.isGranted;
+      if (await isIgnoringBatteryOptimizations()) return true;
+      try {
+        final status = await Permission.ignoreBatteryOptimizations.request();
+        if (status.isGranted) return true;
+      } catch (_) {}
+      return await isIgnoringBatteryOptimizations();
     } catch (_) {
       return false;
     }

@@ -1,7 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../providers/audio_providers.dart';
+import '../../../providers/device_providers.dart';
+import 'background_monitoring_sheet.dart';
 
 class HeroListeningCard extends ConsumerStatefulWidget {
   const HeroListeningCard({super.key});
@@ -29,6 +33,46 @@ class _HeroListeningCardState extends ConsumerState<HeroListeningCard>
     super.dispose();
   }
 
+  Future<void> _handleListeningTap() async {
+    final isListening = ref.read(isListeningProvider);
+    if (isListening) {
+      await ref.read(isListeningProvider.notifier).stop();
+      return;
+    }
+
+    // 1. Check microphone permission
+    final micStatus = await Permission.microphone.status;
+    if (!micStatus.isGranted) {
+      final req = await Permission.microphone.request();
+      if (!req.isGranted) return;
+    }
+
+    // 2. Check battery optimization status
+    final deviceService = ref.read(deviceServiceProvider);
+    final isIgnoring = await deviceService.isIgnoringBatteryOptimizations();
+
+    if (isIgnoring) {
+      // Already whitelisted for unrestricted background! Start listening immediately.
+      await ref.read(isListeningProvider.notifier).start();
+      return;
+    }
+
+    // 3. Check if user already saw / interacted with the educational rationale
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool('battery_optimization_rationale_seen') ?? false;
+
+    if (seen) {
+      // User previously made a choice or dismissed; start smoothly in foreground mode without nagging
+      await ref.read(isListeningProvider.notifier).start();
+      return;
+    }
+
+    // 4. First time: Present the educational bottom sheet explaining Set vs Deny
+    if (mounted) {
+      await showBackgroundMonitoringSheet(context, ref);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isListening = ref.watch(isListeningProvider);
@@ -37,9 +81,7 @@ class _HeroListeningCardState extends ConsumerState<HeroListeningCard>
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          ref.read(isListeningProvider.notifier).toggle();
-        },
+        onTap: _handleListeningTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

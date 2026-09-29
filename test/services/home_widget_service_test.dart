@@ -86,4 +86,45 @@ void main() {
     expect(success, isTrue);
     expect(channelCalls.any((call) => call.method == 'requestPinWidget'), isTrue);
   });
+
+  test('HomeWidgetService syncData saves widget_theme_type for light theme', () async {
+    await service.syncData(
+      isListening: true,
+      activeProfile: 'home',
+      ambientDb: 40.0,
+      alertsTodayCount: 0,
+      themeType: 'light',
+    );
+
+    final themeCall = channelCalls.firstWhere(
+      (c) => c.method == 'saveWidgetData' && c.arguments['id'] == 'widget_theme_type',
+    );
+    expect(themeCall.arguments['data'], equals('light'));
+  });
+
+  test('HomeWidgetService syncData saves widget_theme_type for highContrast and colorBlindSafe', () async {
+    await service.syncData(
+      isListening: false,
+      activeProfile: 'sleep',
+      ambientDb: 25.0,
+      alertsTodayCount: 1,
+      themeType: 'highContrast',
+    );
+    var themeCall = channelCalls.lastWhere(
+      (c) => c.method == 'saveWidgetData' && c.arguments['id'] == 'widget_theme_type',
+    );
+    expect(themeCall.arguments['data'], equals('highContrast'));
+
+    await service.syncData(
+      isListening: true,
+      activeProfile: 'outdoor',
+      ambientDb: 55.0,
+      alertsTodayCount: 2,
+      themeType: 'colorBlindSafe',
+    );
+    themeCall = channelCalls.lastWhere(
+      (c) => c.method == 'saveWidgetData' && c.arguments['id'] == 'widget_theme_type',
+    );
+    expect(themeCall.arguments['data'], equals('colorBlindSafe'));
+  });
 }

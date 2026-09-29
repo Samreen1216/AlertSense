@@ -60,14 +60,6 @@ class ForegroundService {
     try {
       init();
 
-      // Ensure Android doesn't kill or throttle audio capture when screen is locked
-      try {
-        if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
-          await FlutterForegroundTask.requestIgnoreBatteryOptimization();
-        }
-      } catch (e) {
-        debugPrint('[ForegroundService] Battery optimization request note: $e');
-      }
 
       if (await FlutterForegroundTask.isRunningService) {
         await updateStatus(title: title, text: text);
@@ -116,6 +108,22 @@ class ForegroundService {
       }
     } catch (e) {
       debugPrint('[ForegroundService] updateStatus error: $e');
+    }
+  }
+
+  Future<bool> isIgnoringBatteryOptimizations() async {
+    try {
+      return await FlutterForegroundTask.isIgnoringBatteryOptimizations;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> requestIgnoreBatteryOptimization() async {
+    try {
+      return await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+    } catch (_) {
+      return false;
     }
   }
 }
