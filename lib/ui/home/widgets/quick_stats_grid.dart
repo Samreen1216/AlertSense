@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/responsive_utils.dart';
 import '../../../providers/device_providers.dart';
 import '../../../providers/stats_providers.dart';
 
@@ -19,31 +20,71 @@ class QuickStatsGrid extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 600 || context.isTablet;
+
+        final tileAlerts = _StatTile(
+          icon: Icons.warning_amber_rounded,
+          iconBg: const Color(0xFFFEE2E2),
+          iconColor: const Color(0xFFEF4444),
+          valueText: '$alertsToday',
+          valueColor: const Color(0xFFEF4444),
+          labelText: 'Alerts Today',
+          isDark: isDark,
+        );
+
+        final tileBattery = _StatTile(
+          icon: Icons.battery_charging_full_rounded,
+          iconBg: const Color(0xFFDCFCE7),
+          iconColor: const Color(0xFF10B981),
+          valueText: '$batteryLevel%',
+          valueColor: const Color(0xFF10B981),
+          labelText: 'Battery Level',
+          isDark: isDark,
+        );
+
+        final tileListening = _StatTile(
+          icon: Icons.access_time_rounded,
+          iconBg: const Color(0xFFDBEAFE),
+          iconColor: const Color(0xFF0055D4),
+          valueText: listeningTime,
+          valueColor: const Color(0xFF0055D4),
+          labelText: 'Listening Time',
+          isDark: isDark,
+        );
+
+        final tileMostFrequent = _StatTile(
+          icon: Icons.bar_chart_rounded,
+          iconBg: const Color(0xFFF3E8FF),
+          iconColor: const Color(0xFF8B5CF6),
+          valueText: mostFrequentLabel,
+          valueColor: isDark ? Colors.white : const Color(0xFF1E293B),
+          labelText: 'Most Frequent',
+          isSpecialTitle: true,
+          isDark: isDark,
+        );
+
+        if (isWide) {
+          return Row(
+            children: [
+              Expanded(child: tileAlerts),
+              const SizedBox(width: 12),
+              Expanded(child: tileBattery),
+              const SizedBox(width: 12),
+              Expanded(child: tileListening),
+              const SizedBox(width: 12),
+              Expanded(child: tileMostFrequent),
+            ],
+          );
+        }
         return Row(
           children: [
             // Left Column (Alerts Today & Battery Level)
             Expanded(
               child: Column(
                 children: [
-                  _StatTile(
-                    icon: Icons.warning_amber_rounded,
-                    iconBg: const Color(0xFFFEE2E2),
-                    iconColor: const Color(0xFFEF4444),
-                    valueText: '$alertsToday',
-                    valueColor: const Color(0xFFEF4444),
-                    labelText: 'Alerts Today',
-                    isDark: isDark,
-                  ),
+                  tileAlerts,
                   const SizedBox(height: 12),
-                  _StatTile(
-                    icon: Icons.battery_charging_full_rounded,
-                    iconBg: const Color(0xFFDCFCE7),
-                    iconColor: const Color(0xFF10B981),
-                    valueText: '$batteryLevel%',
-                    valueColor: const Color(0xFF10B981),
-                    labelText: 'Battery Level',
-                    isDark: isDark,
-                  ),
+                  tileBattery,
                 ],
               ),
             ),
@@ -53,26 +94,9 @@ class QuickStatsGrid extends ConsumerWidget {
             Expanded(
               child: Column(
                 children: [
-                  _StatTile(
-                    icon: Icons.access_time_rounded,
-                    iconBg: const Color(0xFFDBEAFE),
-                    iconColor: const Color(0xFF0055D4),
-                    valueText: listeningTime,
-                    valueColor: const Color(0xFF0055D4),
-                    labelText: 'Listening Time',
-                    isDark: isDark,
-                  ),
+                  tileListening,
                   const SizedBox(height: 12),
-                  _StatTile(
-                    icon: Icons.bar_chart_rounded,
-                    iconBg: const Color(0xFFF3E8FF),
-                    iconColor: const Color(0xFF8B5CF6),
-                    valueText: mostFrequentLabel,
-                    valueColor: isDark ? Colors.white : const Color(0xFF1E293B),
-                    labelText: 'Most Frequent',
-                    isSpecialTitle: true,
-                    isDark: isDark,
-                  ),
+                  tileMostFrequent,
                 ],
               ),
             ),
@@ -155,29 +179,39 @@ class _StatTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              valueText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
-                color: valueColor,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                valueText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: valueColor,
+                ),
               ),
             ),
           ] else ...[
-            Text(
-              valueText,
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.w900,
-                color: valueColor,
-                letterSpacing: -0.5,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                valueText,
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w900,
+                  color: valueColor,
+                  letterSpacing: -0.5,
+                ),
               ),
             ),
             const SizedBox(height: 2),
             Text(
               labelText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,

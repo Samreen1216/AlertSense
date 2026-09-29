@@ -69,9 +69,9 @@ class SoundCategoryCardsSection extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
 
-        // Horizontal Scrollable Cards — fixed height matches original design.
+        // Horizontal Scrollable Cards — dynamic height based on text scaling.
         SizedBox(
-          height: 146,
+          height: MediaQuery.textScalerOf(context).scale(146).clamp(146.0, 185.0),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
@@ -210,16 +210,21 @@ class _VerticalSoundCard extends StatelessWidget {
                 ),
 
                 // Label
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white : const Color(0xFF1E293B),
-                    height: 1.15,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : const Color(0xFF1E293B),
+                        height: 1.15,
+                      ),
+                    ),
                   ),
                 ),
 

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_svg_icons.dart';
@@ -41,11 +42,11 @@ class HeroProfileCard extends ConsumerWidget {
             child: child,
           );
         },
-        pageBuilder: (ctx, a1, a2) => const Align(
+        pageBuilder: (ctx, a1, a2) => Align(
           alignment: Alignment.centerRight,
           child: SizedBox(
-            width: 320,
-            child: ProfileSideNavigation(),
+            width: min(320.0, MediaQuery.sizeOf(ctx).width * 0.85),
+            child: const ProfileSideNavigation(),
           ),
         ),
       );

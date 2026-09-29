@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/theme/theme_provider.dart';
+import '../../core/utils/responsive_utils.dart';
 import 'widgets/alertsense_header.dart';
 import 'widgets/hero_sound_radar.dart';
 import 'widgets/hero_listening_card.dart';
@@ -25,19 +26,14 @@ class HomeScreen extends ConsumerWidget {
 
     final scaffoldBg = isHighContrast ? Colors.black : AppColors.darkBackground;
 
-    return Scaffold(
-      backgroundColor: scaffoldBg,
-      endDrawer: const ProfileSideNavigation(),
-      body: SafeArea(
-        bottom: false,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 1. TOP HEADER
-              const AlertSenseHeader(),
-              const SizedBox(height: 4),
+    final bodyContent = SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. TOP HEADER
+          const AlertSenseHeader(),
+          const SizedBox(height: 4),
 
               // 2. HERO SECTION: 2-Column Responsive Hero (Radar + 3 Cards)
               Padding(
@@ -144,7 +140,23 @@ class HomeScreen extends ConsumerWidget {
               ),
             ],
           ),
-        ),
+        );
+
+    return Scaffold(
+      backgroundColor: scaffoldBg,
+      endDrawer: const ProfileSideNavigation(),
+      body: SafeArea(
+        bottom: false,
+        child: context.isTablet
+            ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: ResponsiveBreakpoints.maxDesktopWidth,
+                  ),
+                  child: bodyContent,
+                ),
+              )
+            : bodyContent,
       ),
     );
   }

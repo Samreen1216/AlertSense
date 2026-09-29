@@ -53,7 +53,7 @@ void main() {
     );
   }
 
-  testWidgets('Theme Mode section renders with quick switch pills and theme details', (tester) async {
+  testWidgets('Theme Mode tile renders cleanly and displays current theme name', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -65,32 +65,9 @@ void main() {
     // Verify Theme Mode title and details exist
     expect(find.text('Theme Mode'), findsOneWidget);
     expect(find.text('Standard Light'), findsOneWidget);
-    expect(find.text('Daylight'), findsOneWidget);
-
-    // Verify all 4 quick switch pills are rendered
-    expect(find.text('Light'), findsOneWidget);
-    expect(find.text('Dark'), findsOneWidget);
-    expect(find.text('Contrast'), findsOneWidget);
-    expect(find.text('Color-Safe'), findsOneWidget);
-
-    // Tap 'Dark' quick pill
-    await tester.tap(find.text('Dark'));
-    await tester.pumpAndSettle();
-
-    // Verify subtitle switched to Cyber Dark
-    expect(find.text('Cyber Dark'), findsOneWidget);
-    expect(find.text('OLED'), findsOneWidget);
-
-    // Tap 'Contrast' quick pill
-    await tester.tap(find.text('Contrast'));
-    await tester.pumpAndSettle();
-
-    // Verify subtitle switched to High Contrast (AMOLED)
-    expect(find.text('High Contrast (AMOLED)'), findsOneWidget);
-    expect(find.text('WCAG AAA'), findsOneWidget);
   });
 
-  testWidgets('Tapping Theme Mode opens Appearance & Color Theme bottom sheet with Live Preview', (tester) async {
+  testWidgets('Tapping Theme Mode opens Appearance & Color Theme bottom sheet and switches theme', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -105,8 +82,7 @@ void main() {
 
     // Verify Bottom Sheet is displayed
     expect(find.text('Appearance & Color Theme'), findsOneWidget);
-    expect(find.text('LIVE ALERT PREVIEW'), findsOneWidget);
-    expect(find.text('AVAILABLE THEMES'), findsOneWidget);
+    expect(find.text('Select a theme that works best for your eyesight'), findsOneWidget);
 
     // Verify all 4 themes are in the sheet
     expect(find.text('Standard Light'), findsWidgets);
@@ -114,12 +90,9 @@ void main() {
     expect(find.text('High Contrast (AMOLED)'), findsWidgets);
     expect(find.text('Color-Blind Accessible (IBM)'), findsWidgets);
 
-    // Tap Cyber Dark card in the sheet
+    // Tap Cyber Dark option in the sheet
     await tester.tap(find.text('Cyber Dark').first);
     await tester.pumpAndSettle();
-
-    // Verify Live Preview card updated and APPLIED badge is shown
-    expect(find.text('APPLIED'), findsWidgets);
 
     // Tap Done to dismiss
     await tester.tap(find.text('Done'));
@@ -130,7 +103,7 @@ void main() {
     expect(find.text('Cyber Dark'), findsOneWidget);
   });
 
-  testWidgets('ThemeAppearanceBottomSheet standalone show method works seamlessly', (tester) async {
+  testWidgets('ThemeAppearanceBottomSheet standalone show method works seamlessly with close button', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [

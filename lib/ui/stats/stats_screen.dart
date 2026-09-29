@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_svg_icons.dart';
 import '../../core/router/app_router.dart';
+import '../../core/utils/responsive_utils.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/stats_providers.dart';
 
@@ -204,12 +205,15 @@ class StatsScreen extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Alerts by Category',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                        Expanded(
+                          child: Text(
+                            'Alerts by Category',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
                         SegmentedButton<String>(
                           segments: const [
                             ButtonSegment(
