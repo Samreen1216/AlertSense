@@ -197,16 +197,20 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
           onPressed: _exitSleepMode,
         ),
         const SizedBox(width: 8),
-        const Text(
-          'Sleep Guardian',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-            letterSpacing: 0.5,
+        const Expanded(
+          child: Text(
+            'Sleep Guardian',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -289,55 +293,61 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
               ),
             ),
           ),
-          Text(
-            DateFormat('EEEE, MMMM d').format(_currentTime),
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.6),
-              letterSpacing: 0.5,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              DateFormat('EEEE, MMMM d').format(_currentTime),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.6),
+                letterSpacing: 0.5,
+              ),
             ),
           ),
           SizedBox(height: isLandscape ? 12 : 18),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-            decoration: BoxDecoration(
-              color: isListening
-                  ? const Color(0xFF065F46).withValues(alpha: 0.3)
-                  : const Color(0xFF991B1B).withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+              decoration: BoxDecoration(
                 color: isListening
-                    ? const Color(0xFF10B981).withValues(alpha: 0.5)
-                    : const Color(0xFFEF4444).withValues(alpha: 0.5),
-                width: 1.0,
+                    ? const Color(0xFF065F46).withValues(alpha: 0.3)
+                    : const Color(0xFF991B1B).withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isListening
+                      ? const Color(0xFF10B981).withValues(alpha: 0.5)
+                      : const Color(0xFFEF4444).withValues(alpha: 0.5),
+                  width: 1.0,
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isListening
-                        ? const Color(0xFF10B981)
-                        : const Color(0xFFEF4444),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isListening
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  isListening ? 'SLEEP GUARDIAN ACTIVE' : 'MONITORING PAUSED',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isListening
-                        ? const Color(0xFF34D399)
-                        : const Color(0xFFF87171),
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(width: 8),
+                  Text(
+                    isListening ? 'SLEEP GUARDIAN ACTIVE' : 'MONITORING PAUSED',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isListening
+                          ? const Color(0xFF34D399)
+                          : const Color(0xFFF87171),
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           if (!isListening) ...[

@@ -117,6 +117,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
       child: Scaffold(
         body: isSideNav
             ? Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _buildSideNavigation(
                     context,
@@ -280,17 +281,19 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                           },
                         ),
                         const SizedBox(height: 3),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'Quick Scan',
-                            maxLines: 1,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: isHighContrast
-                                  ? Colors.white
-                                  : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              'Quick Scan',
+                              maxLines: 1,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: isHighContrast
+                                    ? Colors.white
+                                    : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                              ),
                             ),
                           ),
                         ),

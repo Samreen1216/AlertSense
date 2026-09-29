@@ -20,10 +20,9 @@ class ResponsiveBreakpoints {
       MediaQuery.sizeOf(context).width >= 900;
 
   /// Orientation is landscape OR viewport height is <= 480 (landscape phones)
-  static bool isLandscape(BuildContext context) {
-    final media = MediaQuery.of(context);
-    return media.orientation == Orientation.landscape || media.size.height <= 480;
-  }
+  static bool isLandscape(BuildContext context) =>
+      MediaQuery.orientationOf(context) == Orientation.landscape ||
+      MediaQuery.sizeOf(context).height <= 480;
 
   /// Viewport height is <= 480
   static bool isShortViewport(BuildContext context) =>
