@@ -28,6 +28,9 @@ import 'package:alertsense/ui/home/widgets/quick_stats_grid.dart';
 import 'package:alertsense/ui/settings/vibration_designer_screen.dart';
 import 'package:alertsense/ui/onboarding/onboarding_screen.dart';
 import 'package:alertsense/ui/splash/splash_screen.dart';
+import 'package:alertsense/ui/settings/sensitivity_screen.dart';
+import 'package:alertsense/ui/shared/in_app_notification_banner.dart';
+import 'package:alertsense/ui/home/home_screen.dart';
 
 class _MockNotificationService extends NotificationService {}
 
@@ -832,6 +835,34 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Insights & Analytics'), findsOneWidget);
     });
+
+    testWidgets('StatsScreen empty state in short landscape (800x360) renders without overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          container: container,
+          child: const StatsScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Not enough data yet'), findsOneWidget);
+    });
   });
 
   group('Phase 3: HistoryScreen Responsive Tests', () {
@@ -903,6 +934,34 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Alert History'), findsOneWidget);
     });
+
+    testWidgets('HistoryScreen empty state in landscape (800x360) does not overflow RenderFlex', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          container: container,
+          child: const HistoryScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('No alerts yet'), findsOneWidget);
+    });
   });
 
   group('Phase 3: SoundCategoryCardsSection Responsive Tests', () {
@@ -971,6 +1030,71 @@ void main() {
       expect(find.text('Battery Level'), findsOneWidget);
       expect(find.text('Listening Time'), findsOneWidget);
       expect(find.text('Most Frequent'), findsOneWidget);
+    });
+
+    testWidgets('QuickStatsGrid at 2.0x font scale scales labels cleanly without overflow', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          textScale: 2.0,
+          container: container,
+          child: const Scaffold(
+            body: SingleChildScrollView(
+              child: QuickStatsGrid(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Alerts Today'), findsOneWidget);
+      expect(find.text('Listening Time'), findsOneWidget);
+    });
+  });
+
+  group('Phase 3: HomeScreen Responsive Tests', () {
+    testWidgets('HomeScreen on tablet (800x1280) constrains max width', (tester) async {
+      configureScreen(tester, width: 800, height: 1280);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          isListeningProvider.overrideWith((ref) => MockListeningNotifier(ref, false)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 1280,
+          container: container,
+          child: const HomeScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(HomeScreen), findsOneWidget);
     });
   });
 
@@ -1086,6 +1210,76 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Skip'), findsOneWidget);
+    });
+
+    testWidgets('SensitivityScreen at 2.0x font scale renders cleanly without horizontal RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          textScale: 2.0,
+          container: container,
+          child: const SensitivityScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Detection Sensitivity'), findsOneWidget);
+    });
+
+    testWidgets('InAppNotificationBanner with long alert does not overflow banner card', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final longAlert = AlertEvent(
+        id: 'banner-test-1',
+        soundCategory: 'emergencySiren',
+        confidence: 0.98,
+        priorityLevel: 'high',
+        timestamp: DateTime.now(),
+        source: 'Sensor',
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          textScale: 1.5,
+          container: container,
+          child: Scaffold(
+            body: InAppNotificationBanner(
+              alert: longAlert,
+              onDismiss: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Emergency Siren Detected!'), findsOneWidget);
     });
   });
 }
