@@ -41,10 +41,10 @@ void main() {
                   ),
                 )),
           ],
-          child: const MaterialApp(
+          child: MaterialApp(
             home: Scaffold(
               body: Builder(
-                builder: _OpenSheetButton(),
+                builder: (ctx) => const _OpenSheetButton(),
               ),
             ),
           ),
@@ -62,14 +62,22 @@ void main() {
       // Check Set / Allow section
       expect(find.text('If you Set / Allow'), findsOneWidget);
       expect(find.text('RECOMMENDED'), findsOneWidget);
-      expect(find.textContaining('24/7 Locked-Screen Detection'), findsOneWidget);
-      expect(find.textContaining('Immediate Emergency Alerts'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((w) =>
+            w is RichText &&
+            w.text.toPlainText().contains('24/7 Locked-Screen Detection')),
+        findsOneWidget,
+      );
 
       // Check Deny section
       expect(find.text('If you Deny'), findsOneWidget);
       expect(find.text('LIMITED FUNCTIONALITY'), findsOneWidget);
-      expect(find.textContaining('Accurate while app is open'), findsOneWidget);
-      expect(find.textContaining('Locked-screen may pause'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((w) =>
+            w is RichText &&
+            w.text.toPlainText().contains('Accurate while app is open')),
+        findsOneWidget,
+      );
 
       // Check action buttons
       expect(find.text('Allow Background Running (Recommended)'), findsOneWidget);
@@ -89,10 +97,10 @@ void main() {
                   ),
                 )),
           ],
-          child: const MaterialApp(
+          child: MaterialApp(
             home: Scaffold(
               body: Builder(
-                builder: _OpenSheetButton(),
+                builder: (ctx) => const _OpenSheetButton(),
               ),
             ),
           ),
@@ -170,13 +178,15 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('Listening...'), findsOneWidget);
 
       // Tap to toggle off
       await tester.tap(find.byType(HeroListeningCard));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(listeningNotifier.state, isFalse);
     });

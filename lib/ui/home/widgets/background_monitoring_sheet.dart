@@ -167,7 +167,7 @@ class _BackgroundMonitoringSheetContentState
         : (widget.isDark ? Colors.white : const Color(0xFF0F172A));
 
     final textSecondary = widget.isHighContrast
-        ? AppColors.hcTextDim
+        ? AppColors.hcTextSecondary
         : (widget.isDark ? Colors.white.withValues(alpha: 0.7) : const Color(0xFF64748B));
 
     return Container(
