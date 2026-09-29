@@ -93,6 +93,7 @@ void main() {
       activeProfile: 'home',
       ambientDb: 40.0,
       alertsTodayCount: 0,
+      highPriorityCount: 0,
       themeType: 'light',
     );
 
@@ -108,6 +109,7 @@ void main() {
       activeProfile: 'sleep',
       ambientDb: 25.0,
       alertsTodayCount: 1,
+      highPriorityCount: 1,
       themeType: 'highContrast',
     );
     var themeCall = channelCalls.lastWhere(
@@ -120,6 +122,7 @@ void main() {
       activeProfile: 'outdoor',
       ambientDb: 55.0,
       alertsTodayCount: 2,
+      highPriorityCount: 0,
       themeType: 'colorBlindSafe',
     );
     themeCall = channelCalls.lastWhere(
