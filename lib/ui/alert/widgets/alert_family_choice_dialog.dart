@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 enum AlertChannel { whatsapp, sms }
 
-/// A reusable, high-UX modal dialog that lets the user choose between
-/// WhatsApp and native SMS (Messages) for emergency alerts.
-/// Provides a clear "JUST ONCE" action so every tap allows re-selection.
+/// A reusable modal dialog that previously let users choose between WhatsApp and SMS.
+/// @deprecated Emergency alerts now directly dispatch via SMS with live GPS location pins
+/// for zero-latency, reliable emergency handling.
+@deprecated
 class AlertFamilyChoiceDialog extends StatefulWidget {
   final List<String> savedContacts;
   final String soundName;

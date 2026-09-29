@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -12,11 +11,9 @@ import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../services/location_service.dart';
 import '../../services/sms_service.dart';
-import 'widgets/alert_family_choice_dialog.dart';
 import 'widgets/quick_response_card.dart';
 import 'dialogs/emergency_call_dialog.dart';
 import 'dialogs/manual_sms_dialog.dart';
-import 'dialogs/manual_whatsapp_dialog.dart';
 
 class FullScreenAlert extends ConsumerStatefulWidget {
   final Map<String, dynamic> alertData;
@@ -182,112 +179,6 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
       // Acknowledge alert & stop active vibrations/flash
       _stopHardwareAlerts();
       ref.read(alertListProvider.notifier).acknowledgeAlert(alertId, action: 'called_emergency');
-    }
-  }
-
-  // ── Alert Family with 2-Choice Dialog (WhatsApp vs Messages with Just Once) ──
-  Future<void> _handleAlertFamilyWithChoice(String soundName, String alertId) async {
-    _autoDispatchTimer?.cancel();
-    _autoDispatchTimer = null;
-    final settings = ref.read(userSettingsProvider);
-    final savedContacts = settings.emergencyContacts;
-
-    // Show the interactive dialog with WhatsApp and Messages options
-    final choice = await showDialog<AlertChannel>(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) => AlertFamilyChoiceDialog(
-        savedContacts: savedContacts,
-        soundName: soundName,
-        initialChannel: AlertChannel.whatsapp,
-      ),
-    );
-
-    if (choice == null || !mounted) return;
-
-    if (choice == AlertChannel.whatsapp) {
-      await _handleAlertFamilyWhatsApp(soundName, alertId);
-    } else if (choice == AlertChannel.sms) {
-      await _handleAlertFamilySms(soundName, alertId);
-    }
-  }
-
-  // ── Alert Family via WhatsApp ─────────────────────────────────────────────
-  Future<void> _handleAlertFamilyWhatsApp(String soundName, String alertId) async {
-    _autoDispatchTimer?.cancel();
-    _autoDispatchTimer = null;
-    final settings = ref.read(userSettingsProvider);
-    final savedContacts = settings.emergencyContacts;
-
-    setState(() => _isSending = true);
-
-    // Acquire GPS location asynchronously with strict fast timeout or reuse pre-locked fix
-    final loc = await _resolveLocation();
-    final message = SmsService.emergencyMessage(
-      soundName,
-      location: loc,
-    );
-
-    if (savedContacts.isNotEmpty) {
-      final success = await SmsService.sendEmergencyWhatsApp(
-        phoneNumber: savedContacts.first,
-        message: message,
-      );
-      if (mounted) setState(() => _isSending = false);
-
-      if (mounted && success) {
-        _stopHardwareAlerts();
-        ref.read(alertListProvider.notifier).acknowledgeAlert(
-          alertId,
-          action: 'alerted_family_whatsapp',
-        );
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('WhatsApp alert opened for ${savedContacts.first}'),
-            backgroundColor: const Color(0xFF25D366),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      } else if (mounted) {
-        await _showManualWhatsAppDialog(soundName, alertId, savedContacts, prefilledMessage: message);
-      }
-    } else {
-      if (mounted) setState(() => _isSending = false);
-      await _showManualWhatsAppDialog(soundName, alertId, [], prefilledMessage: message);
-    }
-  }
-
-  Future<void> _showManualWhatsAppDialog(
-    String soundName,
-    String alertId,
-    List<String> prefill, {
-    String? prefilledMessage,
-  }) async {
-    final loc = await _resolveLocation();
-    final defaultMsg = prefilledMessage ?? SmsService.emergencyMessage(soundName, location: loc);
-    final result = await ManualWhatsAppDialog.show(
-      context,
-      initialPhone: prefill.isNotEmpty ? prefill.first : '',
-      defaultMessage: defaultMsg,
-    );
-
-    if (result != null && mounted) {
-      setState(() => _isSending = true);
-      final success = await SmsService.sendEmergencyWhatsApp(
-        phoneNumber: result.phone,
-        message: result.message,
-      );
-      if (mounted) {
-        setState(() => _isSending = false);
-        if (success) {
-          _stopHardwareAlerts();
-          ref.read(alertListProvider.notifier).acknowledgeAlert(
-            alertId,
-            action: 'alerted_family_whatsapp',
-          );
-        }
-      }
     }
   }
 
@@ -812,13 +703,13 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
         ),
         const SizedBox(height: 10),
 
-        // Alert Family (WhatsApp / Messages Dialog with Just Once)
+        // Alert Family (SMS)
         QuickResponseCard(
-          label: _isSending ? 'Sending Alert…' : 'Alert Family (WhatsApp / SMS)',
+          label: _isSending ? 'Sending Alert…' : 'Alert Family (SMS)',
           icon: Icons.family_restroom_rounded,
           color: const Color(0xFFE65100),
           isLoading: _isSending,
-          onPressed: _isSending ? null : () => _handleAlertFamilyWithChoice(name, alertId),
+          onPressed: _isSending ? null : () => _handleAlertFamilySms(name, alertId),
         ),
         const SizedBox(height: 10),
 

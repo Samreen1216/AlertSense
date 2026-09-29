@@ -3,15 +3,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alertsense/data/datasources/local_storage.dart';
+import 'package:alertsense/data/models/alert_event.dart';
 import 'package:alertsense/data/models/user_settings.dart';
+import 'package:alertsense/data/repositories/alert_repository.dart';
 import 'package:alertsense/data/repositories/settings_repository.dart';
 import 'package:alertsense/main.dart';
+import 'package:alertsense/providers/alert_providers.dart';
 import 'package:alertsense/providers/service_providers.dart';
 import 'package:alertsense/providers/settings_providers.dart';
 import 'package:alertsense/services/location_service.dart';
+import 'package:alertsense/services/notification_service.dart';
 import 'package:alertsense/services/sms_service.dart';
+import 'package:alertsense/ui/alert/alert_details_screen.dart';
 import 'package:alertsense/ui/alert/full_screen_alert.dart';
 import 'package:alertsense/ui/settings/emergency_contacts_screen.dart';
+
+class _MockNotificationService extends NotificationService {}
 
 class _FakeLocationService extends LocationService {
   final LocationResult? mockLocation;
@@ -227,6 +234,176 @@ void main() {
 
       expect(msg, contains('📍 Pin: https://maps.google.com/?q=33.6844,73.0479 (±8m)'));
       expect(msg, contains('EMERGENCY ALERT via AlertSense: A Smoke Alarm has been detected at my location!'));
+    });
+  });
+
+  group('Alert Screens Family Alert Channel Tests (WhatsApp Removed)', () {
+    testWidgets('FullScreenAlert renders Alert Family (SMS) button and removes WhatsApp option', (tester) async {
+      final mockLoc = LocationResult(
+        latitude: 33.6844,
+        longitude: 73.0479,
+        accuracy: 14.0,
+        timestamp: DateTime.now(),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          locationServiceProvider.overrideWithValue(_FakeLocationService(mockLocation: mockLoc)),
+          userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
+            ..state = const UserSettings(
+              onboardingCompleted: true,
+              emergencyContacts: ['+923001234567'],
+            )),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final alertData = {
+        'id': 'test-alert-action-1',
+        'soundCategory': 'fireAlarm',
+        'confidence': 97,
+        'priorityLevel': 'HIGH',
+        'timestamp': DateTime.now(),
+      };
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: FullScreenAlert(alertData: alertData),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should show 'Alert Family (SMS)'
+      expect(find.text('Alert Family (SMS)'), findsOneWidget);
+      // Should NOT show 'Alert Family (WhatsApp / SMS)' or WhatsApp actions
+      expect(find.text('Alert Family (WhatsApp / SMS)'), findsNothing);
+      expect(find.text('Send WhatsApp to Family'), findsNothing);
+      expect(find.text('Choose Emergency Channel'), findsNothing);
+    });
+
+    testWidgets('AlertDetailsScreen renders Alert Family via SMS and removes WhatsApp button', (tester) async {
+      final alertRepo = AlertRepository(localStorage);
+      await alertRepo.init();
+
+      final mockLoc = LocationResult(
+        latitude: 33.6844,
+        longitude: 73.0479,
+        accuracy: 14.0,
+        timestamp: DateTime.now(),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          locationServiceProvider.overrideWithValue(_FakeLocationService(mockLocation: mockLoc)),
+          userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
+            ..state = const UserSettings(
+              onboardingCompleted: true,
+              emergencyContacts: ['+923001234567'],
+            )),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final testAlert = AlertEvent(
+        id: 'test-detail-sms-1',
+        soundCategory: 'smokeAlarm',
+        confidence: 0.95,
+        priorityLevel: 'high',
+        timestamp: DateTime.now(),
+        source: 'Acoustic Sensor',
+        acknowledged: false,
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: AlertDetailsScreen(alert: testAlert),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Should show 'Alert Family via SMS'
+      expect(find.text('Alert Family via SMS'), findsOneWidget);
+      // Should NOT show 'Send WhatsApp to Family' or 'Send SMS to Family'
+      expect(find.text('Send WhatsApp to Family'), findsNothing);
+      expect(find.text('Send SMS to Family'), findsNothing);
+      expect(find.text('Choose Emergency Channel'), findsNothing);
+    });
+
+    testWidgets('AlertDetailsScreen tapping Alert Family via SMS with empty contacts opens ManualSmsDialog with GPS pin', (tester) async {
+      final alertRepo = AlertRepository(localStorage);
+      await alertRepo.init();
+
+      final mockLoc = LocationResult(
+        latitude: 33.6844,
+        longitude: 73.0479,
+        accuracy: 10.0,
+        timestamp: DateTime.now(),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          locationServiceProvider.overrideWithValue(_FakeLocationService(mockLocation: mockLoc)),
+          userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
+            ..state = const UserSettings(
+              onboardingCompleted: true,
+              emergencyContacts: [], // No saved contacts
+            )),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final testAlert = AlertEvent(
+        id: 'test-detail-sms-empty',
+        soundCategory: 'fireAlarm',
+        confidence: 0.98,
+        priorityLevel: 'high',
+        timestamp: DateTime.now(),
+        source: 'Acoustic Sensor',
+        acknowledged: false,
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: AlertDetailsScreen(alert: testAlert),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tap 'Alert Family via SMS'
+      await tester.tap(find.text('Alert Family via SMS'));
+      await tester.pumpAndSettle();
+
+      // Should open ManualSmsDialog directly with phone input and GPS pin
+      expect(find.text('SEND SMS'), findsOneWidget);
+      expect(find.text('GPS Pin Attached'), findsOneWidget);
+      expect(find.text('Choose Emergency Channel'), findsNothing);
+      expect(find.text('WhatsApp'), findsNothing);
     });
   });
 }

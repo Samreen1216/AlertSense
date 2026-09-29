@@ -408,7 +408,7 @@ void main() {
           textScale: 2.0,
           child: Scaffold(
             body: QuickResponseCard(
-              label: 'Alert Family (WhatsApp / SMS) Very Long Emergency Action Label',
+              label: 'Alert Family (SMS) Very Long Emergency Action Label',
               icon: Icons.family_restroom_rounded,
               color: Colors.orange,
               onPressed: () {},
