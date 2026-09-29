@@ -3,10 +3,100 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/audio_providers.dart';
 import '../../providers/service_providers.dart';
 import '../../providers/stats_providers.dart';
+
+class WidgetThemeColors {
+  final Color background;
+  final Color cardBackground;
+  final Color cardBorder;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color accent;
+  final Color primaryButtonBg;
+  final Color primaryButtonText;
+  final Color secondaryButtonBg;
+  final Color secondaryButtonBorder;
+  final Color secondaryButtonText;
+
+  const WidgetThemeColors({
+    required this.background,
+    required this.cardBackground,
+    required this.cardBorder,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.accent,
+    required this.primaryButtonBg,
+    required this.primaryButtonText,
+    required this.secondaryButtonBg,
+    required this.secondaryButtonBorder,
+    required this.secondaryButtonText,
+  });
+
+  factory WidgetThemeColors.fromThemeType(ThemeType type) {
+    switch (type) {
+      case ThemeType.light:
+        return const WidgetThemeColors(
+          background: Color(0xFFF8FAFC),
+          cardBackground: Color(0xFFFFFFFF),
+          cardBorder: Color(0xFFE2E8F0),
+          textPrimary: Color(0xFF0F172A),
+          textSecondary: Color(0xFF64748B),
+          accent: Color(0xFF0062FF),
+          primaryButtonBg: Color(0xFF0062FF),
+          primaryButtonText: Color(0xFFFFFFFF),
+          secondaryButtonBg: Color(0xFFF1F5F9),
+          secondaryButtonBorder: Color(0xFFCBD5E1),
+          secondaryButtonText: Color(0xFF0F172A),
+        );
+      case ThemeType.highContrast:
+        return const WidgetThemeColors(
+          background: Color(0xFF000000),
+          cardBackground: Color(0xFF000000),
+          cardBorder: Color(0xFF38BDF8),
+          textPrimary: Color(0xFFFFFFFF),
+          textSecondary: Color(0xFFE2E8F0),
+          accent: Color(0xFF38BDF8),
+          primaryButtonBg: Color(0xFF38BDF8),
+          primaryButtonText: Color(0xFF000000),
+          secondaryButtonBg: Color(0xFF000000),
+          secondaryButtonBorder: Color(0xFF38BDF8),
+          secondaryButtonText: Color(0xFFFFFFFF),
+        );
+      case ThemeType.colorBlindSafe:
+        return const WidgetThemeColors(
+          background: Color(0xFFF8FAFC),
+          cardBackground: Color(0xFFFFFFFF),
+          cardBorder: Color(0xFFD0D7DE),
+          textPrimary: Color(0xFF0F172A),
+          textSecondary: Color(0xFF57606A),
+          accent: Color(0xFF0077BB),
+          primaryButtonBg: Color(0xFF0077BB),
+          primaryButtonText: Color(0xFFFFFFFF),
+          secondaryButtonBg: Color(0xFFF6F8FA),
+          secondaryButtonBorder: Color(0xFFD0D7DE),
+          secondaryButtonText: Color(0xFF0F172A),
+        );
+      case ThemeType.dark:
+        return const WidgetThemeColors(
+          background: Color(0xFF070F26),
+          cardBackground: Color(0xFF0F172A),
+          cardBorder: Color(0xFF1E293B),
+          textPrimary: Color(0xFFFFFFFF),
+          textSecondary: Color(0xFF94A3B8),
+          accent: Color(0xFF00E5FF),
+          primaryButtonBg: Color(0xFF1A73E8),
+          primaryButtonText: Color(0xFFFFFFFF),
+          secondaryButtonBg: Color(0xFF0F172A),
+          secondaryButtonBorder: Color(0xFF334155),
+          secondaryButtonText: Color(0xFFFFFFFF),
+        );
+    }
+  }
+}
 
 class HomeWidgetShowcaseScreen extends ConsumerStatefulWidget {
   const HomeWidgetShowcaseScreen({super.key});
@@ -41,6 +131,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
     final todayCount = ref.read(alertsTodayCountProvider);
     final highCount = ref.read(highPriorityCountProvider);
     final enabledCount = ref.read(enabledSoundsProvider).length;
+    final themeType = ref.read(themeTypeProvider);
 
     await widgetService.syncData(
       isListening: isListening,
@@ -50,6 +141,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
       alertsTodayCount: todayCount,
       highPriorityCount: highCount,
       monitoredCount: enabledCount,
+      themeType: themeType.name,
     );
 
     if (mounted) {
@@ -95,6 +187,8 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
     final lastAlert = ref.watch(lastAlertProvider);
     final todayCount = ref.watch(alertsTodayCountProvider);
     final enabledCount = ref.watch(enabledSoundsProvider).length;
+    final themeType = ref.watch(themeTypeProvider);
+    final widgetColors = WidgetThemeColors.fromThemeType(themeType);
 
     return Scaffold(
       backgroundColor: const Color(0xFF070F26),
@@ -162,6 +256,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
               lastAlert: lastAlert,
               todayCount: todayCount,
               enabledCount: enabledCount,
+              theme: widgetColors,
             ),
             const SizedBox(height: 14),
 
@@ -171,11 +266,11 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildSlidePill(0, '1. Live Monitor'),
+                  _buildSlidePill(0, '1. Live Monitor', widgetColors),
                   const SizedBox(width: 8),
-                  _buildSlidePill(1, '2. Alerts Feed'),
+                  _buildSlidePill(1, '2. Alerts Feed', widgetColors),
                   const SizedBox(width: 8),
-                  _buildSlidePill(2, '3. Emergency'),
+                  _buildSlidePill(2, '3. Emergency', widgetColors),
                 ],
               ),
             ),
@@ -224,7 +319,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
     );
   }
 
-  Widget _buildSlidePill(int index, String label) {
+  Widget _buildSlidePill(int index, String label, WidgetThemeColors theme) {
     final isSelected = _currentSlide == index;
     return GestureDetector(
       onTap: () => setState(() => _currentSlide = index),
@@ -232,17 +327,17 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1A73E8) : const Color(0xFF0F172A),
+          color: isSelected ? theme.primaryButtonBg : theme.secondaryButtonBg,
           borderRadius: BorderRadius.circular(100),
           border: Border.all(
-            color: isSelected ? const Color(0xFF00E5FF) : const Color(0xFF1E293B),
+            color: isSelected ? theme.accent : theme.secondaryButtonBorder,
             width: 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+            color: isSelected ? theme.primaryButtonText : theme.textSecondary,
             fontSize: 11,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
@@ -258,24 +353,25 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
     required dynamic lastAlert,
     required int todayCount,
     required int enabledCount,
+    required WidgetThemeColors theme,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF070F26),
+        color: theme.background,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: const Color(0xFF1E293B),
+          color: theme.cardBorder,
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00E5FF).withValues(alpha: 0.12),
+            color: theme.accent.withValues(alpha: 0.12),
             blurRadius: 20,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -292,10 +388,10 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                     children: [
                       const Text('🛡️', style: TextStyle(fontSize: 15)),
                       const SizedBox(width: 5),
-                      const Text(
+                      Text(
                         'AlertSense',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: theme.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
@@ -304,17 +400,17 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: isListening ? const Color(0xFF0D2818) : const Color(0xFF1E293B),
+                          color: isListening ? const Color(0xFF0D2818) : theme.secondaryButtonBg,
                           borderRadius: BorderRadius.circular(100),
                           border: Border.all(
-                            color: isListening ? const Color(0xFF10B981) : const Color(0xFF475569),
+                            color: isListening ? const Color(0xFF10B981) : theme.cardBorder,
                             width: 1,
                           ),
                         ),
                         child: Text(
                           isListening ? '● LIVE' : '○ PAUSED',
                           style: TextStyle(
-                            color: isListening ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            color: isListening ? const Color(0xFF10B981) : theme.textSecondary,
                             fontSize: 9.5,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
@@ -327,69 +423,34 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
               ),
               const Spacer(),
 
-              // Slider Navigation Controls (< dots >)
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: _prevSlide,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF334155)),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text('◀', style: TextStyle(color: Color(0xFF00E5FF), fontSize: 10)),
+              // Right: Open App Action Button
+              GestureDetector(
+                onTap: () => context.go(AppRoutes.home),
+                child: Container(
+                  height: 28,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: theme.secondaryButtonBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: theme.secondaryButtonBorder),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '⚡ Open App',
+                    style: TextStyle(
+                      color: theme.accent,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: _nextSlide,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A).withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        _currentSlide == 0
-                            ? '● ○ ○ (1/3)'
-                            : _currentSlide == 1
-                                ? '○ ● ○ (2/3)'
-                                : '○ ○ ● (3/3)',
-                        style: const TextStyle(
-                          color: Color(0xFF00E5FF),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  GestureDetector(
-                    onTap: _nextSlide,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF0F172A),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFF334155)),
-                      ),
-                      alignment: Alignment.center,
-                      child: const Text('▶', style: TextStyle(color: Color(0xFF00E5FF), fontSize: 10)),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
 
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Divider(color: Color(0xFF1E293B), height: 1),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Divider(color: theme.cardBorder, height: 1),
           ),
 
           // 2. SLIDE CONTENT
@@ -402,7 +463,78 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
               lastAlert: lastAlert,
               todayCount: todayCount,
               enabledCount: enabledCount,
+              theme: theme,
             ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Divider(color: theme.cardBorder, height: 1),
+          ),
+
+          // 3. BOTTOM MIDDLE SLIDER CONTROLS ROW (< dots >)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Prev Slide Button (<)
+              GestureDetector(
+                onTap: _prevSlide,
+                child: Container(
+                  width: 54,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: theme.secondaryButtonBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: theme.secondaryButtonBorder),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('◀', style: TextStyle(color: theme.accent, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Slide indicator dots
+              GestureDetector(
+                onTap: _nextSlide,
+                child: Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  decoration: BoxDecoration(
+                    color: theme.secondaryButtonBg,
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(color: theme.secondaryButtonBorder),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    _currentSlide == 0
+                        ? '● ○ ○'
+                        : _currentSlide == 1
+                            ? '○ ● ○'
+                            : '○ ○ ●',
+                    style: TextStyle(
+                      color: theme.accent,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Next Slide Button (>)
+              GestureDetector(
+                onTap: _nextSlide,
+                child: Container(
+                  width: 54,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: theme.secondaryButtonBg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: theme.secondaryButtonBorder),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text('▶', style: TextStyle(color: theme.accent, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -416,42 +548,32 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
     required dynamic lastAlert,
     required int todayCount,
     required int enabledCount,
+    required WidgetThemeColors theme,
   }) {
     switch (_currentSlide) {
       case 0:
-        return _buildSlide1(isListening, profile, db, enabledCount);
+        return _buildSlide1(isListening, profile, db, enabledCount, theme);
       case 1:
-        return _buildSlide2(lastAlert, todayCount);
+        return _buildSlide2(lastAlert, todayCount, theme);
       case 2:
       default:
-        return _buildSlide3();
+        return _buildSlide3(theme);
     }
   }
 
   // SLIDE 1: AWARENESS & LIVE RADAR
-  Widget _buildSlide1(bool isListening, String profile, double db, int enabledCount) {
+  Widget _buildSlide1(bool isListening, String profile, double db, int enabledCount, WidgetThemeColors theme) {
     return Column(
       key: const ValueKey(0),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'AWARENESS & LIVE RADAR',
-          style: TextStyle(
-            color: Color(0xFF00E5FF),
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 5),
-
         // Decibel & Profile Card
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
+            color: theme.cardBackground,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF1E293B)),
+            border: Border.all(color: theme.cardBorder),
           ),
           child: Column(
             children: [
@@ -459,8 +581,8 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                 children: [
                   Text(
                     '${db.toStringAsFixed(0)} dB',
-                    style: const TextStyle(
-                      color: Color(0xFF00E5FF),
+                    style: TextStyle(
+                      color: theme.accent,
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
                     ),
@@ -469,8 +591,8 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   Expanded(
                     child: Text(
                       db < 45 ? 'Quiet Environment' : (db < 65 ? 'Normal Ambient Noise' : 'Moderate Activity'),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: theme.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -485,11 +607,11 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                 children: [
                   Text(
                     '🏠 ${_capitalize(profile)} Profile Active',
-                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                    style: TextStyle(color: theme.textSecondary, fontSize: 11),
                   ),
                   Text(
                     '$enabledCount Sounds Monitored',
-                    style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                    style: TextStyle(color: theme.textSecondary, fontSize: 11),
                   ),
                 ],
               ),
@@ -504,8 +626,8 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
             Expanded(
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: theme.primaryButtonBg,
+                  foregroundColor: theme.primaryButtonText,
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -518,9 +640,9 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
             Expanded(
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color(0xFF1E293B),
-                  side: const BorderSide(color: Color(0xFF334155)),
+                  foregroundColor: theme.secondaryButtonText,
+                  backgroundColor: theme.secondaryButtonBg,
+                  side: BorderSide(color: theme.secondaryButtonBorder),
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -543,7 +665,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
   }
 
   // SLIDE 2: RECENT ALERTS & THREAT FEED
-  Widget _buildSlide2(dynamic lastAlert, int todayCount) {
+  Widget _buildSlide2(dynamic lastAlert, int todayCount, WidgetThemeColors theme) {
     final alertTitle = lastAlert != null ? lastAlert.soundCategory : 'No Recent Alerts';
     final alertPriority = lastAlert != null ? lastAlert.priorityLevel.toUpperCase() : 'LOW';
     final isHigh = alertPriority == 'HIGH';
@@ -552,25 +674,14 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
       key: const ValueKey(1),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'RECENT ALERTS & SAFETY FEED',
-          style: TextStyle(
-            color: Color(0xFFF59E0B),
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 5),
-
         // Alert Card
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
+            color: theme.cardBackground,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isHigh ? const Color(0xFFEF4444).withValues(alpha: 0.4) : const Color(0xFF1E293B),
+              color: isHigh ? const Color(0xFFEF4444).withValues(alpha: 0.4) : theme.cardBorder,
             ),
           ),
           child: Column(
@@ -580,8 +691,8 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   Expanded(
                     child: Text(
                       '🚨 $alertTitle',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: theme.textPrimary,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
@@ -612,14 +723,14 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '94% Confidence • Recently Active',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                    style: TextStyle(color: theme.textSecondary, fontSize: 11),
                   ),
                   Text(
                     '$todayCount Alerts Today',
-                    style: const TextStyle(
-                      color: Color(0xFF00E5FF),
+                    style: TextStyle(
+                      color: theme.accent,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -637,8 +748,8 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
             Expanded(
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: theme.primaryButtonBg,
+                  foregroundColor: theme.primaryButtonText,
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -651,14 +762,14 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
             Expanded(
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color(0xFF1E293B),
-                  side: const BorderSide(color: Color(0xFF334155)),
+                  foregroundColor: theme.secondaryButtonText,
+                  backgroundColor: theme.secondaryButtonBg,
+                  side: BorderSide(color: theme.secondaryButtonBorder),
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () => context.push(AppRoutes.stats),
-                icon: const Icon(Icons.bar_chart_rounded, size: 15, color: Color(0xFF00E5FF)),
+                icon: Icon(Icons.bar_chart_rounded, size: 15, color: theme.accent),
                 label: const Text('Sound Insights', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               ),
             ),
@@ -669,45 +780,34 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
   }
 
   // SLIDE 3: RAPID EMERGENCY & SAFETY ACTIONS
-  Widget _buildSlide3() {
+  Widget _buildSlide3(WidgetThemeColors theme) {
     return Column(
       key: const ValueKey(2),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
-          'RAPID EMERGENCY & SAFETY',
-          style: TextStyle(
-            color: Color(0xFFEF4444),
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 5),
-
         // Emergency Card
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF0F172A),
+            color: theme.cardBackground,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
           ),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 '🚨 Life-Safety Quick Response',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: theme.textPrimary,
                   fontSize: 13.5,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
                 'Instant SOS alert dispatch & Bedside sleep mode ready',
-                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                style: TextStyle(color: theme.textSecondary, fontSize: 11),
               ),
             ],
           ),
@@ -734,14 +834,14 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
             Expanded(
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color(0xFF1E293B),
-                  side: const BorderSide(color: Color(0xFF334155)),
+                  foregroundColor: theme.secondaryButtonText,
+                  backgroundColor: theme.secondaryButtonBg,
+                  side: BorderSide(color: theme.secondaryButtonBorder),
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () => context.push(AppRoutes.sleepMode),
-                icon: const Icon(Icons.bedtime_rounded, size: 14, color: Color(0xFF00E5FF)),
+                icon: Icon(Icons.bedtime_rounded, size: 14, color: theme.accent),
                 label: const Text('Sleep Mode', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold)),
               ),
             ),
@@ -749,9 +849,9 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
             Expanded(
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color(0xFF1E293B),
-                  side: const BorderSide(color: Color(0xFF334155)),
+                  foregroundColor: theme.secondaryButtonText,
+                  backgroundColor: theme.secondaryButtonBg,
+                  side: BorderSide(color: theme.secondaryButtonBorder),
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -777,8 +877,8 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: const [
+          const Row(
+            children: [
               Icon(Icons.help_outline_rounded, color: Color(0xFF00E5FF), size: 18),
               SizedBox(width: 8),
               Text(

@@ -115,12 +115,15 @@ void main() {
   });
 
   testWidgets('Tapping center YOU button toggles listening state', (tester) async {
-    final testNotifier = _TestListeningNotifier(false);
+    late _TestListeningNotifier testNotifier;
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          isListeningProvider.overrideWith((ref) => testNotifier),
+          isListeningProvider.overrideWith((ref) {
+            testNotifier = _TestListeningNotifier(ref, false);
+            return testNotifier;
+          }),
         ],
         child: const MaterialApp(
           home: Scaffold(
