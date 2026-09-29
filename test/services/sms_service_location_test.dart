@@ -168,4 +168,16 @@ void main() {
       expect(SmsService.formatForWhatsApp('   '), '');
     });
   });
+
+  group('SmsService URI encoding tests', () {
+    test('message with Google Maps link, newlines, and pin emoji preserves formatting when encoded', () {
+      const pinUrl = 'https://maps.google.com/?q=33.6844,73.0479';
+      final msg = SmsService.emergencyMessage('Smoke Alarm', locationUrl: pinUrl, accuracy: 12.0);
+      final encoded = Uri.encodeComponent(msg);
+
+      expect(encoded, contains(Uri.encodeComponent('https://maps.google.com/?q=33.6844,73.0479')));
+      expect(encoded, contains(Uri.encodeComponent('📍 Pin:')));
+      expect(encoded, contains('%0A')); // newlines encoded as %0A
+    });
+  });
 }

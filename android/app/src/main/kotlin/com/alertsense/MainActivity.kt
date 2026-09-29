@@ -82,10 +82,16 @@ class MainActivity: FlutterActivity() {
             } else null
 
             val cleanRecipient = recipient.trim().replace(" ", "")
+            val encodedRecipient = Uri.encode(cleanRecipient, "+,;")
+            val encodedBody = Uri.encode(message)
+            val smsUri = Uri.parse("smsto:" + encodedRecipient + "?body=" + encodedBody)
             val intent = Intent(Intent.ACTION_SENDTO).apply {
-                data = Uri.parse("smsto:" + Uri.encode(cleanRecipient))
+                data = smsUri
+                putExtra("address", cleanRecipient)
+                putExtra(Intent.EXTRA_PHONE_NUMBER, cleanRecipient)
                 putExtra("sms_body", message)
                 putExtra(Intent.EXTRA_TEXT, message)
+                putExtra("exit_on_sent", true)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 if (!defaultSmsPackage.isNullOrEmpty()) {
                     setPackage(defaultSmsPackage)
@@ -97,7 +103,9 @@ class MainActivity: FlutterActivity() {
                 true
             } else {
                 val fallbackIntent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("smsto:" + Uri.encode(cleanRecipient))
+                    data = smsUri
+                    putExtra("address", cleanRecipient)
+                    putExtra(Intent.EXTRA_PHONE_NUMBER, cleanRecipient)
                     putExtra("sms_body", message)
                     putExtra(Intent.EXTRA_TEXT, message)
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -285,8 +293,8 @@ class MainActivity: FlutterActivity() {
                     if (isBetterLocation(location, currentBest)) {
                         currentBest = location
                     }
-                    // Instant return if accuracy is good enough for emergency location (<= 25m)
-                    if (location.accuracy <= 25.0f) {
+                    // Instant return if accuracy is good enough for emergency location (<= 35m)
+                    if (location.accuracy <= 35.0f) {
                         finishWithLocation(location)
                     }
                 }
@@ -309,10 +317,10 @@ class MainActivity: FlutterActivity() {
                 } catch (_: Exception) {}
             }
 
-            // Strict fast watchdog timeout: 3 seconds
+            // Strict fast watchdog timeout: 2400ms to guarantee response before Dart timeout
             Handler(Looper.getMainLooper()).postDelayed({
                 finishWithLocation(currentBest)
-            }, 3000)
+            }, 2400)
         } catch (e: Exception) {
             result.success(getLastKnownLocation())
         }

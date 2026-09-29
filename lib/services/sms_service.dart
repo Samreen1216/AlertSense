@@ -53,12 +53,14 @@ class SmsService {
     // 0. On Android, use native Intent with default SMS package to bypass the "Open with WhatsApp" chooser
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {
+        final targetRecipient =
+            cleanRecipients.length == 1 ? primaryRecipient : cleanRecipients.join(';');
         final success = await _deviceChannel.invokeMethod<bool>('sendDirectSms', {
-          'recipient': primaryRecipient,
+          'recipient': targetRecipient,
           'message': message,
         });
         if (success == true) {
-          debugPrint('[SmsService] Native direct SMS successfully launched for $primaryRecipient');
+          debugPrint('[SmsService] Native direct SMS successfully launched for $targetRecipient');
           return true;
         }
       } catch (e) {
@@ -66,48 +68,47 @@ class SmsService {
       }
     }
 
-    // 1. Prioritize smsto: scheme (targets native SMS Inbox directly)
+    // 1. Prioritize smsto: and sms: schemes with proper body encoding (targets native SMS Inbox)
     final rawSmstoSingleUri = Uri.parse('smsto:$primaryRecipient?body=$encodedMsg');
-    try {
-      if (await canLaunchUrl(rawSmstoSingleUri)) {
-        return await launchUrl(rawSmstoSingleUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {}
+    final querySmstoSingleUri = Uri(
+      scheme: 'smsto',
+      path: primaryRecipient,
+      queryParameters: <String, String>{'body': message},
+    );
+    final rawSmsSingleUri = Uri.parse('sms:$primaryRecipient?body=$encodedMsg');
+    final querySmsSingleUri = Uri(
+      scheme: 'sms',
+      path: primaryRecipient,
+      queryParameters: <String, String>{'body': message},
+    );
+    final rawIosSmsUri = Uri.parse('sms:$primaryRecipient&body=$encodedMsg');
 
-    // 2. smsto: with multiple recipients
     final smstoAllUri = Uri(
       scheme: 'smsto',
       path: allRecipients,
-      queryParameters: <String, String>{
-        'body': message,
-      },
+      queryParameters: <String, String>{'body': message},
     );
-    try {
-      if (await canLaunchUrl(smstoAllUri)) {
-        return await launchUrl(smstoAllUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {}
-
-    // 3. Raw smsto: with multiple recipients string
     final rawSmstoAllUri = Uri.parse('smsto:$allRecipients?body=$encodedMsg');
-    try {
-      if (await canLaunchUrl(rawSmstoAllUri)) {
-        return await launchUrl(rawSmstoAllUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (_) {}
-
-    // 4. iOS format (sms:number&body=...) and standard sms: fallback
-    final rawIosSmsUri = Uri.parse('sms:$primaryRecipient&body=$encodedMsg');
-    final rawSmsUri = Uri.parse('sms:$primaryRecipient?body=$encodedMsg');
     final smsUri = Uri(
       scheme: 'sms',
       path: allRecipients,
-      queryParameters: <String, String>{
-        'body': message,
-      },
+      queryParameters: <String, String>{'body': message},
     );
+    final rawSmsAllUri = Uri.parse('sms:$allRecipients?body=$encodedMsg');
 
-    for (final candidate in [rawIosSmsUri, rawSmsUri, smsUri]) {
+    final candidates = [
+      rawSmstoSingleUri,
+      querySmstoSingleUri,
+      rawSmsSingleUri,
+      querySmsSingleUri,
+      smstoAllUri,
+      rawSmstoAllUri,
+      rawIosSmsUri,
+      smsUri,
+      rawSmsAllUri,
+    ];
+
+    for (final candidate in candidates) {
       try {
         if (await canLaunchUrl(candidate)) {
           return await launchUrl(candidate, mode: LaunchMode.externalApplication);
@@ -115,17 +116,13 @@ class SmsService {
       } catch (_) {}
     }
 
-    // 5. Final fallback: direct smsto launch without pre-flight check
-    try {
-      return await launchUrl(rawSmstoSingleUri, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      debugPrint('[SmsService] SMS direct launch fallback error: $e');
+    // Direct launches without pre-flight check in case canLaunchUrl was restricted by OS
+    for (final fallback in [rawSmstoSingleUri, querySmsSingleUri, rawSmsSingleUri, smsUri]) {
       try {
-        return await launchUrl(smsUri, mode: LaunchMode.externalApplication);
-      } catch (_) {
-        return false;
-      }
+        return await launchUrl(fallback, mode: LaunchMode.externalApplication);
+      } catch (_) {}
     }
+    return false;
   }
 
   /// Format phone numbers into clean international format suitable for WhatsApp.
@@ -172,16 +169,19 @@ class SmsService {
         'https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}',
       );
 
-      try {
-        if (await canLaunchUrl(whatsappDirectUri)) {
-          return await launchUrl(whatsappDirectUri, mode: LaunchMode.externalApplication);
-        } else if (await canLaunchUrl(apiDirectUri)) {
-          return await launchUrl(apiDirectUri, mode: LaunchMode.externalApplication);
-        } else if (await canLaunchUrl(waMeUri)) {
-          return await launchUrl(waMeUri, mode: LaunchMode.externalApplication);
-        }
-      } catch (e) {
-        debugPrint('[SmsService] WhatsApp direct phone error: $e');
+      for (final candidate in [whatsappDirectUri, apiDirectUri, waMeUri]) {
+        try {
+          if (await canLaunchUrl(candidate)) {
+            return await launchUrl(candidate, mode: LaunchMode.externalApplication);
+          }
+        } catch (_) {}
+      }
+
+      // Direct fallback attempt without pre-flight check in case OS queries were inconclusive
+      for (final candidate in [whatsappDirectUri, waMeUri, apiDirectUri]) {
+        try {
+          return await launchUrl(candidate, mode: LaunchMode.externalApplication);
+        } catch (_) {}
       }
     }
 
@@ -193,15 +193,16 @@ class SmsService {
       'https://api.whatsapp.com/send?text=${Uri.encodeComponent(message)}',
     );
 
-    try {
-      if (await canLaunchUrl(whatsappShareUri)) {
-        return await launchUrl(whatsappShareUri, mode: LaunchMode.externalApplication);
-      } else if (await canLaunchUrl(apiShareUri)) {
-        return await launchUrl(apiShareUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      debugPrint('[SmsService] WhatsApp general launch error: $e');
+    for (final candidate in [whatsappShareUri, apiShareUri]) {
+      try {
+        if (await canLaunchUrl(candidate)) {
+          return await launchUrl(candidate, mode: LaunchMode.externalApplication);
+        }
+      } catch (_) {}
     }
+    try {
+      return await launchUrl(whatsappShareUri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
 
     // 3. Fallback: System Share sheet so user can send via WhatsApp or any installed messenger
     try {

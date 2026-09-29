@@ -10,6 +10,7 @@ import '../../core/utils/responsive_utils.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
+import '../../services/location_service.dart';
 import '../../services/sms_service.dart';
 import 'widgets/alert_family_choice_dialog.dart';
 import 'widgets/quick_response_card.dart';
@@ -38,6 +39,11 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
   bool _autoDispatchCancelled = false;
   bool _autoDispatched = false;
 
+  // Real-time GPS Location Locking
+  LocationResult? _lockedLocation;
+  bool _isAcquiringLocation = true;
+  Future<LocationResult?>? _gpsFuture;
+
   @override
   void initState() {
     super.initState();
@@ -55,9 +61,52 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _startAutoDispatchCountdown();
-        ref.read(locationServiceProvider).getCurrentLocation(useCache: false);
+        _acquireGpsLocation();
       }
     });
+  }
+
+  Future<void> _acquireGpsLocation() async {
+    if (!mounted) return;
+    setState(() => _isAcquiringLocation = true);
+    try {
+      final future = ref.read(locationServiceProvider).getCurrentLocation(
+        timeout: const Duration(seconds: 4),
+        useCache: false,
+      );
+      _gpsFuture = future;
+      final loc = await future;
+      if (mounted) {
+        setState(() {
+          _lockedLocation = loc;
+          _isAcquiringLocation = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isAcquiringLocation = false);
+      }
+    }
+  }
+
+  Future<LocationResult?> _resolveLocation() async {
+    if (_lockedLocation != null) return _lockedLocation;
+    if (_gpsFuture != null) {
+      try {
+        final loc = await _gpsFuture!.timeout(const Duration(seconds: 3));
+        if (loc != null) {
+          if (mounted) setState(() => _lockedLocation = loc);
+          return loc;
+        }
+      } catch (_) {}
+    }
+    final loc = await ref.read(locationServiceProvider).getCurrentLocation(
+      timeout: const Duration(seconds: 4),
+    );
+    if (loc != null && mounted) {
+      setState(() => _lockedLocation = loc);
+    }
+    return loc;
   }
 
   void _startAutoDispatchCountdown() {
@@ -172,8 +221,8 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
 
     setState(() => _isSending = true);
 
-    // Acquire GPS location asynchronously with strict fast timeout
-    final loc = await ref.read(locationServiceProvider).getCurrentLocation();
+    // Acquire GPS location asynchronously with strict fast timeout or reuse pre-locked fix
+    final loc = await _resolveLocation();
     final message = SmsService.emergencyMessage(
       soundName,
       location: loc,
@@ -215,7 +264,8 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
     List<String> prefill, {
     String? prefilledMessage,
   }) async {
-    final defaultMsg = prefilledMessage ?? SmsService.emergencyMessage(soundName);
+    final loc = await _resolveLocation();
+    final defaultMsg = prefilledMessage ?? SmsService.emergencyMessage(soundName, location: loc);
     final result = await ManualWhatsAppDialog.show(
       context,
       initialPhone: prefill.isNotEmpty ? prefill.first : '',
@@ -250,8 +300,8 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
 
     setState(() => _isSending = true);
 
-    // Acquire GPS location asynchronously with strict fast timeout
-    final loc = await ref.read(locationServiceProvider).getCurrentLocation();
+    // Acquire GPS location asynchronously with strict fast timeout or reuse pre-locked fix
+    final loc = await _resolveLocation();
 
     final message = isAuto
         ? SmsService.autoDispatchEmergencyMessage(
@@ -307,7 +357,8 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
     List<String> prefill, {
     String? prefilledMessage,
   }) async {
-    final defaultMsg = prefilledMessage ?? SmsService.emergencyMessage(soundName);
+    final loc = await _resolveLocation();
+    final defaultMsg = prefilledMessage ?? SmsService.emergencyMessage(soundName, location: loc);
     final result = await ManualSmsDialog.show(
       context,
       initialPhone: prefill.isNotEmpty ? prefill.first : '',
@@ -463,6 +514,8 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                       fontWeight: FontWeight.w500,
                     ),
                   ),
+                  const SizedBox(height: 6),
+                  _buildGpsStatusBadge(),
                 ],
               ),
 
@@ -552,6 +605,8 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                     ),
                     textAlign: TextAlign.center,
                   ),
+                  const SizedBox(height: 4),
+                  _buildGpsStatusBadge(),
                   const SizedBox(height: 8),
                   _buildAutoDispatchBanner(),
                 ],
@@ -574,6 +629,96 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGpsStatusBadge() {
+    final hasLoc = _lockedLocation != null;
+    final isAcquiring = _isAcquiringLocation;
+
+    Color badgeBg;
+    Color borderColor;
+    Color iconColor;
+    Color textColor;
+    String statusText;
+    IconData icon;
+
+    if (isAcquiring) {
+      badgeBg = Colors.black.withValues(alpha: 0.35);
+      borderColor = Colors.amberAccent.withValues(alpha: 0.4);
+      iconColor = Colors.amberAccent;
+      textColor = Colors.white;
+      statusText = 'Acquiring GPS location…';
+      icon = Icons.location_searching_rounded;
+    } else if (hasLoc) {
+      badgeBg = const Color(0xFF1B5E20).withValues(alpha: 0.65);
+      borderColor = const Color(0xFF69F0AE).withValues(alpha: 0.6);
+      iconColor = const Color(0xFF69F0AE);
+      textColor = Colors.white;
+      statusText = '📍 GPS Location Locked (${_lockedLocation!.formattedAccuracy})';
+      icon = Icons.location_on_rounded;
+    } else {
+      badgeBg = Colors.black.withValues(alpha: 0.35);
+      borderColor = Colors.white24;
+      iconColor = Colors.white54;
+      textColor = Colors.white70;
+      statusText = '📍 GPS Offline';
+      icon = Icons.location_off_rounded;
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: badgeBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: borderColor,
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isAcquiring)
+            const SizedBox(
+              width: 12,
+              height: 12,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.amberAccent,
+              ),
+            )
+          else
+            Icon(icon, color: iconColor, size: 15),
+          const SizedBox(width: 7),
+          Flexible(
+            child: Text(
+              statusText,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ),
+          if (!isAcquiring && !hasLoc) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _acquireGpsLocation,
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amberAccent,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

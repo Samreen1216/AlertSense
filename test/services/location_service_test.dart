@@ -247,6 +247,27 @@ void main() {
       expect(service.cachedLocation, isNull);
     });
 
+    test('deduplicates simultaneous concurrent getCurrentLocation calls into a single channel invocation', () async {
+      service.clearCache();
+      deviceCalls.clear();
+
+      // Launch 3 concurrent location fetches simultaneously
+      final future1 = service.getCurrentLocation(useCache: false);
+      final future2 = service.getCurrentLocation(useCache: false);
+      final future3 = service.getCurrentLocation(useCache: false);
+
+      final results = await Future.wait([future1, future2, future3]);
+
+      // All 3 callers must receive the exact same resolved location
+      expect(results[0], isNotNull);
+      expect(results[1], equals(results[0]));
+      expect(results[2], equals(results[0]));
+
+      // Only ONE channel invocation should have occurred
+      final getLocCalls = deviceCalls.where((c) => c.method == 'getCurrentLocation').toList();
+      expect(getLocCalls.length, equals(1));
+    });
+
     test('falls back to geolocator Android channel if device channel returns null', () async {
       // Mock device channel to return null
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -367,6 +388,17 @@ void main() {
         LocationService.formatSnippet(33.6844, 73.0479, 12.3),
         'https://maps.google.com/?q=33.6844,73.0479 (±12m)',
       );
+    });
+
+    test('checkAndRequestPermission succeeds when permission is granted by checker', () async {
+      final permService = LocationService(
+        deviceChannel: testDeviceChannel,
+        serviceStatusChecker: () async => true,
+        permissionStatusChecker: () async => true,
+      );
+
+      final hasPerm = await permService.checkAndRequestPermission();
+      expect(hasPerm, isTrue);
     });
   });
 }

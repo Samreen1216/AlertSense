@@ -1,6 +1,6 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Represents geographical coordinates and accuracy obtained during emergency detection.
@@ -116,6 +116,7 @@ class LocationService {
 
   LocationResult? _cachedLocation;
   DateTime? _cacheTimestamp;
+  Future<LocationResult?>? _inflightFetch;
 
   LocationService({
     MethodChannel? deviceChannel,
@@ -180,6 +181,11 @@ class LocationService {
       } catch (_) {}
     }
 
+    // 4. Try Geolocator directly
+    try {
+      return await Geolocator.isLocationServiceEnabled();
+    } catch (_) {}
+
     // Default to true to allow fetch attempt if status check is inconclusive
     return true;
   }
@@ -213,23 +219,43 @@ class LocationService {
       } catch (_) {}
     }
 
+    try {
+      final perm = await Geolocator.checkPermission();
+      return perm == LocationPermission.always || perm == LocationPermission.whileInUse;
+    } catch (_) {}
+
     return true;
   }
 
   /// Explicitly requests location permission from the user.
   Future<PermissionStatus> requestPermission() async {
     try {
-      return await Permission.location.request();
-    } catch (_) {
-      try {
-        final granted = await _deviceChannel.invokeMethod<bool>('checkPermission');
-        if (granted == true) return PermissionStatus.granted;
-      } catch (_) {}
-      return PermissionStatus.denied;
-    }
+      final status = await Permission.location.request();
+      if (status.isGranted || status.isLimited) {
+        return status;
+      }
+      if (status.isPermanentlyDenied || status.isRestricted) {
+        return status;
+      }
+    } catch (_) {}
+
+    try {
+      final geoPerm = await Geolocator.requestPermission();
+      if (geoPerm == LocationPermission.always || geoPerm == LocationPermission.whileInUse) {
+        return PermissionStatus.granted;
+      } else if (geoPerm == LocationPermission.deniedForever) {
+        return PermissionStatus.permanentlyDenied;
+      }
+    } catch (_) {}
+
+    try {
+      final granted = await _deviceChannel.invokeMethod<bool>('checkPermission');
+      if (granted == true) return PermissionStatus.granted;
+    } catch (_) {}
+    return PermissionStatus.denied;
   }
 
-  /// Checks and automatically requests permission if not permanently denied.
+  /// Checks and automatically requests permission if not granted.
   /// Returns `true` if granted, `false` otherwise.
   Future<bool> checkAndRequestPermission() async {
     if (permissionStatusChecker != null) {
@@ -238,13 +264,13 @@ class LocationService {
       } catch (_) {}
     }
 
-    // 1. Try AlertSense device channel check first
+    // 1. Check if permission is already granted via AlertSense device channel
     try {
       final granted = await _deviceChannel.invokeMethod<bool>('checkPermission');
-      if (granted != null) return granted;
+      if (granted == true) return true;
     } catch (_) {}
 
-    // 2. Try permission_handler
+    // 2. Check if already granted via permission_handler
     try {
       final status = await Permission.location.status;
       if (status.isGranted || status.isLimited) {
@@ -254,12 +280,9 @@ class LocationService {
         debugPrint('[LocationService] Location permission permanently denied or restricted.');
         return false;
       }
-
-      final requested = await Permission.location.request();
-      return requested.isGranted || requested.isLimited;
     } catch (_) {}
 
-    // 3. Fallback to geolocator channels
+    // 3. Check if already granted via geolocator channels
     for (final channel in [_geolocatorAndroidChannel, _geolocatorChannel]) {
       try {
         final perm = await channel.invokeMethod<int>('checkPermission');
@@ -267,8 +290,39 @@ class LocationService {
       } catch (_) {}
     }
 
-    // Allow native layer to attempt fetch if permission check is inconclusive
-    return true;
+    try {
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.always || perm == LocationPermission.whileInUse) {
+        return true;
+      }
+      if (perm == LocationPermission.deniedForever) {
+        debugPrint('[LocationService] Geolocator reports permission permanently denied.');
+        return false;
+      }
+    } catch (_) {}
+
+    // 4. Permission is NOT granted yet! Explicitly request permission at runtime
+    try {
+      final requested = await Permission.location.request();
+      if (requested.isGranted || requested.isLimited) {
+        return true;
+      }
+    } catch (_) {}
+
+    try {
+      final geoPerm = await Geolocator.requestPermission();
+      if (geoPerm == LocationPermission.always || geoPerm == LocationPermission.whileInUse) {
+        return true;
+      }
+    } catch (_) {}
+
+    // 5. Final check via device channel in case system dialog resolved it
+    try {
+      final granted = await _deviceChannel.invokeMethod<bool>('checkPermission');
+      if (granted == true) return true;
+    } catch (_) {}
+
+    return false;
   }
 
   /// Instantly retrieves the last known location without waiting for fresh GPS fix.
@@ -295,6 +349,21 @@ class LocationService {
       } catch (_) {}
     }
 
+    // Direct geolocator plugin fallback
+    try {
+      final pos = await Geolocator.getLastKnownPosition();
+      if (pos != null) {
+        final res = LocationResult(
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+          accuracy: pos.accuracy,
+          timestamp: pos.timestamp,
+        );
+        updateCache(res);
+        return res;
+      }
+    } catch (_) {}
+
     return null;
   }
 
@@ -311,7 +380,7 @@ class LocationService {
   ///
   /// Never throws an exception; always fails gracefully.
   Future<LocationResult?> getCurrentLocation({
-    Duration timeout = const Duration(seconds: 3),
+    Duration timeout = const Duration(seconds: 4),
     bool useCache = true,
   }) async {
     // 0. Instant Cache Fast-Path: if cache is valid and fresh, return immediately!
@@ -319,6 +388,23 @@ class LocationService {
       return _cachedLocation;
     }
 
+    // 0b. Inflight request deduplication: reuse active fetch if one is already running
+    if (_inflightFetch != null) {
+      return await _inflightFetch!;
+    }
+
+    final future = _executeLocationFetch(timeout);
+    _inflightFetch = future;
+    try {
+      return await future;
+    } finally {
+      if (identical(_inflightFetch, future)) {
+        _inflightFetch = null;
+      }
+    }
+  }
+
+  Future<LocationResult?> _executeLocationFetch(Duration timeout) async {
     try {
       // 1. Verify location hardware/service is enabled
       final isEnabled = await isLocationServiceEnabled();
@@ -363,28 +449,50 @@ class LocationService {
   }
 
   Future<LocationResult?> _fetchFromChannels() async {
-    // 1. Try AlertSense native device channel
+    // 1. Try AlertSense native device channel with fast 2.5s budget
     try {
-      final raw = await _deviceChannel.invokeMethod<dynamic>('getCurrentLocation');
+      final raw = await _deviceChannel
+          .invokeMethod<dynamic>('getCurrentLocation')
+          .timeout(const Duration(milliseconds: 2500));
       final parsed = LocationResult.tryFromMap(raw);
       if (parsed != null) return parsed;
     } catch (_) {}
 
     // 2. Try geolocator Android channel
     try {
-      final raw = await _geolocatorAndroidChannel.invokeMethod<dynamic>('getCurrentPosition');
+      final raw = await _geolocatorAndroidChannel
+          .invokeMethod<dynamic>('getCurrentPosition')
+          .timeout(const Duration(milliseconds: 2000));
       final parsed = LocationResult.tryFromMap(raw);
       if (parsed != null) return parsed;
     } catch (_) {}
 
     // 3. Try standard geolocator channel
     try {
-      final raw = await _geolocatorChannel.invokeMethod<dynamic>('getCurrentPosition');
+      final raw = await _geolocatorChannel
+          .invokeMethod<dynamic>('getCurrentPosition')
+          .timeout(const Duration(milliseconds: 2000));
       final parsed = LocationResult.tryFromMap(raw);
       if (parsed != null) return parsed;
     } catch (_) {}
 
-    // 4. Fallback to last known location
+    // 4. Try geolocator plugin directly as hardware fallback
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 3),
+        ),
+      );
+      return LocationResult(
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+        accuracy: pos.accuracy,
+        timestamp: pos.timestamp,
+      );
+    } catch (_) {}
+
+    // 5. Fallback to last known location
     return getLastKnownLocation();
   }
 

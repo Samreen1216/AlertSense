@@ -328,5 +328,35 @@ void main() {
       expect(find.text('Please enter a recipient phone number'), findsOneWidget);
       expect(returnedResult, isNull);
     });
+
+    testWidgets('shows GPS Pin Attached badge when message contains Google Maps pin', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterial(
+          const ManualSmsDialog(
+            initialPhone: '+15551234567',
+            defaultMessage: 'EMERGENCY: Siren detected\n\n📍 Pin: https://maps.google.com/?q=33.6844,73.0479 (±12m)',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('GPS Pin Attached'), findsOneWidget);
+    });
+  });
+
+  group('ManualWhatsAppDialog GPS Status Tests', () {
+    testWidgets('shows GPS Pin Attached badge when message contains Google Maps pin', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterial(
+          const ManualWhatsAppDialog(
+            initialPhone: '+923001234567',
+            defaultMessage: 'EMERGENCY: Fire detected\n\n📍 Pin: https://maps.google.com/?q=31.5204,74.3587 (±10m)',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('GPS Pin Attached'), findsOneWidget);
+    });
   });
 }

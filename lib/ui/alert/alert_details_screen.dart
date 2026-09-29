@@ -396,6 +396,9 @@ class AlertDetailsScreen extends ConsumerWidget {
                       return;
                     }
 
+                    // Pre-warm location acquisition in parallel while choice dialog is open
+                    final locFuture = ref.read(locationServiceProvider).getCurrentLocation();
+
                     // Show the 2-choice dialog (WhatsApp vs Messages with "JUST ONCE")
                     final choice = await showDialog<AlertChannel>(
                       context: context,
@@ -409,7 +412,7 @@ class AlertDetailsScreen extends ConsumerWidget {
 
                     if (choice == null || !context.mounted) return;
 
-                    final loc = await ref.read(locationServiceProvider).getCurrentLocation();
+                    final loc = await locFuture;
                     final message = SmsService.emergencyMessage(
                       label,
                       location: loc,

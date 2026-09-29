@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
+import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
+import '../../services/location_service.dart';
+import '../../services/sms_service.dart';
 
 class EmergencyContactsScreen extends ConsumerStatefulWidget {
   const EmergencyContactsScreen({super.key});
@@ -16,6 +19,7 @@ class EmergencyContactsScreen extends ConsumerStatefulWidget {
 
 class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScreen> {
   late List<TextEditingController> _controllers;
+  bool _isTestingGps = false;
 
   @override
   void initState() {
@@ -58,6 +62,199 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
         controller.close();
       } catch (_) {}
     });
+  }
+
+  Future<void> _testEmergencySosMessage() async {
+    final numbers = _controllers
+        .map((c) => c.text.trim())
+        .where((text) => text.isNotEmpty)
+        .toList();
+
+    if (numbers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter at least one emergency contact number first.'),
+          backgroundColor: Colors.orange.shade800,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final targetContact = numbers.first;
+    setState(() => _isTestingGps = true);
+
+    LocationResult? location;
+    try {
+      location = await ref.read(locationServiceProvider).getCurrentLocation(
+        timeout: const Duration(seconds: 4),
+        useCache: false,
+      );
+    } catch (_) {}
+
+    if (!mounted) return;
+    setState(() => _isTestingGps = false);
+
+    final testMessage = SmsService.emergencyMessage(
+      'Smoke Alarm (TEST)',
+      location: location,
+    );
+
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E222D) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: isDark ? Colors.white12 : Colors.black12,
+              width: 1.0,
+            ),
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.gps_fixed_rounded,
+                  color: Colors.redAccent,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Emergency SOS Test',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // GPS Status Pill
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: location != null
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : Colors.orange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: location != null ? Colors.green : Colors.orange,
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        location != null ? Icons.location_on_rounded : Icons.location_off_rounded,
+                        color: location != null ? Colors.green : Colors.orange,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          location != null
+                              ? 'GPS Locked: ${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)} (${location.formattedAccuracy})'
+                              : 'GPS Not Locked (Sending without Pin)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: location != null
+                                ? (isDark ? Colors.greenAccent : Colors.green.shade800)
+                                : (isDark ? Colors.orangeAccent : Colors.orange.shade800),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Target: $targetContact',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Message Preview:',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF272B37) : const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black12,
+                    ),
+                  ),
+                  child: SelectableText(
+                    testMessage,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF25D366),
+                side: const BorderSide(color: Color(0xFF25D366)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.chat_rounded, size: 18),
+              label: const Text('WhatsApp'),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                SmsService.sendEmergencyWhatsApp(
+                  phoneNumber: targetContact,
+                  message: testMessage,
+                );
+              },
+            ),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFE65100),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.sms_rounded, size: 18),
+              label: const Text('Send SMS'),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                SmsService.sendEmergencySms(
+                  recipients: [targetContact],
+                  message: testMessage,
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -242,6 +439,37 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
               label: const Text(
                 'Save Contacts',
                 style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 50,
+            child: OutlinedButton.icon(
+              style: isHighContrast
+                  ? OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.hcPrimary,
+                      side: const BorderSide(color: AppColors.hcPrimary, width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    )
+                  : OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFEF4444),
+                      side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+              onPressed: _isTestingGps ? null : _testEmergencySosMessage,
+              icon: _isTestingGps
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF4444)),
+                    )
+                  : const Icon(Icons.gps_fixed_rounded),
+              label: Text(
+                _isTestingGps
+                    ? 'Acquiring GPS Fix…'
+                    : 'Test Emergency SOS Message (with GPS)',
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ),

@@ -107,9 +107,56 @@ class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
               ),
             ),
             const SizedBox(height: 14),
-            const Text(
-              'Emergency message preview & edit:',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Emergency message preview & edit:',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _messageController.text.contains('maps.google.com')
+                        ? const Color(0xFF1B5E20).withValues(alpha: 0.6)
+                        : Colors.amber.shade900.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _messageController.text.contains('maps.google.com')
+                          ? const Color(0xFF69F0AE)
+                          : Colors.amberAccent,
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _messageController.text.contains('maps.google.com')
+                            ? Icons.location_on_rounded
+                            : Icons.location_off_rounded,
+                        size: 13,
+                        color: _messageController.text.contains('maps.google.com')
+                            ? const Color(0xFF69F0AE)
+                            : Colors.amberAccent,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _messageController.text.contains('maps.google.com')
+                            ? 'GPS Pin Attached'
+                            : 'No GPS Pin',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: _messageController.text.contains('maps.google.com')
+                              ? Colors.white
+                              : Colors.amberAccent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             TextField(
