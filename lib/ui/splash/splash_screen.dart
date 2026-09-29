@@ -530,7 +530,46 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               SafeArea(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
+                    final isShort = constraints.maxHeight < 500;
                     final isCompact = constraints.maxHeight < 680;
+
+                    if (isShort) {
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          children: [
+                            // Top Bar: Theme Switcher & Skip Button
+                            _buildTopBar(currentTheme, splashColors),
+                            const SizedBox(height: 10),
+
+                            // Center Emblem with 3D Parallax & Breathing Glow
+                            _buildCenterEmblem(splashColors, safeTiltX, safeTiltY, true),
+                            const SizedBox(height: 12),
+
+                            // Animated Title & Tagline
+                            _buildBrandTypography(splashColors, true),
+                            const SizedBox(height: 12),
+
+                            // Live Acoustic Frequency Equalizer
+                            _buildEqualizer(splashColors),
+                            const SizedBox(height: 10),
+
+                            // Dynamic Feature Pills Horizontal Ribbon
+                            _buildFeaturePills(splashColors),
+                            const SizedBox(height: 14),
+
+                            // Progress Bar & Initialization State
+                            _buildStatusProgress(splashColors, true),
+                            const SizedBox(height: 10),
+
+                            // Action Button ("Get Started / Continue")
+                            _buildActionButton(splashColors),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      );
+                    }
+
                     return Column(
                       children: [
                         // Top Bar: Theme Switcher & Skip Button

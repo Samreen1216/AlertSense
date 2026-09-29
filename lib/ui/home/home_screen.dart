@@ -148,7 +148,8 @@ class HomeScreen extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: context.isTablet
-            ? Center(
+            ? Align(
+                alignment: Alignment.topCenter,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
                     maxWidth: ResponsiveBreakpoints.maxDesktopWidth,

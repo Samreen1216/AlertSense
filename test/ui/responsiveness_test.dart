@@ -20,6 +20,14 @@ import 'package:alertsense/ui/alert/widgets/quick_response_card.dart';
 import 'package:alertsense/ui/alert/full_screen_alert.dart';
 import 'package:alertsense/ui/alert/alert_details_screen.dart';
 import 'package:alertsense/ui/sleep/sleep_mode_screen.dart';
+import 'package:alertsense/ui/stats/stats_screen.dart';
+import 'package:alertsense/ui/quick_scan/quick_scan_screen.dart';
+import 'package:alertsense/ui/history/history_screen.dart';
+import 'package:alertsense/ui/home/widgets/sound_category_cards.dart';
+import 'package:alertsense/ui/home/widgets/quick_stats_grid.dart';
+import 'package:alertsense/ui/settings/vibration_designer_screen.dart';
+import 'package:alertsense/ui/onboarding/onboarding_screen.dart';
+import 'package:alertsense/ui/splash/splash_screen.dart';
 
 class _MockNotificationService extends NotificationService {}
 
@@ -741,6 +749,343 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Alert Details'), findsOneWidget);
+    });
+  });
+
+  group('Phase 3: StatsScreen Responsive Tests', () {
+    testWidgets('StatsScreen at 2.0x font scale renders cleanly without RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 360, height: 640);
+      final testAlerts = [
+        AlertEvent(
+          id: 'stats-alert-1',
+          soundCategory: 'fireAlarm',
+          confidence: 0.95,
+          priorityLevel: 'high',
+          timestamp: DateTime.now(),
+          source: 'Sensor 1',
+        ),
+        AlertEvent(
+          id: 'stats-alert-2',
+          soundCategory: 'doorbell',
+          confidence: 0.88,
+          priorityLevel: 'low',
+          timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+          source: 'Sensor 1',
+        ),
+      ];
+      for (final a in testAlerts) {
+        await alertRepo.addAlert(a);
+      }
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 360,
+          height: 640,
+          textScale: 2.0,
+          container: container,
+          child: const StatsScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Insights & Analytics'), findsOneWidget);
+      expect(find.text('Alerts Today'), findsOneWidget);
+    });
+
+    testWidgets('StatsScreen on tablet (800x1280) constrains max width', (tester) async {
+      configureScreen(tester, width: 800, height: 1280);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 1280,
+          container: container,
+          child: const StatsScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Insights & Analytics'), findsOneWidget);
+    });
+  });
+
+  group('Phase 3: HistoryScreen Responsive Tests', () {
+    testWidgets('HistoryScreen with long action strings does not overflow RenderFlex', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final alertWithLongAction = AlertEvent(
+        id: 'hist-long-action-1',
+        soundCategory: 'emergencySiren',
+        confidence: 0.99,
+        priorityLevel: 'high',
+        timestamp: DateTime.now(),
+        source: 'Acoustic Sensor',
+        acknowledged: true,
+        responseAction: 'Dispatched Emergency Response Services and Notified Caregiver Network Immediately',
+      );
+      await alertRepo.addAlert(alertWithLongAction);
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          textScale: 1.5,
+          container: container,
+          child: const HistoryScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Alert History'), findsOneWidget);
+    });
+
+    testWidgets('HistoryScreen on tablet constrains ListView to 800dp centered', (tester) async {
+      configureScreen(tester, width: 800, height: 1280);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 1280,
+          container: container,
+          child: const HistoryScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Alert History'), findsOneWidget);
+    });
+  });
+
+  group('Phase 3: SoundCategoryCardsSection Responsive Tests', () {
+    testWidgets('sound_category_cards at 2.0x font scale renders cleanly without RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 360, height: 600);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 360,
+          height: 600,
+          textScale: 2.0,
+          container: container,
+          child: const Scaffold(
+            body: SingleChildScrollView(
+              child: SoundCategoryCardsSection(),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Sound Categories'), findsOneWidget);
+    });
+  });
+
+  group('Phase 3: QuickStatsGrid Responsive Tests', () {
+    testWidgets('QuickStatsGrid on wide viewport (800x600) renders 4 tiles in a single row', (tester) async {
+      configureScreen(tester, width: 800, height: 600);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 600,
+          container: container,
+          child: const Scaffold(
+            body: QuickStatsGrid(),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Alerts Today'), findsOneWidget);
+      expect(find.text('Battery Level'), findsOneWidget);
+      expect(find.text('Listening Time'), findsOneWidget);
+      expect(find.text('Most Frequent'), findsOneWidget);
+    });
+  });
+
+  group('Phase 4: QuickScanScreen Landscape Tests', () {
+    testWidgets('QuickScanScreen in landscape (800x360) renders without RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          container: container,
+          child: const QuickScanScreen(autoStart: false),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Quick Scan'), findsOneWidget);
+      expect(find.text('Start Quick Scan'), findsOneWidget);
+    });
+  });
+
+  group('Phase 4: OnboardingScreen & Creation Tools Responsive Tests', () {
+    testWidgets('OnboardingScreen in landscape (800x360) renders cleanly without RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          container: container,
+          child: const OnboardingScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Sounds You Can See'), findsOneWidget);
+      expect(find.text('Skip'), findsOneWidget);
+      expect(find.text('Next'), findsOneWidget);
+    });
+
+    testWidgets('VibrationDesignerScreen in landscape (800x360) renders cleanly', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          container: container,
+          child: const VibrationDesignerScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Vibration Designer'), findsOneWidget);
+    });
+
+    testWidgets('SplashScreen in short viewport (800x360) renders cleanly without RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          container: container,
+          child: const SplashScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Skip'), findsOneWidget);
     });
   });
 }

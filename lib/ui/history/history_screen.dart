@@ -232,96 +232,109 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
           // Alerts List or Empty State
           Expanded(
-            child: alerts.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: themeType == ThemeType.highContrast
-                                  ? Colors.black
-                                  : (isDark
-                                      ? const Color(0xFF1E2638)
-                                      : theme.colorScheme.surfaceContainerHighest
-                                          .withValues(alpha: 0.5)),
-                              shape: BoxShape.circle,
-                              border: themeType == ThemeType.highContrast
-                                  ? Border.all(color: const Color(0xFF00FF41), width: 2)
-                                  : null,
-                            ),
-                            child: Icon(
-                              Icons.notifications_off_outlined,
-                              size: 64,
-                              color: themeType == ThemeType.highContrast
-                                  ? const Color(0xFF00FF41)
-                                  : theme.colorScheme.primary.withValues(alpha: 0.7),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No alerts yet',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: themeType == ThemeType.highContrast ? const Color(0xFF00FF41) : null,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            selectedFilter == 'All'
-                                ? 'No sounds have been detected yet. When an environmental sound or alarm occurs, it will be logged here.'
-                                : 'No $selectedFilter priority alerts found.',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: themeType == ThemeType.highContrast
-                                  ? Colors.white70
-                                  : theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          if (selectedFilter == 'All') ...[
-                            const SizedBox(height: 20),
-                            FilledButton.icon(
-                              onPressed: () => context.push(AppRoutes.quickScan),
-                              icon: const Icon(Icons.graphic_eq_rounded, size: 18),
-                              label: const Text('Start Quick Scan'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: themeType == ThemeType.highContrast ? const Color(0xFF00FF41) : null,
-                                foregroundColor: themeType == ThemeType.highContrast ? Colors.black : null,
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: context.isTablet ? 800 : double.infinity,
+                ),
+                child: alerts.isEmpty
+                    ? LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isShort = constraints.maxHeight < 400;
+                          return SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 32.0,
+                                  vertical: isShort ? 16.0 : 32.0,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(isShort ? 16 : 24),
+                                      decoration: BoxDecoration(
+                                        color: themeType == ThemeType.highContrast
+                                            ? Colors.black
+                                            : (isDark
+                                                ? const Color(0xFF1E2638)
+                                                : theme.colorScheme.surfaceContainerHighest
+                                                    .withValues(alpha: 0.5)),
+                                        shape: BoxShape.circle,
+                                        border: themeType == ThemeType.highContrast
+                                            ? Border.all(color: const Color(0xFF00FF41), width: 2)
+                                            : null,
+                                      ),
+                                      child: Icon(
+                                        Icons.notifications_off_outlined,
+                                        size: isShort ? 40 : 64,
+                                        color: themeType == ThemeType.highContrast
+                                            ? const Color(0xFF00FF41)
+                                            : theme.colorScheme.primary.withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                    SizedBox(height: isShort ? 10 : 16),
+                                    Text(
+                                      'No alerts yet',
+                                      style: theme.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: isShort ? 18 : null,
+                                        color: themeType == ThemeType.highContrast ? const Color(0xFF00FF41) : null,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      selectedFilter == 'All'
+                                          ? 'No sounds have been detected yet. When an environmental sound or alarm occurs, it will be logged here.'
+                                          : 'No $selectedFilter priority alerts found.',
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: themeType == ThemeType.highContrast
+                                            ? Colors.white70
+                                            : theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    if (selectedFilter == 'All') ...[
+                                      SizedBox(height: isShort ? 14 : 20),
+                                      FilledButton.icon(
+                                        onPressed: () => context.push(AppRoutes.quickScan),
+                                        icon: const Icon(Icons.graphic_eq_rounded, size: 18),
+                                        label: const Text('Start Quick Scan'),
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: themeType == ThemeType.highContrast ? const Color(0xFF00FF41) : null,
+                                          foregroundColor: themeType == ThemeType.highContrast ? Colors.black : null,
+                                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(14),
+                                          ),
+                                        ),
+                                      ),
+                                    ] else ...[
+                                      const SizedBox(height: 16),
+                                      OutlinedButton(
+                                        style: themeType == ThemeType.highContrast
+                                            ? OutlinedButton.styleFrom(
+                                                foregroundColor: const Color(0xFF00FF41),
+                                                side: const BorderSide(color: Color(0xFF00FF41)),
+                                              )
+                                            : null,
+                                        onPressed: () {
+                                          ref.read(alertFilterPriorityProvider.notifier).state = null;
+                                        },
+                                        child: const Text('Show All Alerts'),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ),
-                          ] else ...[
-                            const SizedBox(height: 16),
-                            OutlinedButton(
-                              style: themeType == ThemeType.highContrast
-                                  ? OutlinedButton.styleFrom(
-                                      foregroundColor: const Color(0xFF00FF41),
-                                      side: const BorderSide(color: Color(0xFF00FF41)),
-                                    )
-                                  : null,
-                              onPressed: () {
-                                ref.read(alertFilterPriorityProvider.notifier).state = null;
-                              },
-                              child: const Text('Show All Alerts'),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  )
-                : Align(
-                    alignment: Alignment.topCenter,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: context.isTablet ? 800 : double.infinity,
-                      ),
-                      child: ListView.builder(
+                          );
+                        },
+                      )
+                    : ListView.builder(
                         padding: const EdgeInsets.only(top: 8, bottom: 24),
                         itemCount: grouped.keys.length,
                         itemBuilder: (context, groupIndex) {

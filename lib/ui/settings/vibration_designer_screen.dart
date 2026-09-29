@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vibration/vibration.dart';
 import '../../core/constants/app_svg_icons.dart';
 import '../../core/constants/sound_categories.dart';
+import '../../core/utils/responsive_utils.dart';
 import '../../providers/settings_providers.dart';
 
 class VibrationDesignerScreen extends ConsumerStatefulWidget {
@@ -225,54 +226,58 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isLandscape = context.isLandscape;
     final hasCustomSaved = ref.watch(userSettingsProvider).customVibrationPatterns.containsKey(_selectedCategory.name);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Vibration Designer'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Sound Category Dropdown
-            DropdownButtonFormField<SoundCategory>(
-              initialValue: _selectedCategory,
-              decoration: InputDecoration(
-                labelText: 'Sound Category',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Sound Category Dropdown
+              DropdownButtonFormField<SoundCategory>(
+                initialValue: _selectedCategory,
+                decoration: InputDecoration(
+                  labelText: 'Sound Category',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                items: SoundCategory.values.map((cat) {
+                  return DropdownMenuItem(
+                    value: cat,
+                    child: Row(
+                      children: [
+                        AppSvgIcon(iconKey: cat.name, size: 18, color: cat.color),
+                        const SizedBox(width: 10),
+                        Text(cat.label),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (cat) {
+                  if (cat != null) {
+                    setState(() {
+                      _selectedCategory = cat;
+                      _loadPatternForCategory(cat);
+                    });
+                  }
+                },
               ),
-              items: SoundCategory.values.map((cat) {
-                return DropdownMenuItem(
-                  value: cat,
-                  child: Row(
-                    children: [
-                      AppSvgIcon(iconKey: cat.name, size: 18, color: cat.color),
-                      const SizedBox(width: 10),
-                      Text(cat.label),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (cat) {
-                if (cat != null) {
-                  setState(() {
-                    _selectedCategory = cat;
-                    _loadPatternForCategory(cat);
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Tap Pad
-            Expanded(
-              child: GestureDetector(
-                onTapDown: _onTapDown,
-                onTapUp: _onTapUp,
-                child: Container(
-                  width: double.infinity,
+              // Tap Pad
+              SizedBox(
+                height: isLandscape ? 180 : 240,
+                child: GestureDetector(
+                  onTapDown: _onTapDown,
+                  onTapUp: _onTapUp,
+                  child: Container(
+                    width: double.infinity,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(16),
@@ -456,6 +461,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

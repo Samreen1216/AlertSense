@@ -166,15 +166,18 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
             const SizedBox(height: 14),
 
             // Slide Navigation Tabs
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildSlidePill(0, '1. Live Monitor'),
-                const SizedBox(width: 8),
-                _buildSlidePill(1, '2. Alerts Feed'),
-                const SizedBox(width: 8),
-                _buildSlidePill(2, '3. Emergency'),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildSlidePill(0, '1. Live Monitor'),
+                  const SizedBox(width: 8),
+                  _buildSlidePill(1, '2. Alerts Feed'),
+                  const SizedBox(width: 8),
+                  _buildSlidePill(2, '3. Emergency'),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
@@ -280,40 +283,47 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
           Row(
             children: [
               // Brand & Live Pill
-              Row(
-                children: [
-                  const Text('🛡️', style: TextStyle(fontSize: 15)),
-                  const SizedBox(width: 5),
-                  const Text(
-                    'AlertSense',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: isListening ? const Color(0xFF0D2818) : const Color(0xFF1E293B),
-                      borderRadius: BorderRadius.circular(100),
-                      border: Border.all(
-                        color: isListening ? const Color(0xFF10B981) : const Color(0xFF475569),
-                        width: 1,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🛡️', style: TextStyle(fontSize: 15)),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'AlertSense',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      isListening ? '● LIVE' : '○ PAUSED',
-                      style: TextStyle(
-                        color: isListening ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: isListening ? const Color(0xFF0D2818) : const Color(0xFF1E293B),
+                          borderRadius: BorderRadius.circular(100),
+                          border: Border.all(
+                            color: isListening ? const Color(0xFF10B981) : const Color(0xFF475569),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          isListening ? '● LIVE' : '○ PAUSED',
+                          style: TextStyle(
+                            color: isListening ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
               const Spacer(),
 

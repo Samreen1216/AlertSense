@@ -40,66 +40,78 @@ class StatsScreen extends ConsumerWidget {
               )
             : null,
       ),
-      body: alerts.isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.darkCard
-                            : theme.colorScheme.surfaceContainerHighest
-                                .withValues(alpha: 0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.bar_chart_rounded,
-                        size: 64,
-                        color: theme.colorScheme.primary.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Not enough data yet',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'AlertSense will analyze your sound patterns and generate frequency trends once alerts are recorded.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    FilledButton.tonalIcon(
-                      onPressed: () => context.push(AppRoutes.quickScan),
-                      icon: const Icon(Icons.graphic_eq_rounded, size: 18),
-                      label: const Text('Perform Quick Scan'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: context.isTablet ? 840 : double.infinity,
+          ),
+          child: alerts.isEmpty
+              ? LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isShort = constraints.maxHeight < 450;
+                    return SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 32.0,
+                            vertical: isShort ? 16.0 : 32.0,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(isShort ? 16 : 24),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.darkCard
+                                      : theme.colorScheme.surfaceContainerHighest
+                                          .withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.bar_chart_rounded,
+                                  size: isShort ? 40 : 64,
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.7),
+                                ),
+                              ),
+                              SizedBox(height: isShort ? 12 : 20),
+                              Text(
+                                'Not enough data yet',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'AlertSense will analyze your sound patterns and generate frequency trends once alerts are recorded.',
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              SizedBox(height: isShort ? 14 : 20),
+                              FilledButton.tonalIcon(
+                                onPressed: () => context.push(AppRoutes.quickScan),
+                                icon: const Icon(Icons.graphic_eq_rounded, size: 18),
+                                label: const Text('Perform Quick Scan'),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: context.isTablet ? 840 : double.infinity,
-                ),
-                child: SingleChildScrollView(
+                    );
+                  },
+                )
+              : SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

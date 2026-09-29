@@ -152,12 +152,16 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  '${cat.label} Detected!',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w800,
-                                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                Flexible(
+                                  child: Text(
+                                    '${cat.label} Detected!',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w800,
+                                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 6),

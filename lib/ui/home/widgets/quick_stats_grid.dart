@@ -64,16 +64,19 @@ class QuickStatsGrid extends ConsumerWidget {
         );
 
         if (isWide) {
-          return Row(
-            children: [
-              Expanded(child: tileAlerts),
-              const SizedBox(width: 12),
-              Expanded(child: tileBattery),
-              const SizedBox(width: 12),
-              Expanded(child: tileListening),
-              const SizedBox(width: 12),
-              Expanded(child: tileMostFrequent),
-            ],
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: tileAlerts),
+                const SizedBox(width: 12),
+                Expanded(child: tileBattery),
+                const SizedBox(width: 12),
+                Expanded(child: tileListening),
+                const SizedBox(width: 12),
+                Expanded(child: tileMostFrequent),
+              ],
+            ),
           );
         }
         return Row(
@@ -170,12 +173,16 @@ class _StatTile extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           if (isSpecialTitle) ...[
-            Text(
-              labelText,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: iconColor,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                labelText,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: iconColor,
+                ),
               ),
             ),
             const SizedBox(height: 2),
@@ -208,14 +215,18 @@ class _StatTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              labelText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white60 : const Color(0xFF64748B),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                labelText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                ),
               ),
             ),
           ],

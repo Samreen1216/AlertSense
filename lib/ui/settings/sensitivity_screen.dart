@@ -150,22 +150,32 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Required Confidence: $percent%',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: sensitivityColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                        Expanded(
                           child: Text(
-                            sensitivityLabel,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: sensitivityColor,
-                              fontWeight: FontWeight.w700,
+                            'Required Confidence: $percent%',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: sensitivityColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                sensitivityLabel,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: sensitivityColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -195,21 +205,26 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '◀ More Alerts\n(Sensitive)',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
+                          Expanded(
+                            child: Text(
+                              '◀ More Alerts\n(Sensitive)',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                          Text(
-                            'Fewer False Alarms ▶\n(Strict Certainty)',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Fewer False Alarms ▶\n(Strict Certainty)',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
