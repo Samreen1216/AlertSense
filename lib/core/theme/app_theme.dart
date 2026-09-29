@@ -118,17 +118,15 @@ class AppTheme {
 
   // ── High Contrast Theme (WCAG AAA) ───────────────────────────────────────────
   static ThemeData getHighContrast() {
-    // FontWeight & color overrides retained for AAA legibility.
-    // Font SIZE is intentionally absent — delegated to MediaQuery.textScaler.
     final textTheme = AppTypography.baseTextTheme.copyWith(
       headlineLarge: AppTypography.headlineLarge.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
       headlineMedium: AppTypography.headlineMedium.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
       titleLarge: AppTypography.titleLarge.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
       titleMedium: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w800, color: Colors.white),
       bodyLarge: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
-      bodyMedium: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: Colors.white),
+      bodyMedium: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w700, color: const Color(0xFFE2E8F0)),
       labelLarge: AppTypography.labelLarge.copyWith(fontWeight: FontWeight.w900, color: Colors.white),
-      labelSmall: AppTypography.labelSmall.copyWith(fontWeight: FontWeight.w800, color: Colors.white),
+      labelSmall: AppTypography.labelSmall.copyWith(fontWeight: FontWeight.w800, color: const Color(0xFFE2E8F0)),
     );
 
     return ThemeData(
@@ -136,53 +134,59 @@ class AppTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: Colors.black,
       colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF00FF41),
-        secondary: Color(0xFFFFD600),
-        surface: Colors.black,
+        primary: Color(0xFF38BDF8),
+        secondary: Color(0xFF818CF8),
+        surface: Color(0xFF0D1424),
+        surfaceContainerHighest: Color(0xFF131D33),
         onPrimary: Colors.black,
         onSecondary: Colors.black,
         onSurface: Colors.white,
+        outline: Color(0xFF38BDF8),
+        outlineVariant: Color(0xFF334155),
       ),
       textTheme: textTheme,
       cardTheme: CardThemeData(
-        color: Colors.black,
+        color: const Color(0xFF0D1424),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Colors.white, width: 2),
+          side: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Color(0xFF00FF41), width: 2),
+            side: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
           ),
+          backgroundColor: const Color(0xFF38BDF8),
+          foregroundColor: Colors.black,
           padding: _minTouchTarget,
           minimumSize: const Size(48, 48),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF0D1424),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: Colors.white, width: 2),
+          side: const BorderSide(color: Colors.white70, width: 1.5),
         ),
         padding: const EdgeInsets.all(8),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.black,
+        indicatorColor: const Color(0xFF38BDF8).withValues(alpha: 0.25),
         indicatorShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFF00FF41), width: 2),
+          side: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFF00FF41), width: 2),
+          side: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
         ),
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(0xFF0D1424),
       ),
       appBarTheme: const AppBarTheme(
         elevation: 0,

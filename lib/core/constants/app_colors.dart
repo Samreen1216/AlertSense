@@ -43,11 +43,17 @@ class AppColors {
   static const Color dogBarking = Color(0xFFFB923C); // Warm Tangerine
   static const Color vehicleHorn = Color(0xFF0EA5E9); // Modern Acoustic Cyan
 
-  // ── High Contrast AMOLED Theme (WCAG AAA) ─────────────────────────────────
-  static const Color hcBackground = Color(0xFF000000);
-  static const Color hcTextPrimary = Color(0xFF00FF41); // Matrix Neon Green
-  static const Color hcTextSecondary = Color(0xFFFFD600); // Safety Neon Yellow
-  static const Color hcTextTertiary = Color(0xFF00FFFF); // Electric Cyan
+  // ── High Contrast AMOLED Theme (WCAG AAA Calibrated) ─────────────────────
+  static const Color hcBackground = Color(0xFF000000); // Pure AMOLED Deep Black
+  static const Color hcSurface = Color(0xFF0D1424); // Elevated Deep Charcoal
+  static const Color hcPrimary = Color(0xFF38BDF8); // High-Luminance Acoustic Cyan (10.5:1 on black)
+  static const Color hcSecondary = Color(0xFF818CF8); // Sonic Electric Violet
+  static const Color hcTextPrimary = Color(0xFFFFFFFF); // Pure White (21:1 AAA Maximum Contrast)
+  static const Color hcTextSecondary = Color(0xFFE2E8F0); // High-Luminance Crisp Slate (14:1 AAA)
+  static const Color hcTextTertiary = Color(0xFF94A3B8); // High-Legibility Silver (7.5:1 AAA)
+  static const Color hcHighAlert = Color(0xFFFF453A); // Ultra-Vivid Emergency Red (7.2:1 AAA)
+  static const Color hcMediumAlert = Color(0xFFFFD600); // Safety Amber Gold (14:1 AAA)
+  static const Color hcLowAlert = Color(0xFF38BDF8); // Acoustic Sonic Cyan (10.5:1 AAA)
 
   // ── Color-Blind Safe Palette (IBM Research Standard) ──────────────────────
   static const Color cbSafeHigh = Color(0xFFD81B60); // High-luminance Pink

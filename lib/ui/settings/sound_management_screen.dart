@@ -26,9 +26,9 @@ class SoundManagementScreen extends ConsumerWidget {
       medColor = AppColors.cbSafeMedium; // Orange (#F57C00)
       lowColor = AppColors.cbSafeLow; // Blue (#1E88E5)
     } else if (themeType == ThemeType.highContrast) {
-      highColor = const Color(0xFF00FF41);
-      medColor = const Color(0xFFFFD600);
-      lowColor = const Color(0xFF00FFFF);
+      highColor = AppColors.hcHighAlert;
+      medColor = AppColors.hcMediumAlert;
+      lowColor = AppColors.hcLowAlert;
     } else {
       highColor = const Color(0xFFEF4444);
       medColor = const Color(0xFFF59E0B);
@@ -250,7 +250,7 @@ class SoundManagementScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: isEnabled
                                 ? (themeType == ThemeType.highContrast
-                                    ? const Color(0xFF00FF41).withValues(alpha: 0.2)
+                                    ? AppColors.hcPrimary.withValues(alpha: 0.2)
                                     : const Color(0xFF10B981).withValues(alpha: 0.15))
                                 : (isDark ? Colors.white10 : Colors.black12),
                             borderRadius: BorderRadius.circular(6),
@@ -262,7 +262,7 @@ class SoundManagementScreen extends ConsumerWidget {
                               fontWeight: FontWeight.w700,
                               color: isEnabled
                                   ? (themeType == ThemeType.highContrast
-                                      ? const Color(0xFF00FF41)
+                                      ? AppColors.hcPrimary
                                       : const Color(0xFF10B981))
                                   : (isDark ? Colors.white54 : Colors.black54),
                             ),

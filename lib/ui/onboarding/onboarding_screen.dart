@@ -407,7 +407,7 @@ class _OnboardingPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isGranted
-                  ? const Color(0xFF00FF41).withValues(alpha: 0.6)
+                  ? const Color(0xFF10B981).withValues(alpha: 0.6)
                   : Colors.white.withValues(alpha: 0.2),
               width: 1.2,
             ),
@@ -418,13 +418,13 @@ class _OnboardingPage extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isGranted
-                      ? const Color(0xFF00FF41).withValues(alpha: 0.15)
+                      ? const Color(0xFF10B981).withValues(alpha: 0.15)
                       : Colors.white.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
-                  color: isGranted ? const Color(0xFF00FF41) : Colors.white,
+                  color: isGranted ? const Color(0xFF10B981) : Colors.white,
                   size: 24,
                 ),
               ),
@@ -459,7 +459,7 @@ class _OnboardingPage extends StatelessWidget {
                     Text(
                       'Granted',
                       style: TextStyle(
-                        color: Color(0xFF00FF41),
+                        color: Color(0xFF10B981),
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -467,7 +467,7 @@ class _OnboardingPage extends StatelessWidget {
                     SizedBox(width: 6),
                     Icon(
                       Icons.check_circle_rounded,
-                      color: Color(0xFF00FF41),
+                      color: Color(0xFF10B981),
                       size: 20,
                     ),
                   ],

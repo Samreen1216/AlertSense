@@ -168,13 +168,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   }
                 } else if (themeType == ThemeType.highContrast) {
                   if (filter == 'High') {
-                    chipAccent = const Color(0xFF00FF41);
+                    chipAccent = AppColors.hcHighAlert;
                   } else if (filter == 'Medium') {
-                    chipAccent = const Color(0xFFFFD600);
+                    chipAccent = AppColors.hcMediumAlert;
                   } else if (filter == 'Low') {
-                    chipAccent = const Color(0xFF00FFFF);
+                    chipAccent = AppColors.hcLowAlert;
                   } else {
-                    chipAccent = const Color(0xFF00FF41);
+                    chipAccent = AppColors.hcPrimary;
                   }
                 } else {
                   if (filter == 'High') {
@@ -265,14 +265,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                                     .withValues(alpha: 0.5)),
                                         shape: BoxShape.circle,
                                         border: themeType == ThemeType.highContrast
-                                            ? Border.all(color: const Color(0xFF00FF41), width: 2)
+                                            ? Border.all(color: AppColors.hcPrimary, width: 2)
                                             : null,
                                       ),
                                       child: Icon(
                                         Icons.notifications_off_outlined,
                                         size: isShort ? 40 : 64,
                                         color: themeType == ThemeType.highContrast
-                                            ? const Color(0xFF00FF41)
+                                            ? AppColors.hcPrimary
                                             : theme.colorScheme.primary.withValues(alpha: 0.7),
                                       ),
                                     ),
@@ -282,7 +282,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                       style: theme.textTheme.titleLarge?.copyWith(
                                         fontWeight: FontWeight.bold,
                                         fontSize: isShort ? 18 : null,
-                                        color: themeType == ThemeType.highContrast ? const Color(0xFF00FF41) : null,
+                                        color: themeType == ThemeType.highContrast ? Colors.white : null,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -304,7 +304,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                         icon: const Icon(Icons.graphic_eq_rounded, size: 18),
                                         label: const Text('Start Quick Scan'),
                                         style: FilledButton.styleFrom(
-                                          backgroundColor: themeType == ThemeType.highContrast ? const Color(0xFF00FF41) : null,
+                                          backgroundColor: themeType == ThemeType.highContrast ? AppColors.hcPrimary : null,
                                           foregroundColor: themeType == ThemeType.highContrast ? Colors.black : null,
                                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                           shape: RoundedRectangleBorder(
@@ -317,8 +317,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                       OutlinedButton(
                                         style: themeType == ThemeType.highContrast
                                             ? OutlinedButton.styleFrom(
-                                                foregroundColor: const Color(0xFF00FF41),
-                                                side: const BorderSide(color: Color(0xFF00FF41)),
+                                                foregroundColor: AppColors.hcPrimary,
+                                                side: const BorderSide(color: AppColors.hcPrimary),
                                               )
                                             : null,
                                         onPressed: () {
@@ -528,12 +528,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     } else if (themeType == ThemeType.highContrast) {
       switch (p) {
         case 'high':
-          return const Color(0xFF00FF41);
+          return AppColors.hcHighAlert;
         case 'medium':
-          return const Color(0xFFFFD600);
+          return AppColors.hcMediumAlert;
         case 'low':
         default:
-          return const Color(0xFF00FFFF);
+          return AppColors.hcLowAlert;
       }
     }
 

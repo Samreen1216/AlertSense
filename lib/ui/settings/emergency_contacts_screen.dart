@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../providers/settings_providers.dart';
@@ -103,7 +104,7 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isHighContrast
-                    ? const Color(0xFF00FF41)
+                    ? AppColors.hcPrimary
                     : theme.colorScheme.primary.withValues(alpha: 0.25),
                 width: isHighContrast ? 1.5 : 1.0,
               ),
@@ -112,7 +113,7 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
               children: [
                 Icon(
                   Icons.sms_outlined,
-                  color: isHighContrast ? const Color(0xFF00FF41) : theme.colorScheme.primary,
+                  color: isHighContrast ? AppColors.hcPrimary : theme.colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -131,7 +132,7 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
             'Trusted Phone Numbers',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: isHighContrast ? const Color(0xFF00FF41) : null,
+              color: isHighContrast ? Colors.white : null,
             ),
           ),
           const SizedBox(height: 12),
@@ -153,29 +154,29 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
                       decoration: InputDecoration(
                         prefixIcon: Icon(
                           Icons.phone_outlined,
-                          color: isHighContrast ? const Color(0xFF00FF41) : null,
+                          color: isHighContrast ? AppColors.hcPrimary : null,
                         ),
                         labelText: 'Contact #${index + 1}',
                         labelStyle: TextStyle(
-                          color: isHighContrast ? const Color(0xFF00FF41) : null,
+                          color: isHighContrast ? AppColors.hcPrimary : null,
                         ),
                         hintText: '+1 (555) 000-0000',
                         hintStyle: TextStyle(
                           color: isHighContrast ? Colors.white38 : null,
                         ),
                         filled: isHighContrast,
-                        fillColor: isHighContrast ? const Color(0xFF111111) : null,
+                        fillColor: isHighContrast ? AppColors.hcSurface : null,
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
-                            color: isHighContrast ? const Color(0xFF00FF41).withValues(alpha: 0.5) : theme.colorScheme.outlineVariant,
+                            color: isHighContrast ? AppColors.hcPrimary.withValues(alpha: 0.5) : theme.colorScheme.outlineVariant,
                             width: isHighContrast ? 1.5 : 1.0,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
-                            color: isHighContrast ? const Color(0xFF00FF41) : theme.colorScheme.primary,
+                            color: isHighContrast ? AppColors.hcPrimary : theme.colorScheme.primary,
                             width: 2.0,
                           ),
                         ),
@@ -187,7 +188,7 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
                   IconButton(
                     icon: Icon(
                       Icons.remove_circle_outline,
-                      color: isHighContrast ? const Color(0xFFFF5252) : Colors.red,
+                      color: isHighContrast ? AppColors.hcHighAlert : Colors.red,
                     ),
                     tooltip: 'Remove',
                     onPressed: () {
@@ -207,8 +208,8 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
             child: OutlinedButton.icon(
               style: isHighContrast
                   ? OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF00FF41),
-                      side: const BorderSide(color: Color(0xFF00FF41), width: 1.5),
+                      foregroundColor: AppColors.hcPrimary,
+                      side: const BorderSide(color: AppColors.hcPrimary, width: 1.5),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     )
                   : OutlinedButton.styleFrom(
@@ -229,7 +230,7 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
             child: FilledButton.icon(
               style: isHighContrast
                   ? FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF00FF41),
+                      backgroundColor: AppColors.hcPrimary,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     )

@@ -45,8 +45,8 @@ class AlertDetailsScreen extends ConsumerWidget {
           : (isMedium ? AppColors.cbSafeMedium : AppColors.cbSafeLow);
     } else if (themeType == ThemeType.highContrast) {
       priorityColor = isHigh
-          ? const Color(0xFF00FF41)
-          : (isMedium ? const Color(0xFFFFD600) : const Color(0xFF00FFFF));
+          ? AppColors.hcHighAlert
+          : (isMedium ? AppColors.hcMediumAlert : AppColors.hcLowAlert);
     } else {
       priorityColor = isHigh
           ? const Color(0xFFEF4444)
@@ -170,7 +170,7 @@ class AlertDetailsScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
                     color: isHighContrast
-                        ? const Color(0xFF00FF41)
+                        ? AppColors.hcPrimary
                         : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                     width: isHighContrast ? 1.5 : 1.0,
                   ),

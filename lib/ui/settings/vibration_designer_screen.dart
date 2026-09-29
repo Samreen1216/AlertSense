@@ -350,14 +350,14 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF00FF41).withValues(alpha: 0.15),
+                                color: theme.colorScheme.primary.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Saved Pattern',
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: Color(0xFF00FF41),
+                                  color: theme.colorScheme.primary,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -390,7 +390,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
 
                               Color blockColor;
                               if (isCurrentStep) {
-                                blockColor = const Color(0xFF00FF41); // Active playback highlight
+                                blockColor = theme.colorScheme.secondary; // Active playback highlight
                               } else if (isBuzz) {
                                 blockColor = theme.colorScheme.primary;
                               } else {
@@ -409,7 +409,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                                     boxShadow: isCurrentStep
                                         ? [
                                             BoxShadow(
-                                              color: const Color(0xFF00FF41).withValues(alpha: 0.8),
+                                              color: theme.colorScheme.secondary.withValues(alpha: 0.8),
                                               blurRadius: 8,
                                             ),
                                           ]

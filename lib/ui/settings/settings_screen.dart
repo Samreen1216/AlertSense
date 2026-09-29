@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../providers/alert_providers.dart';
@@ -351,9 +352,9 @@ class SettingsScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFF00FF41), width: 1.5),
+          border: Border.all(color: AppColors.hcPrimary, width: 1.5),
         ),
-        child: Icon(icon, color: const Color(0xFF00FF41), size: 20),
+        child: Icon(icon, color: AppColors.hcPrimary, size: 20),
       );
     }
     return Container(

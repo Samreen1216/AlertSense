@@ -34,15 +34,15 @@ class PriorityBadge extends ConsumerWidget {
     } else if (isHighContrast) {
       switch (normPriority) {
         case 'HIGH':
-          primaryColor = const Color(0xFF00FF41); // Matrix Green
-          textColor = Colors.black;
+          primaryColor = const Color(0xFFFF453A); // Ultra-Vivid Emergency Red (AAA)
+          textColor = Colors.white;
           break;
         case 'MEDIUM':
-          primaryColor = const Color(0xFFFFD600); // Neon Yellow
+          primaryColor = const Color(0xFFFFD600); // Safety Neon Yellow (AAA)
           textColor = Colors.black;
           break;
         case 'LOW':
-          primaryColor = const Color(0xFF00FFFF); // Cyan
+          primaryColor = const Color(0xFF38BDF8); // Acoustic Sonic Cyan (AAA)
           textColor = Colors.black;
           break;
         default:

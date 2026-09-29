@@ -102,9 +102,9 @@ class HomeScreen extends ConsumerWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                   border: isHighContrast
                       ? const Border(
-                          top: BorderSide(color: Color(0xFF00FF41), width: 2.0),
-                          left: BorderSide(color: Color(0xFF00FF41), width: 1.0),
-                          right: BorderSide(color: Color(0xFF00FF41), width: 1.0),
+                          top: BorderSide(color: AppColors.hcPrimary, width: 2.0),
+                          left: BorderSide(color: AppColors.hcPrimary, width: 1.0),
+                          right: BorderSide(color: AppColors.hcPrimary, width: 1.0),
                         )
                       : null,
                   boxShadow: isHighContrast

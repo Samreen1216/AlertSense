@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../providers/audio_providers.dart';
 
@@ -106,7 +107,7 @@ class DbMeterWidget extends ConsumerWidget {
                       widthFactor: animatedValue,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: isHighContrast ? const Color(0xFF00FF41) : null,
+                          color: isHighContrast ? AppColors.hcPrimary : null,
                           gradient: isHighContrast
                               ? null
                               : const LinearGradient(
@@ -175,8 +176,9 @@ class DbMeterWidget extends ConsumerWidget {
       return const Color(0xFFD81B60);
     }
     if (themeType == ThemeType.highContrast) {
-      if (db < 80) return const Color(0xFF00FF41);
-      return const Color(0xFFFFD600);
+      if (db < 50) return AppColors.hcLowAlert;
+      if (db < 80) return AppColors.hcMediumAlert;
+      return AppColors.hcHighAlert;
     }
     if (db < 50) return const Color(0xFF10B981);
     if (db < 75) return const Color(0xFFF59E0B);

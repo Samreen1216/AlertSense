@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
 
 /// Clean model representing a theme choice in the appearance sheet.
@@ -63,13 +64,13 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
     _ThemeItem(
       type: ThemeType.highContrast,
       title: 'High Contrast (AMOLED)',
-      subtitle: 'Pure black canvas with matrix neon green (WCAG AAA)',
+      subtitle: 'Pure black canvas with acoustic cyan & safety red (WCAG AAA)',
       icon: Icons.contrast_rounded,
       swatches: [
         Colors.black,
-        Color(0xFF00FF41),
-        Color(0xFFFFD600),
-        Color(0xFF00FFFF),
+        AppColors.hcPrimary,
+        AppColors.hcHighAlert,
+        AppColors.hcMediumAlert,
       ],
     ),
     _ThemeItem(
@@ -98,7 +99,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
         : (isDark ? const Color(0xFF0F172A) : Colors.white);
 
     final sheetBorder = isHighContrast
-        ? Border.all(color: const Color(0xFF00FF41), width: 1.5)
+        ? Border.all(color: AppColors.hcPrimary, width: 1.5)
         : Border.all(
             color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
             width: 1,
@@ -126,7 +127,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                 height: 4,
                 decoration: BoxDecoration(
                   color: isHighContrast
-                      ? const Color(0xFF00FF41)
+                      ? AppColors.hcPrimary
                       : (isDark ? Colors.white24 : Colors.black12),
                   borderRadius: BorderRadius.circular(2),
                 ),
@@ -202,14 +203,14 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                             side: isHighContrast
-                                ? const BorderSide(color: Color(0xFF00FF41), width: 1.5)
+                                ? const BorderSide(color: AppColors.hcPrimary, width: 1.5)
                                 : BorderSide.none,
                           ),
                           backgroundColor: isHighContrast
                               ? Colors.black
                               : theme.colorScheme.primary,
                           foregroundColor: isHighContrast
-                              ? const Color(0xFF00FF41)
+                              ? AppColors.hcPrimary
                               : theme.colorScheme.onPrimary,
                         ),
                         onPressed: () {
@@ -249,7 +250,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
     if (isHighContrast) {
       tileBg = Colors.black;
       tileBorder = Border.all(
-        color: isSelected ? const Color(0xFF00FF41) : Colors.white24,
+        color: isSelected ? AppColors.hcPrimary : Colors.white24,
         width: isSelected ? 2.0 : 1.0,
       );
     } else {
@@ -301,7 +302,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(10),
                     border: isHighContrast
                         ? Border.all(
-                            color: isSelected ? const Color(0xFF00FF41) : Colors.white30,
+                            color: isSelected ? AppColors.hcPrimary : Colors.white30,
                             width: 1.2,
                           )
                         : null,
@@ -310,7 +311,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                     item.icon,
                     size: 20,
                     color: isHighContrast
-                        ? (isSelected ? const Color(0xFF00FF41) : Colors.white70)
+                        ? (isSelected ? AppColors.hcPrimary : Colors.white70)
                         : (isSelected ? primary : theme.colorScheme.onSurfaceVariant),
                   ),
                 ),
@@ -327,7 +328,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: isHighContrast
-                              ? (isSelected ? const Color(0xFF00FF41) : Colors.white)
+                              ? (isSelected ? AppColors.hcPrimary : Colors.white)
                               : (isSelected ? primary : null),
                         ),
                       ),
@@ -373,7 +374,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                       : Icons.radio_button_unchecked_rounded,
                   size: 22,
                   color: isHighContrast
-                      ? (isSelected ? const Color(0xFF00FF41) : Colors.white30)
+                      ? (isSelected ? AppColors.hcPrimary : Colors.white30)
                       : (isSelected
                           ? primary
                           : (isDark ? Colors.white24 : const Color(0xFFCBD5E1))),

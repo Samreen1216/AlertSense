@@ -318,15 +318,15 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
     } else if (isHighContrast) {
       switch (priority) {
         case 'HIGH':
-          priorityColor = const Color(0xFF00FF41);
-          textColor = Colors.black;
+          priorityColor = AppColors.hcHighAlert;
+          textColor = Colors.white;
           break;
         case 'MEDIUM':
-          priorityColor = const Color(0xFFFFD600);
+          priorityColor = AppColors.hcMediumAlert;
           textColor = Colors.black;
           break;
         default:
-          priorityColor = const Color(0xFF00FFFF);
+          priorityColor = AppColors.hcLowAlert;
           textColor = Colors.black;
       }
     } else {

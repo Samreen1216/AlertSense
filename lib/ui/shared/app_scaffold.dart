@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/utils/responsive_utils.dart';
@@ -253,7 +254,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ),
-                                    color: isHighContrast ? const Color(0xFF00FF41) : null,
+                                    color: isHighContrast ? AppColors.hcPrimary : null,
                                     border: isHighContrast
                                         ? Border.all(color: Colors.white, width: 2)
                                         : null,
@@ -456,7 +457,7 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                                                     begin: Alignment.topLeft,
                                                     end: Alignment.bottomRight,
                                                   ),
-                                            color: isHighContrast ? const Color(0xFF00FF41) : null,
+                                            color: isHighContrast ? AppColors.hcPrimary : null,
                                             border: isHighContrast
                                                 ? Border.all(color: Colors.white, width: 2)
                                                 : null,
@@ -562,7 +563,7 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     Color activeColor;
     if (themeType == ThemeType.highContrast) {
-      activeColor = const Color(0xFF00FF41);
+      activeColor = AppColors.hcPrimary;
     } else if (themeType == ThemeType.colorBlindSafe) {
       activeColor = const Color(0xFF0077BB);
     } else if (isDark) {
@@ -648,7 +649,7 @@ class _SideNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     Color activeColor;
     if (themeType == ThemeType.highContrast) {
-      activeColor = const Color(0xFF00FF41);
+      activeColor = AppColors.hcPrimary;
     } else if (themeType == ThemeType.colorBlindSafe) {
       activeColor = const Color(0xFF0077BB);
     } else if (isDark) {
