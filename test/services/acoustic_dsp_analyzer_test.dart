@@ -4,6 +4,8 @@ import 'package:alertsense/core/constants/sound_categories.dart';
 import 'package:alertsense/services/acoustic_dsp_analyzer.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('AcousticDspAnalyzer Tests', () {
     late AcousticDspAnalyzer analyzer;
 
@@ -139,6 +141,117 @@ void main() {
       expect(SoundCategoryExtension.fromYamnetLabel('Growling'), equals(SoundCategory.dogBarking));
       expect(SoundCategoryExtension.fromYamnetLabel('Breaking'), equals(SoundCategory.glassBreaking));
       expect(SoundCategoryExtension.fromYamnetLabel('Bicycle bell'), equals(SoundCategory.doorbell));
+    });
+  });
+
+  group('AcousticDspAnalyzer Background Isolate (classifyAsync) Tests', () {
+    late AcousticDspAnalyzer analyzer;
+
+    setUp(() {
+      analyzer = const AcousticDspAnalyzer();
+    });
+
+    test('classifyAsync identifies Bell Ring (Doorbell chime ~800 Hz) on background isolate', () async {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      const freq = 800.0;
+      for (int i = 2000; i < 6000; i++) {
+        final t = (i - 2000) / sampleRate;
+        final decay = exp(-t * 2.5);
+        audioData[i] = 0.25 * sin(2 * pi * freq * t) * decay;
+      }
+
+      final result = await analyzer.classifyAsync(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.doorbell.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.70));
+    });
+
+    test('classifyAsync identifies Fire Alarm (~3100 Hz tone) on background isolate', () async {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      const freq = 3100.0;
+      for (int i = 0; i < totalSamples; i++) {
+        final t = i / sampleRate;
+        audioData[i] = 0.25 * sin(2 * pi * freq * t);
+      }
+
+      final result = await analyzer.classifyAsync(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.fireAlarm.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.75));
+    });
+
+    test('classifyAsync identifies Vehicle Horn honk on background isolate', () async {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      for (int i = 1000; i < 14000; i++) {
+        final t = (i - 1000) / sampleRate;
+        audioData[i] = 0.20 * sin(2 * pi * 420 * t) + 0.15 * sin(2 * pi * 500 * t);
+      }
+
+      final result = await analyzer.classifyAsync(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.vehicleHorn.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.80));
+    });
+
+    test('classifyAsync identifies Dog Barking burst on background isolate', () async {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      final rng = Random(42);
+      for (int i = 3000; i < 8000; i++) {
+        final t = (i - 3000) / sampleRate;
+        final envelope = sin(pi * (i - 3000) / 5000);
+        final harmonics = 0.18 * sin(2 * pi * 380 * t) +
+            0.12 * sin(2 * pi * 760 * t) +
+            0.08 * sin(2 * pi * 1140 * t) +
+            0.05 * (rng.nextDouble() * 2 - 1);
+        audioData[i] = envelope * harmonics;
+      }
+
+      final result = await analyzer.classifyAsync(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.dogBarking.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.80));
+    });
+
+    test('classifyAsync returns null for silence without false alarm', () async {
+      const totalSamples = 15600;
+      final silence = List<double>.filled(totalSamples, 0.0001);
+
+      final result = await analyzer.classifyAsync(silence);
+      expect(result, isNull);
+    });
+
+    test('classify and classifyAsync return null for empty and underfilled (<1024) buffers', () async {
+      expect(analyzer.classify([]), isNull);
+      expect(analyzer.classify(List.filled(500, 0.5)), isNull);
+
+      expect(await analyzer.classifyAsync([]), isNull);
+      expect(await analyzer.classifyAsync(List.filled(500, 0.5)), isNull);
+    });
+
+    test('classify and classifyAsync handle NaN and Inf robustly without throwing', () async {
+      final nanBuffer = List.filled(15600, double.nan);
+      expect(analyzer.classify(nanBuffer), isNull);
+      expect(await analyzer.classifyAsync(nanBuffer), isNull);
+
+      final infBuffer = List.filled(15600, double.infinity);
+      expect(analyzer.classify(infBuffer), isNull);
+      expect(await analyzer.classifyAsync(infBuffer), isNull);
     });
   });
 }

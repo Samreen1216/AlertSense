@@ -91,6 +91,33 @@ class TFLiteClassifierService {
     }
   }
 
+  /// Asynchronously classify a 16 kHz mono audio buffer.
+  /// Runs YAMNet inference or offloads DSP feature extraction to a background isolate.
+  Future<ClassificationResult?> classifyAsync(List<double> audioData) async {
+    if (!_isLoaded) {
+      debugPrint('[Classifier] Model not loaded!');
+      return null;
+    }
+
+    final rms = _calculateRms(audioData);
+    final dbLevel = _rmsToDb(rms);
+    if (rms < 0.003) return null; // Silence / ambient baseline
+
+    // 1. Run inference via pretrained YAMNet TFLite model when ready
+    if (_isTfLiteReady && _interpreter != null) {
+      try {
+        final result = _classifyWithYamnet(audioData, dbLevel);
+        return result;
+      } catch (e) {
+        debugPrint('[Classifier] YAMNet inference exception: $e');
+        debugPrint('[Classifier] Falling back to AcousticDspAnalyzer');
+      }
+    }
+
+    // 2. Pure-Dart acoustic feature analyzer fallback executed on background isolate
+    return await _analyzer.classifyAsync(audioData);
+  }
+
   /// Classify a 16 kHz mono audio buffer.
   ClassificationResult? classify(List<double> audioData) {
     if (!_isLoaded) {

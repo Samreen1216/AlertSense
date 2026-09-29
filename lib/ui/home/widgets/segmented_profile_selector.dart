@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/router/app_router.dart';
@@ -34,56 +35,42 @@ class SegmentedProfileSelector extends ConsumerWidget {
       ),
     ];
 
-    final isSleepActive = activeProfile.toLowerCase() == 'sleep';
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161F33) : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : const Color(0xFFE2E8F0),
-              width: 1.0,
-            ),
-          ),
-          child: Row(
-            children: profiles.map((p) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF161F33) : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : const Color(0xFFE2E8F0),
+          width: 1.0,
+        ),
+      ),
+      child: Row(
+        children: profiles.map((p) {
               final isSelected = activeProfile.toLowerCase() == p.id;
 
               return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    ref.read(activeProfileProvider.notifier).state = p.id;
-                    ref.read(enabledSoundsProvider.notifier).setProfile(p.id);
-
-                    if (p.id == 'sleep') {
+                child: Semantics(
+                  label: '${p.title} profile, ${p.subtitle}',
+                  selected: isSelected,
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      final wasAlreadyActive = activeProfile.toLowerCase() == p.id;
+                      ref.read(activeProfileProvider.notifier).state = p.id;
+                      ref.read(enabledSoundsProvider.notifier).setProfile(p.id);
                       ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Sleep Mode active'),
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 4),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          action: SnackBarAction(
-                            label: 'Open Bedside Clock',
-                            textColor: const Color(0xFF00C6FF),
-                            onPressed: () {
-                              context.push(AppRoutes.sleepMode);
-                            },
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: AnimatedContainer(
+
+                      // If user taps the active Sleep profile tab again, navigate to Bedside Clock on demand
+                      if (wasAlreadyActive && p.id == 'sleep') {
+                        context.push(AppRoutes.sleepMode);
+                      }
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
@@ -160,77 +147,11 @@ class SegmentedProfileSelector extends ConsumerWidget {
                     ),
                   ),
                 ),
-              );
-            }).toList(),
-          ),
-        ),
-
-        // Bedside Clock screen transition banner when Sleep mode is active
-        if (isSleepActive)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => context.push(AppRoutes.sleepMode),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.nightlight_round,
-                          size: 16,
-                          color: Color(0xFF8B5CF6),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Bedside Clock Display ready',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF8B5CF6),
-                          ),
-                        ),
-                      ),
-                      const Text(
-                        'Open',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF8B5CF6),
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: Color(0xFF8B5CF6),
-                      ),
-                    ],
-                  ),
-                ),
               ),
-            ),
+            );
+          }).toList(),
           ),
-      ],
-    );
+        );
   }
 }
 

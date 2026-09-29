@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/theme/theme_provider.dart';
 import 'widgets/alertsense_header.dart';
 import 'widgets/hero_sound_radar.dart';
@@ -22,7 +23,7 @@ class HomeScreen extends ConsumerWidget {
     final isHighContrast = themeType == ThemeType.highContrast;
     final isDark = theme.brightness == Brightness.dark;
 
-    final scaffoldBg = isHighContrast ? Colors.black : const Color(0xFF070F26);
+    final scaffoldBg = isHighContrast ? Colors.black : AppColors.darkBackground;
 
     return Scaffold(
       backgroundColor: scaffoldBg,
@@ -101,7 +102,7 @@ class HomeScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: isHighContrast
                       ? Colors.black
-                      : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
+                      : (isDark ? AppColors.darkSurface : AppColors.backgroundLight),
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                   border: isHighContrast
                       ? const Border(

@@ -28,10 +28,10 @@ class AlertRepository {
         matches = matches && alert.priorityLevel == priority;
       }
       if (from != null) {
-        matches = matches && alert.timestamp.isAfter(from);
+        matches = matches && !alert.timestamp.isBefore(from);
       }
       if (to != null) {
-        matches = matches && alert.timestamp.isBefore(to);
+        matches = matches && !alert.timestamp.isAfter(to);
       }
       return matches;
     }).toList();
@@ -57,7 +57,7 @@ class AlertRepository {
 
   int countByCategory(String category, {DateTime? since}) {
     return _alerts.where((a) {
-      return a.soundCategory == category && (since == null || a.timestamp.isAfter(since));
+      return a.soundCategory == category && (since == null || !a.timestamp.isBefore(since));
     }).length;
   }
 
@@ -82,11 +82,11 @@ class AlertRepository {
 
   List<MapEntry<DateTime, int>> dailyTrend({int days = 7}) {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     final map = <DateTime, int>{};
 
     for (int i = 0; i < days; i++) {
-      map[today.subtract(Duration(days: i))] = 0;
+      final day = DateTime(now.year, now.month, now.day - i);
+      map[day] = 0;
     }
 
     for (final alert in _alerts) {

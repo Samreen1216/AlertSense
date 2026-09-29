@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
 import '../core/constants/priority_levels.dart';
@@ -116,6 +117,18 @@ class AlertDispatcherService {
     );
 
     await _alertRepository.addAlert(alertEvent);
+
+    // Spoken accessibility announcement for TalkBack / VoiceOver / screen-reader users
+    try {
+      final label = category.label;
+      final priorityStr = priority.label;
+      SemanticsService.announce(
+        'Alert detected: $label. $priorityStr Priority.',
+        TextDirection.ltr,
+      );
+    } catch (e) {
+      debugPrint('[AlertDispatcher] Semantics announcement error: $e');
+    }
 
     // 5. Trigger vibration feedback
     if (vibrationEnabled) {

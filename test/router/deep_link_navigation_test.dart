@@ -38,6 +38,8 @@ void main() {
 
       collectPaths(router.configuration.routes);
 
+      expect(allPaths, contains(AppRoutes.splash));
+      expect(allPaths, contains(AppRoutes.onboarding));
       expect(allPaths, contains(AppRoutes.home));
       expect(allPaths, contains(AppRoutes.stats));
       expect(allPaths, contains(AppRoutes.history));
@@ -81,6 +83,12 @@ void main() {
       final statsUri = Uri.parse('alertsense://stats');
       expect(statsUri.host, equals('stats'));
       expect(statsUri.path, isEmpty);
+
+      // Test redirect with onboarding host
+      final onboardingUri = Uri.parse('alertsense://onboarding');
+      expect(onboardingUri.host, equals('onboarding'));
+      expect(onboardingUri.path, isEmpty);
+      expect(router.routeInformationParser.configuration.findMatch('/onboarding'), isNotNull);
 
       // Test redirect with home host
       final homeUri = Uri.parse('alertsense://home');

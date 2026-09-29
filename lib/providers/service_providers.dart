@@ -6,6 +6,7 @@ import '../services/deduplication_service.dart';
 import '../services/flash_service.dart';
 import '../services/foreground_service.dart';
 import '../services/home_widget_service.dart';
+import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import '../services/priority_engine.dart';
 import '../services/signal_energy_validator.dart';
@@ -84,4 +85,10 @@ final homeWidgetServiceProvider = Provider<HomeWidgetService>((ref) {
   ref.onDispose(service.dispose);
   return service;
 });
+
+/// Geolocation service provider for emergency SOS and location-injected alerts
+final locationServiceProvider = Provider<LocationService>((ref) {
+  return LocationService();
+});
+
 

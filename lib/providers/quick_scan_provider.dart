@@ -115,9 +115,9 @@ class QuickScanNotifier extends StateNotifier<QuickScanState> {
       });
 
       // Listen to audio chunks and classify
-      _audioSub = audioStream.audioStream.listen((buffer) {
+      _audioSub = audioStream.audioStream.listen((buffer) async {
         if (state.status != QuickScanStatus.scanning) return;
-        final result = classifier.classify(buffer);
+        final result = await classifier.classifyAsync(buffer);
         if (result != null) {
           if (topResult == null || result.confidence > topResult!.confidence) {
             topResult = result;

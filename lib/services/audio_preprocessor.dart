@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 /// High-fidelity audio preprocessing utilities for YAMNet audio recognition.
 ///
@@ -121,6 +122,55 @@ class AudioPreprocessor {
 
     return samples;
   }
+
+  /// Asynchronously processes incoming microphone PCM data on a background isolate via [compute].
+  ///
+  /// Converts PCM16 to float32, mixes to mono, and resamples to 16,000 Hz off the UI thread.
+  /// Gracefully falls back to synchronous processing if isolates are restricted.
+  static Future<List<double>> processIncomingPcmAsync({
+    required Uint8List pcmBytes,
+    required int inputSampleRate,
+    required int numChannels,
+  }) async {
+    try {
+      return await compute(
+        _processIncomingPcmWorker,
+        IncomingPcmParams(
+          pcmBytes: pcmBytes,
+          inputSampleRate: inputSampleRate,
+          numChannels: numChannels,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[AudioPreprocessor] Background isolate failed or restricted ($e). Falling back to synchronous.');
+      return processIncomingPcm(
+        pcmBytes: pcmBytes,
+        inputSampleRate: inputSampleRate,
+        numChannels: numChannels,
+      );
+    }
+  }
+}
+
+/// Parameters for background isolate PCM preprocessing.
+class IncomingPcmParams {
+  final Uint8List pcmBytes;
+  final int inputSampleRate;
+  final int numChannels;
+
+  const IncomingPcmParams({
+    required this.pcmBytes,
+    required this.inputSampleRate,
+    required this.numChannels,
+  });
+}
+
+List<double> _processIncomingPcmWorker(IncomingPcmParams params) {
+  return AudioPreprocessor.processIncomingPcm(
+    pcmBytes: params.pcmBytes,
+    inputSampleRate: params.inputSampleRate,
+    numChannels: params.numChannels,
+  );
 }
 
 /// Streaming FIFO audio buffer that assembles continuous samples into 15,600-sample windows.

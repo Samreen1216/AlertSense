@@ -11,6 +11,9 @@ class SettingsRepository {
 
   Future<void> init() async {
     _settings = _storage.loadSettings();
+    if (_storage.isOnboardingComplete() && !_settings.onboardingCompleted) {
+      _settings = _settings.copyWith(onboardingCompleted: true);
+    }
     _profiles = _storage.loadProfiles();
   }
 
@@ -46,5 +49,15 @@ class SettingsRepository {
 
   Future<void> setActiveProfile(String profileId) async {
     await updateSettings(_settings.copyWith(activeProfileId: profileId));
+  }
+
+  Future<void> setOnboardingComplete() async {
+    _settings = _settings.copyWith(onboardingCompleted: true);
+    await _storage.saveSettings(_settings);
+    await _storage.setOnboardingComplete();
+  }
+
+  bool isOnboardingComplete() {
+    return _settings.onboardingCompleted || _storage.isOnboardingComplete();
   }
 }

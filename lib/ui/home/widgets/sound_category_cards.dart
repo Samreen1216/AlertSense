@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_svg_icons.dart';
@@ -34,28 +35,32 @@ class SoundCategoryCardsSection extends ConsumerWidget {
                   letterSpacing: -0.3,
                 ),
               ),
-              InkWell(
-                onTap: () => context.push(AppRoutes.soundManagement),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Edit',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
+              Semantics(
+                label: 'Edit sound categories',
+                button: true,
+                child: InkWell(
+                  onTap: () => context.push(AppRoutes.soundManagement),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Edit',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.tune_rounded,
+                          size: 16,
                           color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.tune_rounded,
-                        size: 16,
-                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -81,6 +86,7 @@ class SoundCategoryCardsSection extends ConsumerWidget {
                 isEnabled: isEnabled,
                 isDark: isDark,
                 onToggle: () {
+                  HapticFeedback.selectionClick();
                   ref.read(enabledSoundsProvider.notifier).toggle(cat.name);
                 },
               );
@@ -143,7 +149,10 @@ class _VerticalSoundCard extends StatelessWidget {
     // Semantics wraps the whole card so screen readers announce a single
     // cohesive element: label + toggle state.
     return Semantics(
-      label: '$label sound detection, ${isEnabled ? 'enabled' : 'disabled'}',
+      label: '$label sound detection',
+      value: isEnabled ? 'Enabled' : 'Disabled',
+      toggled: isEnabled,
+      selected: isEnabled,
       button: true,
       onTap: onToggle,
       child: Material(

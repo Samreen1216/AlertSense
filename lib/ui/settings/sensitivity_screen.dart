@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/sound_categories.dart';
 import '../../providers/service_providers.dart';
@@ -177,6 +178,7 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                       divisions: 13,
                       label: '$percent%',
                       onChanged: (val) {
+                        HapticFeedback.selectionClick();
                         setState(() {
                           _localThresholds[category.name] = val;
                         });

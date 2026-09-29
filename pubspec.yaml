@@ -47,6 +47,7 @@ dependencies:
   uuid: ^4.4.2
   equatable: ^2.0.5
   rxdart: ^0.28.0
+  geolocator: ^12.0.0
 
   # PDF Export
   pdf: ^3.11.0

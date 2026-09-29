@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
+import '../../core/utils/responsive_utils.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
@@ -89,53 +91,92 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
     final isHighContrast = themeType == ThemeType.highContrast;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final isSideNav = ResponsiveBreakpoints.isTablet(context) ||
+        ResponsiveBreakpoints.isLandscape(context);
+
+    final contentStack = Stack(
+      children: [
+        widget.navigationShell,
+        if (_activeBannerAlert != null)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: InAppNotificationBanner(
+              key: ValueKey(_activeBannerAlert!.id),
+              alert: _activeBannerAlert!,
+              onDismiss: () {
+                if (mounted) setState(() => _activeBannerAlert = null);
+              },
+            ),
+          ),
+      ],
+    );
+
     return WithForegroundTask(
       child: Scaffold(
-        body: Stack(
-          children: [
-            widget.navigationShell,
-            if (_activeBannerAlert != null)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: InAppNotificationBanner(
-                  key: ValueKey(_activeBannerAlert!.id),
-                  alert: _activeBannerAlert!,
-                  onDismiss: () {
-                    if (mounted) setState(() => _activeBannerAlert = null);
-                  },
-                ),
-              ),
-          ],
-        ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isHighContrast
-              ? Colors.black
-              : (isDark ? const Color(0xFF0D1424) : Colors.white),
-          border: isHighContrast
-              ? const Border(top: BorderSide(color: Colors.white, width: 2.0))
-              : null,
-          boxShadow: isHighContrast
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, -3),
+        body: isSideNav
+            ? Row(
+                children: [
+                  _buildSideNavigation(
+                    context,
+                    currentIndex: currentIndex,
+                    themeType: themeType,
+                    isDark: isDark,
+                    isHighContrast: isHighContrast,
                   ),
+                  Expanded(child: contentStack),
                 ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 70,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // 1. Home
-                _NavItem(
+              )
+            : contentStack,
+        bottomNavigationBar: isSideNav
+            ? null
+            : _buildBottomNavigation(
+                context,
+                currentIndex: currentIndex,
+                themeType: themeType,
+                isDark: isDark,
+                isHighContrast: isHighContrast,
+              ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation(
+    BuildContext context, {
+    required int currentIndex,
+    required ThemeType themeType,
+    required bool isDark,
+    required bool isHighContrast,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isHighContrast
+            ? Colors.black
+            : (isDark ? const Color(0xFF0D1424) : Colors.white),
+        border: isHighContrast
+            ? const Border(top: BorderSide(color: Colors.white, width: 2.0))
+            : null,
+        boxShadow: isHighContrast
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, -3),
+                ),
+              ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 70,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              // 1. Home
+              Expanded(
+                child: _NavItem(
                   icon: Icons.home_rounded,
                   label: 'Home',
                   isSelected: currentIndex == 0,
@@ -146,9 +187,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                     widget.navigationShell.goBranch(0, initialLocation: currentIndex == 0);
                   },
                 ),
+              ),
 
-                // 2. Insights
-                _NavItem(
+              // 2. Insights
+              Expanded(
+                child: _NavItem(
                   icon: Icons.bar_chart_rounded,
                   label: 'Insights',
                   isSelected: currentIndex == 1,
@@ -159,93 +202,107 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                     widget.navigationShell.goBranch(1, initialLocation: currentIndex == 1);
                   },
                 ),
+              ),
 
-                // 3. Elevated Quick Scan (Center) with Breathing Pulse Glow
-                GestureDetector(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).clearSnackBars();
-                    context.push(AppRoutes.quickScan);
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedBuilder(
-                        animation: _pulseController,
-                        builder: (context, child) {
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              if (!isHighContrast)
-                                Transform.scale(
-                                  scale: _pulseScaleAnimation.value,
-                                  child: Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: const Color(0xFF0072FF).withValues(
-                                        alpha: _pulseOpacityAnimation.value,
+              // 3. Elevated Quick Scan (Center) with Breathing Pulse Glow
+              Expanded(
+                child: Semantics(
+                  label: 'Quick Scan',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      context.push(AppRoutes.quickScan);
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) {
+                            return Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                if (!isHighContrast)
+                                  Transform.scale(
+                                    scale: _pulseScaleAnimation.value,
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: const Color(0xFF0072FF).withValues(
+                                          alpha: _pulseOpacityAnimation.value,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: isHighContrast
-                                      ? null
-                                      : const LinearGradient(
-                                          colors: [Color(0xFF0062FF), Color(0xFF00C6FF)],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                  color: isHighContrast ? const Color(0xFF00FF41) : null,
-                                  border: isHighContrast
-                                      ? Border.all(color: Colors.white, width: 2)
-                                      : null,
-                                  boxShadow: isHighContrast
-                                      ? null
-                                      : [
-                                          BoxShadow(
-                                            color: const Color(0xFF0062FF).withValues(alpha: 0.45),
-                                            blurRadius: 12,
-                                            spreadRadius: 1,
-                                            offset: const Offset(0, 3),
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: isHighContrast
+                                        ? null
+                                        : const LinearGradient(
+                                            colors: [Color(0xFF0062FF), Color(0xFF00C6FF)],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
                                           ),
-                                        ],
-                                ),
-                                child: Center(
-                                  child: Icon(
-                                    Icons.graphic_eq_rounded,
-                                    color: isHighContrast ? Colors.black : Colors.white,
-                                    size: 24,
+                                    color: isHighContrast ? const Color(0xFF00FF41) : null,
+                                    border: isHighContrast
+                                        ? Border.all(color: Colors.white, width: 2)
+                                        : null,
+                                    boxShadow: isHighContrast
+                                        ? null
+                                        : [
+                                            BoxShadow(
+                                              color: const Color(0xFF0062FF).withValues(alpha: 0.45),
+                                              blurRadius: 10,
+                                              spreadRadius: 1,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.graphic_eq_rounded,
+                                      color: isHighContrast ? Colors.black : Colors.white,
+                                      size: 22,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        'Quick Scan',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: isHighContrast
-                              ? Colors.white
-                              : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                              ],
+                            );
+                          },
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 3),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Quick Scan',
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: isHighContrast
+                                  ? Colors.white
+                                  : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
+              ),
 
-                // 4. History
-                _NavItem(
+              // 4. History
+              Expanded(
+                child: _NavItem(
                   icon: Icons.history_rounded,
                   label: 'History',
                   isSelected: currentIndex == 2,
@@ -256,9 +313,11 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                     widget.navigationShell.goBranch(2, initialLocation: currentIndex == 2);
                   },
                 ),
+              ),
 
-                // 5. Settings
-                _NavItem(
+              // 5. Settings
+              Expanded(
+                child: _NavItem(
                   icon: Icons.settings_rounded,
                   label: 'Settings',
                   isSelected: false,
@@ -269,12 +328,212 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                     context.push(AppRoutes.settings);
                   },
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    ),
+    );
+  }
+
+  Widget _buildSideNavigation(
+    BuildContext context, {
+    required int currentIndex,
+    required ThemeType themeType,
+    required bool isDark,
+    required bool isHighContrast,
+  }) {
+    return Container(
+      width: 78,
+      decoration: BoxDecoration(
+        color: isHighContrast
+            ? Colors.black
+            : (isDark ? const Color(0xFF0D1424) : Colors.white),
+        border: isHighContrast
+            ? const Border(right: BorderSide(color: Colors.white, width: 2.0))
+            : Border(
+                right: BorderSide(
+                  color: isDark ? Colors.white12 : const Color(0xFFE2E8F0),
+                  width: 1.0,
+                ),
+              ),
+        boxShadow: isHighContrast
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(3, 0),
+                ),
+              ],
+      ),
+      child: SafeArea(
+        right: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // 1. Home
+                      _SideNavItem(
+                        icon: Icons.home_rounded,
+                        label: 'Home',
+                        isSelected: currentIndex == 0,
+                        isDark: isDark,
+                        themeType: themeType,
+                        onTap: () {
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          widget.navigationShell.goBranch(0, initialLocation: currentIndex == 0);
+                        },
+                      ),
+
+                      // 2. Insights
+                      _SideNavItem(
+                        icon: Icons.bar_chart_rounded,
+                        label: 'Insights',
+                        isSelected: currentIndex == 1,
+                        isDark: isDark,
+                        themeType: themeType,
+                        onTap: () {
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          widget.navigationShell.goBranch(1, initialLocation: currentIndex == 1);
+                        },
+                      ),
+
+                      // 3. Center Quick Scan
+                      Semantics(
+                        label: 'Quick Scan',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            ScaffoldMessenger.of(context).clearSnackBars();
+                            context.push(AppRoutes.quickScan);
+                          },
+                          behavior: HitTestBehavior.opaque,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                AnimatedBuilder(
+                                  animation: _pulseController,
+                                  builder: (context, child) {
+                                    return Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        if (!isHighContrast)
+                                          Transform.scale(
+                                            scale: _pulseScaleAnimation.value,
+                                            child: Container(
+                                              width: 44,
+                                              height: 44,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: const Color(0xFF0072FF).withValues(
+                                                  alpha: _pulseOpacityAnimation.value,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: isHighContrast
+                                                ? null
+                                                : const LinearGradient(
+                                                    colors: [Color(0xFF0062FF), Color(0xFF00C6FF)],
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                  ),
+                                            color: isHighContrast ? const Color(0xFF00FF41) : null,
+                                            border: isHighContrast
+                                                ? Border.all(color: Colors.white, width: 2)
+                                                : null,
+                                            boxShadow: isHighContrast
+                                                ? null
+                                                : [
+                                                    BoxShadow(
+                                                      color: const Color(0xFF0062FF).withValues(alpha: 0.45),
+                                                      blurRadius: 10,
+                                                      spreadRadius: 1,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ],
+                                          ),
+                                          child: Center(
+                                            child: Icon(
+                                              Icons.graphic_eq_rounded,
+                                              color: isHighContrast ? Colors.black : Colors.white,
+                                              size: 22,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 3),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Quick Scan',
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: isHighContrast
+                                          ? Colors.white
+                                          : (isDark ? Colors.white70 : const Color(0xFF334155)),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // 4. History
+                      _SideNavItem(
+                        icon: Icons.history_rounded,
+                        label: 'History',
+                        isSelected: currentIndex == 2,
+                        isDark: isDark,
+                        themeType: themeType,
+                        onTap: () {
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          widget.navigationShell.goBranch(2, initialLocation: currentIndex == 2);
+                        },
+                      ),
+
+                      // 5. Settings
+                      _SideNavItem(
+                        icon: Icons.settings_rounded,
+                        label: 'Settings',
+                        isSelected: false,
+                        isDark: isDark,
+                        themeType: themeType,
+                        onTap: () {
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          context.push(AppRoutes.settings);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -311,39 +570,139 @@ class _NavItem extends StatelessWidget {
 
     final inactiveColor = isDark ? Colors.white60 : const Color(0xFF64748B);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 23,
-              color: isSelected ? activeColor : inactiveColor,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+    return Semantics(
+      label: label,
+      selected: isSelected,
+      button: true,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 23,
                 color: isSelected ? activeColor : inactiveColor,
               ),
-            ),
-            const SizedBox(height: 2),
-            Container(
-              width: 20,
-              height: 2,
-              decoration: BoxDecoration(
-                color: isSelected ? activeColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(2),
+              const SizedBox(height: 3),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                      color: isSelected ? activeColor : inactiveColor,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Container(
+                width: 20,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: isSelected ? activeColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SideNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final bool isDark;
+  final ThemeType themeType;
+  final VoidCallback onTap;
+
+  const _SideNavItem({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.isDark,
+    required this.themeType,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Color activeColor;
+    if (themeType == ThemeType.highContrast) {
+      activeColor = const Color(0xFF00FF41);
+    } else if (themeType == ThemeType.colorBlindSafe) {
+      activeColor = const Color(0xFF0077BB);
+    } else if (isDark) {
+      activeColor = const Color(0xFF38BDF8);
+    } else {
+      activeColor = const Color(0xFF0062FF);
+    }
+
+    final inactiveColor = isDark ? Colors.white60 : const Color(0xFF64748B);
+
+    return Semantics(
+      label: label,
+      selected: isSelected,
+      button: true,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          onTap();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: 72,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 23,
+                color: isSelected ? activeColor : inactiveColor,
+              ),
+              const SizedBox(height: 3),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                    color: isSelected ? activeColor : inactiveColor,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                width: 20,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: isSelected ? activeColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

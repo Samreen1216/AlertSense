@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_svg_icons.dart';
 import '../../core/router/app_router.dart';
 import '../../providers/alert_providers.dart';
@@ -49,7 +50,7 @@ class StatsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? const Color(0xFF1E2638)
+                            ? AppColors.darkCard
                             : theme.colorScheme.surfaceContainerHighest
                                 .withValues(alpha: 0.5),
                         shape: BoxShape.circle,
@@ -134,7 +135,7 @@ class StatsScreen extends ConsumerWidget {
                     Card(
                       elevation: 0,
                       color: isDark
-                          ? const Color(0xFF1E2638)
+                          ? AppColors.darkCard
                           : theme.colorScheme.surfaceContainerHighest
                               .withValues(alpha: 0.4),
                       shape: RoundedRectangleBorder(
@@ -233,7 +234,7 @@ class StatsScreen extends ConsumerWidget {
                     Card(
                       elevation: 0,
                       color: isDark
-                          ? const Color(0xFF1E2638)
+                          ? AppColors.darkCard
                           : theme.colorScheme.surfaceContainerHighest
                               .withValues(alpha: 0.35),
                       shape: RoundedRectangleBorder(
@@ -315,7 +316,7 @@ class StatsScreen extends ConsumerWidget {
                   Card(
                     elevation: 0,
                     color: isDark
-                        ? const Color(0xFF1E2638)
+                        ? AppColors.darkCard
                         : theme.colorScheme.surfaceContainerHighest
                             .withValues(alpha: 0.35),
                     shape: RoundedRectangleBorder(
@@ -371,7 +372,7 @@ class StatsScreen extends ConsumerWidget {
                   Card(
                     elevation: 0,
                     color: isDark
-                        ? const Color(0xFF1E2638)
+                        ? AppColors.darkCard
                         : theme.colorScheme.surfaceContainerHighest
                             .withValues(alpha: 0.35),
                     shape: RoundedRectangleBorder(
@@ -462,7 +463,7 @@ class _KpiCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1E2638)
+            ? AppColors.darkCard
             : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(

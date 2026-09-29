@@ -9,15 +9,37 @@ import '../data/models/classification_result.dart';
 /// 15,600-sample PCM window and maps them to a [SoundCategory].
 /// No native dependencies — works purely in the Dart VM.
 class AcousticDspAnalyzer {
+  const AcousticDspAnalyzer();
+
   static const int _sampleRate = 16000;
   static const int _fftSize = 1024;
   static const double _binHz = _sampleRate / _fftSize; // 15.625 Hz/bin
 
+  /// Asynchronously offloads heavy acoustic DSP computation (FFT magnitude spectrum,
+  /// Hann windowing, multi-frame active window hop scanning, ZCR) to a background
+  /// isolate via [compute] so the main UI thread never suffers frame drops or stutter.
+  ///
+  /// Gracefully falls back to synchronous [classify] if background isolates are restricted
+  /// (e.g., in certain test environments or single-threaded runtimes).
+  Future<ClassificationResult?> classifyAsync(List<double> audioData) async {
+    try {
+      return await compute(_isolateClassifierWorker, audioData);
+    } catch (e) {
+      debugPrint('[DSP] Background isolate failed or restricted ($e). Falling back to synchronous classification.');
+      return classify(audioData);
+    }
+  }
+
+  /// Static entrypoint executed inside the background isolate.
+  static ClassificationResult? _isolateClassifierWorker(List<double> audioData) {
+    return const AcousticDspAnalyzer().classify(audioData);
+  }
+
   ClassificationResult? classify(List<double> audioData) {
     if (audioData.length < _fftSize) return null;
     final overallRms = _calculateRms(audioData);
+    if (overallRms.isNaN || overallRms.isInfinite || overallRms < 0.003) return null;
     final dbLevel = _rmsToDb(overallRms);
-    if (overallRms < 0.003) return null;
 
     // 1. Multi-frame active window selection:
     // Scan across audio window to locate the frame containing the peak sound event
@@ -34,7 +56,7 @@ class AcousticDspAnalyzer {
       }
     }
 
-    if (maxFrameRms < 0.005) return null;
+    if (maxFrameRms.isNaN || maxFrameRms.isInfinite || maxFrameRms < 0.005) return null;
 
     final activeSamples = audioData.sublist(bestStart, bestStart + _fftSize);
 

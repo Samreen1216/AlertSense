@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
@@ -8,6 +9,7 @@ import '../../providers/alert_providers.dart';
 import '../../providers/audio_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../history/history_screen.dart';
+import 'widgets/theme_appearance_bottom_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -143,17 +145,19 @@ class SettingsScreen extends ConsumerWidget {
           _buildSettingsCard(
             context,
             children: [
-              ListTile(
-                leading: _buildLeadingIcon(
-                  Icons.palette_outlined,
-                  const Color(0xFF10B981),
-                  isDark: isDark,
-                  isHighContrast: isHighContrast,
-                ),
-                title: const Text('Theme Mode'),
-                subtitle: Text(_getThemeName(themeType)),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _showThemeDialog(context, ref, themeType),
+              _buildThemeModeTile(
+                context: context,
+                ref: ref,
+                themeType: themeType,
+                isDark: isDark,
+                isHighContrast: isHighContrast,
+              ),
+              _buildQuickThemeSelector(
+                context: context,
+                ref: ref,
+                activeTheme: themeType,
+                isDark: isDark,
+                isHighContrast: isHighContrast,
               ),
               const Divider(height: 1),
               ListTile(
@@ -408,9 +412,9 @@ class SettingsScreen extends ConsumerWidget {
       case ThemeType.light:
         return 'Standard Light';
       case ThemeType.dark:
-        return 'Dark Mode';
+        return 'Cyber Dark';
       case ThemeType.highContrast:
-        return 'High Contrast (Low Vision)';
+        return 'High Contrast (AMOLED)';
       case ThemeType.colorBlindSafe:
         return 'Color-Blind Accessible';
     }
@@ -423,220 +427,276 @@ class SettingsScreen extends ConsumerWidget {
     return 'Maximum Accessibility (200%)';
   }
 
-  void _showThemeDialog(BuildContext context, WidgetRef ref, ThemeType current) {
+  Widget _buildThemeModeTile({
+    required BuildContext context,
+    required WidgetRef ref,
+    required ThemeType themeType,
+    required bool isDark,
+    required bool isHighContrast,
+  }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = _getThemePrimaryColor(themeType);
+    final swatches = _getThemeSwatches(themeType);
 
-    final themeOptions = [
-      (
-        type: ThemeType.light,
-        title: 'Standard Light',
-        subtitle: 'Crisp slate canvas with sapphire accents',
-        tag: 'Modern',
-        tagColor: const Color(0xFF0062FF),
-        swatches: [const Color(0xFFF8FAFC), const Color(0xFF0062FF), const Color(0xFFEF4444), const Color(0xFF10B981)],
-        cardBg: isDark ? const Color(0xFF111C35) : const Color(0xFFF8FAFC),
-      ),
-      (
-        type: ThemeType.dark,
-        title: 'Cyber Dark',
-        subtitle: 'Midnight obsidian canvas with luminous cyan accents',
-        tag: 'Popular',
-        tagColor: const Color(0xFF38BDF8),
-        swatches: [const Color(0xFF070F26), const Color(0xFF38BDF8), const Color(0xFF0062FF), const Color(0xFF10B981)],
-        cardBg: isDark ? const Color(0xFF111C35) : const Color(0xFFF1F5F9),
-      ),
-      (
-        type: ThemeType.highContrast,
-        title: 'High Contrast (AMOLED)',
-        subtitle: 'Pure #000000 black canvas with matrix neon green',
-        tag: 'WCAG AAA',
-        tagColor: const Color(0xFF00FF41),
-        swatches: [Colors.black, const Color(0xFF00FF41), const Color(0xFFFFD600), const Color(0xFF00FFFF)],
-        cardBg: isDark ? Colors.black : const Color(0xFF0F172A),
-      ),
-      (
-        type: ThemeType.colorBlindSafe,
-        title: 'Color-Blind Accessible (IBM)',
-        subtitle: 'Distinguishable pink, safety orange & cobalt blue',
-        tag: 'Universal',
-        tagColor: const Color(0xFFD81B60),
-        swatches: [Colors.white, const Color(0xFF0077BB), const Color(0xFFD81B60), const Color(0xFFF57C00)],
-        cardBg: isDark ? const Color(0xFF111C35) : const Color(0xFFF8FAFC),
-      ),
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+    return InkWell(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+      onTap: () => _showThemeDialog(context, ref, themeType),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: isHighContrast
+                    ? Colors.black
+                    : primaryColor.withValues(alpha: isDark ? 0.22 : 0.14),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: primaryColor,
+                  width: isHighContrast ? 2.0 : 1.2,
                 ),
-                const SizedBox(height: 18),
-                Text(
-                  'Appearance & Color Theme',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Select the color palette and visual contrast that best matches your eyesight.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                ...themeOptions.map((opt) {
-                  final isSelected = current == opt.type;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {
-                          ref.read(themeTypeProvider.notifier).setTheme(opt.type);
-                          Navigator.pop(ctx);
-                          final messenger = ScaffoldMessenger.of(context);
-                          messenger.clearSnackBars();
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text('Switched theme to ${opt.title}'),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: opt.cardBg,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isSelected
-                                  ? (opt.type == ThemeType.highContrast
-                                      ? const Color(0xFF00FF41)
-                                      : const Color(0xFF0055D4))
-                                  : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
-                              width: isSelected ? 2.0 : 1.0,
-                            ),
+              ),
+              child: Icon(
+                _getThemeIcon(themeType),
+                color: primaryColor,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Theme Mode',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: primaryColor.withValues(alpha: 0.4),
+                            width: 0.8,
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          opt.title,
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: opt.tagColor.withValues(alpha: 0.15),
-                                            borderRadius: BorderRadius.circular(6),
-                                            border: Border.all(
-                                              color: opt.tagColor.withValues(alpha: 0.4),
-                                              width: 0.8,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            opt.tag,
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w800,
-                                              color: opt.tagColor,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      opt.subtitle,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Row(
-                                      children: opt.swatches.map((color) {
-                                        return Container(
-                                          width: 22,
-                                          height: 22,
-                                          margin: const EdgeInsets.only(right: 6),
-                                          decoration: BoxDecoration(
-                                            color: color,
-                                            shape: BoxShape.circle,
-                                            border: Border.all(
-                                              color: Colors.grey.withValues(alpha: 0.4),
-                                              width: 1,
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isSelected)
-                                Icon(
-                                  Icons.check_circle_rounded,
-                                  color: opt.type == ThemeType.highContrast
-                                      ? const Color(0xFF00FF41)
-                                      : const Color(0xFF0055D4),
-                                  size: 24,
-                                )
-                              else
-                                Icon(
-                                  Icons.circle_outlined,
-                                  color: isDark ? Colors.white24 : const Color(0xFFCBD5E1),
-                                  size: 24,
-                                ),
-                            ],
+                        ),
+                        child: Text(
+                          _getThemeTag(themeType),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: primaryColor,
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    _getThemeName(themeType),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isHighContrast
+                          ? const Color(0xFF00FF41)
+                          : primaryColor,
+                      fontWeight: FontWeight.w600,
                     ),
-                  );
-                }),
-              ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      ...swatches.map((color) => Container(
+                            width: 12,
+                            height: 12,
+                            margin: const EdgeInsets.only(right: 5),
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark ? Colors.white24 : Colors.black12,
+                                width: 0.8,
+                              ),
+                            ),
+                          )),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Tap to customize',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+            const SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
     );
+  }
+
+  Widget _buildQuickThemeSelector({
+    required BuildContext context,
+    required WidgetRef ref,
+    required ThemeType activeTheme,
+    required bool isDark,
+    required bool isHighContrast,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+      child: Row(
+        children: ThemeType.values.map((type) {
+          final isSelected = activeTheme == type;
+          final color = _getThemePrimaryColor(type);
+          return Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ref.read(themeTypeProvider.notifier).setTheme(type);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? (isHighContrast
+                              ? Colors.black
+                              : color.withValues(alpha: isDark ? 0.22 : 0.12))
+                          : (isDark
+                              ? Colors.white.withValues(alpha: 0.04)
+                              : Colors.black.withValues(alpha: 0.03)),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected
+                            ? color
+                            : (isHighContrast
+                                ? Colors.white24
+                                : (isDark ? Colors.white10 : Colors.black12)),
+                        width: isSelected ? (isHighContrast ? 2.0 : 1.6) : 1.0,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _getThemeIcon(type),
+                          size: 18,
+                          color: isSelected
+                              ? color
+                              : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _getThemeShortName(type),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                            color: isSelected
+                                ? (isHighContrast ? color : (isDark ? Colors.white : color))
+                                : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  IconData _getThemeIcon(ThemeType type) {
+    switch (type) {
+      case ThemeType.light:
+        return Icons.light_mode_rounded;
+      case ThemeType.dark:
+        return Icons.dark_mode_rounded;
+      case ThemeType.highContrast:
+        return Icons.contrast_rounded;
+      case ThemeType.colorBlindSafe:
+        return Icons.remove_red_eye_rounded;
+    }
+  }
+
+  Color _getThemePrimaryColor(ThemeType type) {
+    switch (type) {
+      case ThemeType.light:
+        return const Color(0xFF0062FF);
+      case ThemeType.dark:
+        return const Color(0xFF38BDF8);
+      case ThemeType.highContrast:
+        return const Color(0xFF00FF41);
+      case ThemeType.colorBlindSafe:
+        return const Color(0xFFD81B60);
+    }
+  }
+
+  String _getThemeTag(ThemeType type) {
+    switch (type) {
+      case ThemeType.light:
+        return 'Daylight';
+      case ThemeType.dark:
+        return 'OLED';
+      case ThemeType.highContrast:
+        return 'WCAG AAA';
+      case ThemeType.colorBlindSafe:
+        return 'Color-Safe';
+    }
+  }
+
+  String _getThemeShortName(ThemeType type) {
+    switch (type) {
+      case ThemeType.light:
+        return 'Light';
+      case ThemeType.dark:
+        return 'Dark';
+      case ThemeType.highContrast:
+        return 'Contrast';
+      case ThemeType.colorBlindSafe:
+        return 'Color-Safe';
+    }
+  }
+
+  List<Color> _getThemeSwatches(ThemeType type) {
+    switch (type) {
+      case ThemeType.light:
+        return const [Color(0xFFF8FAFC), Color(0xFF0062FF), Color(0xFFEF4444), Color(0xFF10B981)];
+      case ThemeType.dark:
+        return const [Color(0xFF070F26), Color(0xFF38BDF8), Color(0xFF818CF8), Color(0xFF10B981)];
+      case ThemeType.highContrast:
+        return const [Colors.black, Color(0xFF00FF41), Color(0xFFFFD600), Color(0xFF00FFFF)];
+      case ThemeType.colorBlindSafe:
+        return const [Colors.white, Color(0xFF0077BB), Color(0xFFD81B60), Color(0xFFEE7733)];
+    }
+  }
+
+  void _showThemeDialog(BuildContext context, WidgetRef ref, ThemeType current) {
+    ThemeAppearanceBottomSheet.show(context);
   }
 
   void _showFontScaleDialog(BuildContext context, WidgetRef ref, double current) {

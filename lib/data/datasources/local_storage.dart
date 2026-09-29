@@ -16,16 +16,24 @@ class LocalStorage {
 
   Future<void> saveSettings(UserSettings settings) async {
     await _prefs.setString('user_settings', settings.toJson());
+    if (settings.onboardingCompleted) {
+      await _prefs.setBool('onboarding_completed', true);
+    }
   }
 
   UserSettings loadSettings() {
     final jsonStr = _prefs.getString('user_settings');
+    UserSettings settings = const UserSettings();
     if (jsonStr != null) {
       try {
-        return UserSettings.fromJson(jsonStr);
+        settings = UserSettings.fromJson(jsonStr);
       } catch (_) {}
     }
-    return const UserSettings();
+    final directOnboarding = _prefs.getBool('onboarding_completed');
+    if (directOnboarding == true && !settings.onboardingCompleted) {
+      settings = settings.copyWith(onboardingCompleted: true);
+    }
+    return settings;
   }
 
   Future<void> saveProfiles(List<SoundProfile> profiles) async {
@@ -65,11 +73,14 @@ class LocalStorage {
   }
 
   Future<void> setOnboardingComplete() async {
+    await _prefs.setBool('onboarding_completed', true);
     final settings = loadSettings().copyWith(onboardingCompleted: true);
     await saveSettings(settings);
   }
 
   bool isOnboardingComplete() {
+    final direct = _prefs.getBool('onboarding_completed');
+    if (direct == true) return true;
     return loadSettings().onboardingCompleted;
   }
 }

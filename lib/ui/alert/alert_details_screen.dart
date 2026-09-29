@@ -9,8 +9,10 @@ import '../../core/constants/sound_categories.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/alert_providers.dart';
+import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../services/sms_service.dart';
+import '../../core/utils/responsive_utils.dart';
 import 'widgets/alert_family_choice_dialog.dart';
 
 class AlertDetailsScreen extends ConsumerWidget {
@@ -85,10 +87,13 @@ class AlertDetailsScreen extends ConsumerWidget {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: ResponsiveBreakpoints.maxTabletWidth),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ── Header Card ──
               Container(
@@ -97,7 +102,7 @@ class AlertDetailsScreen extends ConsumerWidget {
                   color: isHighContrast
                       ? Colors.black
                       : (isDark
-                          ? const Color(0xFF1E2638)
+                          ? AppColors.darkCard
                           : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
@@ -159,7 +164,7 @@ class AlertDetailsScreen extends ConsumerWidget {
                 color: isHighContrast
                     ? Colors.black
                     : (isDark
-                        ? const Color(0xFF1E2638)
+                        ? AppColors.darkCard
                         : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.35)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -313,9 +318,16 @@ class AlertDetailsScreen extends ConsumerWidget {
                     final contact = settings.emergencyContacts.isNotEmpty
                         ? settings.emergencyContacts.first
                         : null;
+
+                    final loc = await ref.read(locationServiceProvider).getCurrentLocation();
+                    final message = SmsService.emergencyMessage(
+                      label,
+                      location: loc,
+                    );
+
                     final success = await SmsService.sendEmergencyWhatsApp(
                       phoneNumber: contact,
-                      message: SmsService.emergencyMessage(label),
+                      message: message,
                     );
                     if (context.mounted) {
                       if (success) {
@@ -397,10 +409,16 @@ class AlertDetailsScreen extends ConsumerWidget {
 
                     if (choice == null || !context.mounted) return;
 
+                    final loc = await ref.read(locationServiceProvider).getCurrentLocation();
+                    final message = SmsService.emergencyMessage(
+                      label,
+                      location: loc,
+                    );
+
                     if (choice == AlertChannel.sms) {
                       await SmsService.sendEmergencySms(
                         recipients: contacts,
-                        message: SmsService.emergencyMessage(label),
+                        message: message,
                       );
                       if (context.mounted) {
                         ref
@@ -418,7 +436,7 @@ class AlertDetailsScreen extends ConsumerWidget {
                     } else if (choice == AlertChannel.whatsapp) {
                       final success = await SmsService.sendEmergencyWhatsApp(
                         phoneNumber: contacts.first,
-                        message: SmsService.emergencyMessage(label),
+                        message: message,
                       );
                       if (context.mounted && success) {
                         ref
@@ -444,7 +462,9 @@ class AlertDetailsScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }
 
@@ -469,21 +489,28 @@ class _DetailRow extends StatelessWidget {
       children: [
         Icon(icon, size: 20, color: theme.colorScheme.onSurfaceVariant),
         const SizedBox(width: 12),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurfaceVariant,
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
-        const Spacer(),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: valueColor ?? theme.colorScheme.onSurface,
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: valueColor ?? theme.colorScheme.onSurface,
+            ),
           ),
         ),
       ],

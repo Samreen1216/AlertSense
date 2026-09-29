@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'location_service.dart';
 
 /// Service for quick emergency responses, phone dialing, SMS messaging, and WhatsApp alerts.
 class SmsService {
@@ -217,8 +218,59 @@ class SmsService {
     return 'AlertSense notice: A $soundName was detected earlier, but I have verified that I am safe. No action is required.';
   }
 
-  /// Preset message for "Emergency Alert" to family.
-  static String emergencyMessage(String soundName) {
+  /// Preset message for "Emergency Alert" to family via SMS or WhatsApp.
+  /// If [location] or [locationUrl] is provided, formats with clickable Google Maps pin and optional accuracy.
+  static String emergencyMessage(
+    String soundName, {
+    String? locationUrl,
+    double? accuracy,
+    LocationResult? location,
+  }) {
+    final url = location?.toGoogleMapsUrl() ?? locationUrl;
+    final acc = location?.accuracy ?? accuracy;
+
+    if (url != null && url.trim().isNotEmpty) {
+      final accStr = acc != null ? ' (±${acc.round()}m)' : '';
+      return 'EMERGENCY ALERT via AlertSense: A $soundName has been detected at my location!\n\n'
+          '📍 Pin: $url$accStr\n\n'
+          'Please check on me or call for assistance!';
+    }
     return 'EMERGENCY ALERT via AlertSense: A $soundName has been detected at my location. Please check on me or call for assistance!';
   }
+
+  /// Preset message for auto-dispatched critical alerts when 45-second countdown expires unacknowledged.
+  static String autoDispatchEmergencyMessage(
+    String soundName, {
+    String? locationUrl,
+    double? accuracy,
+    LocationResult? location,
+  }) {
+    final url = location?.toGoogleMapsUrl() ?? locationUrl;
+    final acc = location?.accuracy ?? accuracy;
+
+    if (url != null && url.trim().isNotEmpty) {
+      final accStr = acc != null ? ' (±${acc.round()}m)' : '';
+      return 'CRITICAL ALERT via AlertSense: $soundName detected at user location. '
+          'User is currently unacknowledged.\n\n'
+          '📍 Pin: $url$accStr\n\n'
+          'Sent automatically by AlertSense.';
+    }
+    return 'CRITICAL ALERT: $soundName detected at user location. User is currently unacknowledged. Sent automatically by AlertSense.';
+  }
+
+  /// Preset message for WhatsApp emergency alert.
+  static String whatsAppEmergencyMessage(
+    String soundName, {
+    String? locationUrl,
+    double? accuracy,
+    LocationResult? location,
+  }) {
+    return emergencyMessage(
+      soundName,
+      locationUrl: locationUrl,
+      accuracy: accuracy,
+      location: location,
+    );
+  }
 }
+

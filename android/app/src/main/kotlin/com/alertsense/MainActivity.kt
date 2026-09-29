@@ -5,8 +5,15 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Telephony
 import io.flutter.embedding.android.FlutterActivity
@@ -42,6 +49,26 @@ class MainActivity: FlutterActivity() {
                     val message = call.argument<String>("message") ?: ""
                     val success = sendDirectSms(recipient, message)
                     result.success(success)
+                }
+                "isLocationServiceEnabled" -> {
+                    val isEnabled = isLocationServiceEnabled()
+                    result.success(isEnabled)
+                }
+                "checkPermission" -> {
+                    val hasFine = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    } else true
+                    val hasCoarse = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    } else true
+                    result.success(hasFine || hasCoarse)
+                }
+                "getLastKnownLocation" -> {
+                    val loc = getLastKnownLocation()
+                    result.success(loc)
+                }
+                "getCurrentLocation" -> {
+                    getCurrentLocation(result)
                 }
                 else -> result.notImplemented()
             }
@@ -117,6 +144,177 @@ class MainActivity: FlutterActivity() {
             }
         } catch (e: Exception) {
             true
+        }
+    }
+
+    private fun isLocationServiceEnabled(): Boolean {
+        return try {
+            val locationManager = getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
+            val gps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            val network = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            gps || network
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun isBetterLocation(location: Location, currentBestLocation: Location?): Boolean {
+        if (currentBestLocation == null) return true
+        val timeDelta = location.time - currentBestLocation.time
+        val isSignificantlyNewer = timeDelta > 1000 * 60 * 2 // 2 minutes newer
+        val isSignificantlyOlder = timeDelta < -1000 * 60 * 2 // 2 minutes older
+        val isNewer = timeDelta > 0
+
+        if (isSignificantlyNewer) return true
+        if (isSignificantlyOlder) return false
+
+        val accuracyDelta = (location.accuracy - currentBestLocation.accuracy).toInt()
+        val isLessAccurate = accuracyDelta > 0
+        val isMoreAccurate = accuracyDelta < 0
+        val isSignificantlyLessAccurate = accuracyDelta > 200
+
+        if (isMoreAccurate) return true
+        if (isNewer && !isLessAccurate) return true
+        if (isNewer && !isSignificantlyLessAccurate && location.provider == currentBestLocation.provider) return true
+        return false
+    }
+
+    private fun getLastKnownLocation(): Map<String, Any>? {
+        return try {
+            val locationManager = getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
+            val hasFine = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            } else true
+            val hasCoarse = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            } else true
+            if (!hasFine && !hasCoarse) return null
+
+            var bestLocation: Location? = null
+            val providers = listOf(
+                LocationManager.GPS_PROVIDER,
+                LocationManager.NETWORK_PROVIDER,
+                LocationManager.PASSIVE_PROVIDER
+            )
+            for (provider in providers) {
+                try {
+                    if (locationManager.isProviderEnabled(provider)) {
+                        val loc = locationManager.getLastKnownLocation(provider)
+                        if (loc != null && isBetterLocation(loc, bestLocation)) {
+                            bestLocation = loc
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+
+            if (bestLocation != null) {
+                mapOf(
+                    "latitude" to bestLocation.latitude,
+                    "longitude" to bestLocation.longitude,
+                    "accuracy" to bestLocation.accuracy.toDouble(),
+                    "timestamp" to bestLocation.time
+                )
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getCurrentLocation(result: MethodChannel.Result) {
+        try {
+            val lastKnown = getLastKnownLocation()
+            val locationManager = getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+            if (locationManager == null) {
+                result.success(lastKnown)
+                return
+            }
+
+            val hasFine = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            } else true
+            val hasCoarse = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            } else true
+            if (!hasFine && !hasCoarse) {
+                result.error("PERMISSION_DENIED", "Location permissions not granted.", null)
+                return
+            }
+
+            val activeProviders = mutableListOf<String>()
+            if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                activeProviders.add(LocationManager.NETWORK_PROVIDER)
+            }
+            if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                activeProviders.add(LocationManager.GPS_PROVIDER)
+            }
+
+            if (activeProviders.isEmpty()) {
+                if (lastKnown != null) {
+                    result.success(lastKnown)
+                } else {
+                    result.error("LOCATION_DISABLED", "Location services are disabled.", null)
+                }
+                return
+            }
+
+            var responded = false
+            var currentBest: Location? = null
+            val listeners = mutableListOf<LocationListener>()
+
+            val finishWithLocation: (Location?) -> Unit = { loc ->
+                if (!responded) {
+                    responded = true
+                    for (l in listeners) {
+                        try { locationManager.removeUpdates(l) } catch (_: Exception) {}
+                    }
+                    if (loc != null) {
+                        result.success(mapOf(
+                            "latitude" to loc.latitude,
+                            "longitude" to loc.longitude,
+                            "accuracy" to loc.accuracy.toDouble(),
+                            "timestamp" to loc.time
+                        ))
+                    } else {
+                        result.success(lastKnown)
+                    }
+                }
+            }
+
+            val listener = object : LocationListener {
+                override fun onLocationChanged(location: Location) {
+                    if (isBetterLocation(location, currentBest)) {
+                        currentBest = location
+                    }
+                    // Instant return if accuracy is good enough for emergency location (<= 25m)
+                    if (location.accuracy <= 25.0f) {
+                        finishWithLocation(location)
+                    }
+                }
+                override fun onProviderDisabled(p: String) {}
+                override fun onProviderEnabled(p: String) {}
+                @Deprecated("Deprecated in Java")
+                override fun onStatusChanged(p: String?, status: Int, extras: Bundle?) {}
+            }
+            listeners.add(listener)
+
+            for (provider in activeProviders) {
+                try {
+                    locationManager.requestLocationUpdates(
+                        provider,
+                        0L,
+                        0f,
+                        listener,
+                        Looper.getMainLooper()
+                    )
+                } catch (_: Exception) {}
+            }
+
+            // Strict fast watchdog timeout: 3 seconds
+            Handler(Looper.getMainLooper()).postDelayed({
+                finishWithLocation(currentBest)
+            }, 3000)
+        } catch (e: Exception) {
+            result.success(getLastKnownLocation())
         }
     }
 }

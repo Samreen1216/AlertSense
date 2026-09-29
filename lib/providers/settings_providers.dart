@@ -49,6 +49,18 @@ class SettingsNotifier extends StateNotifier<UserSettings> {
     updated[category] = pattern;
     await updateSettings(state.copyWith(customVibrationPatterns: updated));
   }
+
+  Future<void> setOnboardingCompleted(bool completed) async {
+    await updateSettings(state.copyWith(onboardingCompleted: completed));
+    if (completed) {
+      final repo = _ref.read(settingsRepositoryProvider);
+      await repo.setOnboardingComplete();
+    }
+  }
+
+  Future<void> completeOnboarding() async {
+    await setOnboardingCompleted(true);
+  }
 }
 
 final userSettingsProvider = StateNotifierProvider<SettingsNotifier, UserSettings>((ref) {

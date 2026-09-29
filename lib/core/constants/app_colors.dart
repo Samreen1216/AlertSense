@@ -17,6 +17,11 @@ class AppColors {
   static const Color surfaceDark = Color(0xFF111C35); // Frosted Deep Sapphire
   static const Color surfaceDarkElevated = Color(0xFF182544);
 
+  // Standard Dark Surface Tokens
+  static const Color darkBackground = Color(0xFF070F26);
+  static const Color darkCard = Color(0xFF1E2638);
+  static const Color darkSurface = Color(0xFF0F172A);
+
   // ── Status & Feedback States ──────────────────────────────────────────────
   static const Color error = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);

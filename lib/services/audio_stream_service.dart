@@ -18,7 +18,7 @@ class AudioStreamService {
   final _dbLevelController = StreamController<double>.broadcast();
 
   final AudioRecorder _recorder = AudioRecorder();
-  StreamSubscription<Uint8List>? _recorderSub;
+  StreamSubscription<List<double>>? _recorderSub;
   // 50% overlapping windows (15,600 samples window, 7,800 hop size = 0.487s) for responsive sound tracking
   final AudioWindowBuffer _windowBuffer = AudioWindowBuffer(
     windowSize: samplesPerWindow,
@@ -75,8 +75,14 @@ class AudioStreamService {
           }
         }
 
-        _recorderSub = stream.listen(
-          (data) => _onAudioData(data, inputSampleRate: activeRate),
+        _recorderSub = stream.asyncMap((data) async {
+          return await AudioPreprocessor.processIncomingPcmAsync(
+            pcmBytes: data,
+            inputSampleRate: activeRate,
+            numChannels: 1,
+          );
+        }).listen(
+          (samples) => _onAudioSamples(samples),
           onError: (e) {
             debugPrint('[AudioStream] Mic error: $e');
             _startAmbientDbFallback();
@@ -107,16 +113,12 @@ class AudioStreamService {
     }
   }
 
-  void _onAudioData(Uint8List data, {int inputSampleRate = sampleRate}) {
-    // 1. Preprocess incoming PCM data (PCM16 -> Float32, mono, 16 kHz)
-    final samples = AudioPreprocessor.processIncomingPcm(
-      pcmBytes: data,
-      inputSampleRate: inputSampleRate,
-      numChannels: 1,
-    );
+  /// Ingests preprocessed 16 kHz mono float32 audio samples into the window buffer.
+  void _onAudioSamples(List<double> samples) {
+    if (!_isListening) return;
     _windowBuffer.addSamples(samples);
 
-    // 2. Extract complete 15,600-sample windows
+    // Extract complete 15,600-sample windows
     while (_windowBuffer.hasWindow) {
       final window = _windowBuffer.nextWindow();
       if (window == null) break;
@@ -130,6 +132,26 @@ class AudioStreamService {
         if (!_audioBufferController.isClosed) _audioBufferController.add(window);
       }
     }
+  }
+
+  /// Synchronously processes incoming PCM data for direct callers.
+  void _onAudioData(Uint8List data, {int inputSampleRate = sampleRate}) {
+    final samples = AudioPreprocessor.processIncomingPcm(
+      pcmBytes: data,
+      inputSampleRate: inputSampleRate,
+      numChannels: 1,
+    );
+    _onAudioSamples(samples);
+  }
+
+  /// Asynchronously processes incoming PCM data offloaded to a background isolate.
+  Future<void> onAudioDataAsync(Uint8List data, {int inputSampleRate = sampleRate}) async {
+    final samples = await AudioPreprocessor.processIncomingPcmAsync(
+      pcmBytes: data,
+      inputSampleRate: inputSampleRate,
+      numChannels: 1,
+    );
+    _onAudioSamples(samples);
   }
 
   /// Ambient meter fallback that only updates decibel level without generating fake audio alerts.

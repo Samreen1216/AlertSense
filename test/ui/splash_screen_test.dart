@@ -6,7 +6,6 @@ import 'package:alertsense/core/theme/theme_provider.dart';
 import 'package:alertsense/data/datasources/local_storage.dart';
 import 'package:alertsense/data/repositories/settings_repository.dart';
 import 'package:alertsense/main.dart';
-import 'package:alertsense/providers/settings_providers.dart';
 import 'package:alertsense/ui/splash/splash_screen.dart';
 
 void main() {

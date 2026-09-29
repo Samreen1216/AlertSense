@@ -46,6 +46,8 @@ class ListeningNotifier extends StateNotifier<bool> {
     if (state) { await _stop(); } else { await _start(); }
   }
 
+  Future<void> toggleListening() => toggle();
+
   Future<void> start() async { if (!state) await _start(); }
   Future<void> stop() async { if (state) await _stop(); }
 
@@ -112,8 +114,8 @@ class ListeningNotifier extends StateNotifier<bool> {
         return;
       }
 
-      // 2. YAMNet Inference & Top-5 Candidate Search
-      final result = classifier.classify(buffer);
+      // 2. YAMNet Inference & Top-5 Candidate Search (offloaded to background isolate)
+      final result = await classifier.classifyAsync(buffer);
       if (result == null) {
         return;
       }

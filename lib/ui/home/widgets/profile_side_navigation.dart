@@ -126,19 +126,10 @@ class ProfileSideNavigation extends ConsumerWidget {
                               SnackBar(
                                 content: Text('Switched profile to ${p.title}'),
                                 behavior: SnackBarBehavior.floating,
-                                duration: Duration(seconds: p.id == 'sleep' ? 4 : 2),
+                                duration: const Duration(seconds: 2),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                action: p.id == 'sleep'
-                                    ? SnackBarAction(
-                                        label: 'Open Bedside Clock',
-                                        textColor: const Color(0xFF00C6FF),
-                                        onPressed: () {
-                                          context.push(AppRoutes.sleepMode);
-                                        },
-                                      )
-                                    : null,
                               ),
                             );
                           },

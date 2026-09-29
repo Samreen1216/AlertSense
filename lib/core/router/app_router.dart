@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/alert_event.dart';
+import '../../main.dart';
+import '../../providers/settings_providers.dart';
 import '../../ui/onboarding/onboarding_screen.dart';
 import '../../ui/home/home_screen.dart';
 import '../../ui/history/history_screen.dart';
@@ -41,8 +43,25 @@ class AppRoutes {
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  bool checkOnboardingComplete() {
+    try {
+      final userSettings = ref.read(userSettingsProvider);
+      final localStorage = ref.read(localStorageProvider);
+      return userSettings.onboardingCompleted || localStorage.isOnboardingComplete();
+    } catch (_) {
+      try {
+        final userSettings = ref.read(userSettingsProvider);
+        return userSettings.onboardingCompleted;
+      } catch (_) {
+        return false;
+      }
+    }
+  }
+
+  final initialOnboarding = checkOnboardingComplete();
+
   return GoRouter(
-    initialLocation: AppRoutes.splash,
+    initialLocation: initialOnboarding ? AppRoutes.home : AppRoutes.splash,
     errorBuilder: (context, state) {
       return const HomeScreen();
     },
@@ -50,6 +69,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final uri = state.uri;
       final path = uri.path;
       final host = uri.host;
+      final isOnboardingComplete = checkOnboardingComplete();
+
+      // Guard: If onboarding completed, redirect /onboarding access to /home
+      if (isOnboardingComplete &&
+          (path == AppRoutes.onboarding || path == '/onboarding' || host == 'onboarding')) {
+        return AppRoutes.home;
+      }
 
       // Handle root '/' or empty path with custom scheme host
       if (path == '/' || path.isEmpty) {
@@ -67,13 +93,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               return AppRoutes.history;
             case 'stats':
               return AppRoutes.stats;
+            case 'onboarding':
+              return isOnboardingComplete ? AppRoutes.home : AppRoutes.onboarding;
             case 'home':
             case 'toggle-listening':
             default:
               return AppRoutes.home;
           }
         }
-        return AppRoutes.splash;
+        return isOnboardingComplete ? AppRoutes.home : AppRoutes.splash;
       }
 
       // Handle path-based aliases from deep links
@@ -87,10 +115,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      // Root route redirect to splash
+      // Root route redirect to home for onboarded users, splash for cold new launches
       GoRoute(
         path: '/',
-        redirect: (context, state) => AppRoutes.splash,
+        redirect: (context, state) =>
+            checkOnboardingComplete() ? AppRoutes.home : AppRoutes.splash,
       ),
 
       // Splash screen
@@ -112,6 +141,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Onboarding
       GoRoute(
         path: AppRoutes.onboarding,
+        redirect: (context, state) =>
+            checkOnboardingComplete() ? AppRoutes.home : null,
         builder: (context, state) => const OnboardingScreen(),
       ),
 

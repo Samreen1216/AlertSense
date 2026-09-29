@@ -1,0 +1,731 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:alertsense/core/utils/responsive_utils.dart';
+import 'package:alertsense/core/router/app_router.dart';
+import 'package:alertsense/core/theme/theme_provider.dart';
+import 'package:alertsense/data/datasources/local_storage.dart';
+import 'package:alertsense/data/models/alert_event.dart';
+import 'package:alertsense/data/models/user_settings.dart';
+import 'package:alertsense/data/repositories/alert_repository.dart';
+import 'package:alertsense/data/repositories/settings_repository.dart';
+import 'package:alertsense/main.dart';
+import 'package:alertsense/providers/alert_providers.dart';
+import 'package:alertsense/providers/audio_providers.dart';
+import 'package:alertsense/providers/settings_providers.dart';
+import 'package:alertsense/ui/alert/widgets/quick_response_card.dart';
+import 'package:alertsense/ui/alert/full_screen_alert.dart';
+import 'package:alertsense/ui/alert/alert_details_screen.dart';
+import 'package:alertsense/ui/sleep/sleep_mode_screen.dart';
+
+class MockListeningNotifier extends ListeningNotifier {
+  MockListeningNotifier(super.ref, [bool initial = true]) {
+    state = initial;
+  }
+
+  @override
+  Future<void> start() async {
+    state = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    state = false;
+  }
+
+  @override
+  Future<void> toggle() async {
+    state = !state;
+  }
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late SharedPreferences prefs;
+  late LocalStorage localStorage;
+  late SettingsRepository settingsRepo;
+  late AlertRepository alertRepo;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+    localStorage = LocalStorage(prefs);
+    settingsRepo = SettingsRepository(localStorage);
+    await settingsRepo.init();
+    alertRepo = AlertRepository(localStorage);
+    await alertRepo.init();
+  });
+
+  /// Helper to configure physical screen size and text scaling factor
+  void configureScreen(
+    WidgetTester tester, {
+    required double width,
+    required double height,
+  }) {
+    tester.view.physicalSize = Size(width, height);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+  }
+
+  /// Helper to wrap test widgets with simulated MediaQuery for text scaling & dimensions
+  Widget buildResponsiveTestApp({
+    required Widget child,
+    required double width,
+    required double height,
+    double textScale = 1.0,
+    ProviderContainer? container,
+  }) {
+    final orientation = width > height ? Orientation.landscape : Orientation.portrait;
+    final widgetTree = MediaQuery(
+      data: MediaQueryData(
+        size: Size(width, height),
+        textScaler: TextScaler.linear(textScale),
+        orientation: orientation,
+        padding: EdgeInsets.zero,
+        viewInsets: EdgeInsets.zero,
+        viewPadding: EdgeInsets.zero,
+      ),
+      child: MaterialApp(
+        home: child,
+      ),
+    );
+
+    if (container != null) {
+      return UncontrolledProviderScope(
+        container: container,
+        child: widgetTree,
+      );
+    }
+    return widgetTree;
+  }
+
+  group('Phase 1: ResponsiveBreakpoints Utility Tests', () {
+    testWidgets('Breakpoints accurately categorize compact, tablet, landscape, desktop', (tester) async {
+      // 1. Compact screen (320x568)
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          child: Builder(
+            builder: (context) {
+              expect(ResponsiveBreakpoints.isCompact(context), isTrue);
+              expect(ResponsiveBreakpoints.isTablet(context), isFalse);
+              expect(ResponsiveBreakpoints.isDesktop(context), isFalse);
+              expect(ResponsiveBreakpoints.isLandscape(context), isFalse);
+              expect(context.isCompact, isTrue);
+              expect(
+                ResponsiveBreakpoints.value(context, compact: 'compact', regular: 'regular'),
+                'compact',
+              );
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      // 2. Landscape phone (800x360)
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          child: Builder(
+            builder: (context) {
+              expect(ResponsiveBreakpoints.isLandscape(context), isTrue);
+              expect(ResponsiveBreakpoints.isShortViewport(context), isTrue);
+              expect(context.isLandscape, isTrue);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      // 3. Tablet (800x1280)
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 1280,
+          child: Builder(
+            builder: (context) {
+              expect(ResponsiveBreakpoints.isTablet(context), isTrue);
+              expect(ResponsiveBreakpoints.isDesktop(context), isFalse);
+              expect(context.isTablet, isTrue);
+              expect(
+                ResponsiveBreakpoints.value(context, compact: 'compact', regular: 'regular', tablet: 'tablet'),
+                'tablet',
+              );
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+
+      // 4. Desktop (1024x768)
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 1024,
+          height: 768,
+          child: Builder(
+            builder: (context) {
+              expect(ResponsiveBreakpoints.isDesktop(context), isTrue);
+              expect(context.isDesktop, isTrue);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+    });
+  });
+
+  group('Phase 1: AppScaffold Adaptive Navigation Tests', () {
+    ProviderContainer createScaffoldContainer() {
+      return ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
+            ..state = const UserSettings(onboardingCompleted: true)),
+        ],
+      );
+    }
+
+    testWidgets('Portrait compact phone (320x568) renders bottom navigation bar without overflow', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final container = createScaffoldContainer();
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(320, 568),
+              textScaler: TextScaler.linear(1.0),
+              orientation: Orientation.portrait,
+            ),
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Insights'), findsOneWidget);
+      expect(find.text('Quick Scan'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
+    });
+
+    testWidgets('Portrait compact phone at 2.0x font scale renders cleanly without RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final container = createScaffoldContainer();
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(320, 568),
+              textScaler: TextScaler.linear(2.0),
+              orientation: Orientation.portrait,
+            ),
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Quick Scan'), findsOneWidget);
+    });
+
+    testWidgets('Landscape phone (800x360) switches to side navigation rail without overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = createScaffoldContainer();
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(800, 360),
+              textScaler: TextScaler.linear(1.0),
+              orientation: Orientation.landscape,
+            ),
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      // All 5 destinations exist in the side navigation rail
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Insights'), findsOneWidget);
+      expect(find.text('Quick Scan'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
+    });
+
+    testWidgets('Landscape phone at 2.0x font scale renders side rail without overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = createScaffoldContainer();
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(800, 360),
+              textScaler: TextScaler.linear(2.0),
+              orientation: Orientation.landscape,
+            ),
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Tablet (800x1280) uses adaptive side rail without overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 1280);
+      final container = createScaffoldContainer();
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(800, 1280),
+              textScaler: TextScaler.linear(1.0),
+              orientation: Orientation.portrait,
+            ),
+            child: MaterialApp.router(routerConfig: router),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Insights'), findsOneWidget);
+    });
+  });
+
+  group('Phase 2: QuickResponseCard Responsive Tests', () {
+    testWidgets('QuickResponseCard minHeight: 52 and FittedBox on compact 320x568 phone', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          child: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  QuickResponseCard(
+                    label: "I'm Safe (False Alarm)",
+                    icon: Icons.check_circle_outline_rounded,
+                    color: Colors.green,
+                    onPressed: () {},
+                  ),
+                  const SizedBox(height: 10),
+                  QuickResponseCard(
+                    label: 'Call Emergency Services (Immediate Dispatch)',
+                    icon: Icons.phone_rounded,
+                    color: Colors.red,
+                    onPressed: () {},
+                  ),
+                  const SizedBox(height: 10),
+                  QuickResponseCard(
+                    label: 'Loading State Test',
+                    icon: Icons.hourglass_top_rounded,
+                    color: Colors.blue,
+                    isLoading: true,
+                    onPressed: () {},
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(FittedBox), findsWidgets);
+      expect(find.byType(ConstrainedBox), findsWidgets);
+    });
+
+    testWidgets('QuickResponseCard under 2.0x font scale never overflows RenderFlex', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          textScale: 2.0,
+          child: Scaffold(
+            body: QuickResponseCard(
+              label: 'Alert Family (WhatsApp / SMS) Very Long Emergency Action Label',
+              icon: Icons.family_restroom_rounded,
+              color: Colors.orange,
+              onPressed: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('QuickResponseCard on landscape 800x360 renders cleanly', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          textScale: 1.5,
+          child: Scaffold(
+            body: QuickResponseCard(
+              label: 'Acknowledge & Dismiss Alert',
+              icon: Icons.close_rounded,
+              color: Colors.grey,
+              onPressed: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Phase 2: FullScreenAlert Responsive & Landscape Layout Tests', () {
+    final alertData = {
+      'id': 'alert-test-01',
+      'soundCategory': 'fireAlarm',
+      'confidence': 96,
+      'priorityLevel': 'HIGH',
+      'timestamp': DateTime.now(),
+    };
+
+    ProviderContainer createAlertContainer({List<String> emergencyContacts = const []}) {
+      return ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
+            ..state = UserSettings(
+              onboardingCompleted: true,
+              emergencyContacts: emergencyContacts,
+            )),
+        ],
+      );
+    }
+
+    testWidgets('FullScreenAlert renders without overflow on 320x568 compact phone', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final container = createAlertContainer(emergencyContacts: ['+1234567890']);
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          container: container,
+          child: FullScreenAlert(alertData: alertData),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Fire Alarm'), findsOneWidget);
+      expect(find.text('CRITICAL ALERT DETECTED'), findsOneWidget);
+      expect(find.text("I'm Safe (False Alarm)"), findsOneWidget);
+    });
+
+    testWidgets('FullScreenAlert at 2.0x font scale renders cleanly without RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final container = createAlertContainer(emergencyContacts: ['+1234567890']);
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          textScale: 2.0,
+          container: container,
+          child: FullScreenAlert(alertData: alertData),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('FullScreenAlert in landscape (800x360) renders 2-column layout without overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = createAlertContainer(emergencyContacts: ['+1234567890']);
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          container: container,
+          child: FullScreenAlert(alertData: alertData),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      // Both columns exist: left pane title & right pane action buttons
+      expect(find.text('Fire Alarm'), findsOneWidget);
+      expect(find.text('CRITICAL ALERT DETECTED'), findsOneWidget);
+      expect(find.text("I'm Safe (False Alarm)"), findsOneWidget);
+      expect(find.text('Call Emergency Services'), findsOneWidget);
+    });
+
+    testWidgets('FullScreenAlert on tablet (800x1280) constrains max width to 680', (tester) async {
+      configureScreen(tester, width: 800, height: 1280);
+      final container = createAlertContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 1280,
+          container: container,
+          child: FullScreenAlert(alertData: alertData),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Fire Alarm'), findsOneWidget);
+    });
+  });
+
+  group('Phase 2: SleepModeScreen Responsive & Nightstand Mode Tests', () {
+    ProviderContainer createSleepContainer() {
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          isListeningProvider.overrideWith((ref) => MockListeningNotifier(ref, true)),
+        ],
+      );
+      container.read(activeProfileProvider.notifier).state = 'home';
+      return container;
+    }
+
+    testWidgets('SleepModeScreen clock is wrapped in FittedBox and does not overflow on 320x568 compact phone', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final container = createSleepContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          container: container,
+          child: const SleepModeScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Sleep Guardian'), findsOneWidget);
+      expect(find.text('BEDSIDE'), findsOneWidget);
+      expect(find.text('Exit Sleep Mode'), findsOneWidget);
+    });
+
+    testWidgets('SleepModeScreen clock does not wrap or overflow under 2.0x font scale', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+      final container = createSleepContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          textScale: 2.0,
+          container: container,
+          child: const SleepModeScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('SleepModeScreen bedside landscape (800x360) splits into 2-column view without overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 360);
+      final container = createSleepContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 360,
+          container: container,
+          child: const SleepModeScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      // Both columns exist
+      expect(find.text('Sleep Guardian'), findsOneWidget);
+      expect(find.text('Monitored Life-Safety Alarms'), findsOneWidget);
+      expect(find.text('Fire Alarm'), findsOneWidget);
+      expect(find.text('Exit Sleep Mode'), findsOneWidget);
+    });
+
+    testWidgets('SleepModeScreen on tablet (800x1280) renders cleanly without overflow', (tester) async {
+      configureScreen(tester, width: 800, height: 1280);
+      final container = createSleepContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 1280,
+          container: container,
+          child: const SleepModeScreen(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Exit Sleep Mode'), findsOneWidget);
+    });
+  });
+
+  group('Phase 2: AlertDetailsScreen Responsive Tests', () {
+    final alert = AlertEvent(
+      id: 'alert-detail-test',
+      soundCategory: 'smokeAlarm',
+      confidence: 0.94,
+      priorityLevel: 'high',
+      timestamp: DateTime(2026, 9, 29, 14, 30),
+      source: 'High-Precision Acoustic Sensor #1',
+      acknowledged: true,
+      responseAction: 'auto_sms_unacknowledged',
+    );
+
+    testWidgets('_DetailRow does not overflow on 320x568 compact phone with long text value', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          container: container,
+          child: AlertDetailsScreen(alert: alert),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Alert Details'), findsOneWidget);
+      expect(find.text('Confidence Score'), findsOneWidget);
+      expect(find.text('Detection Source'), findsOneWidget);
+    });
+
+    testWidgets('AlertDetailsScreen under 2.0x font scale does not throw RenderFlex overflow', (tester) async {
+      configureScreen(tester, width: 320, height: 568);
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 320,
+          height: 568,
+          textScale: 2.0,
+          container: container,
+          child: AlertDetailsScreen(alert: alert),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('AlertDetailsScreen on 800x1280 tablet constrains max width', (tester) async {
+      configureScreen(tester, width: 800, height: 1280);
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        buildResponsiveTestApp(
+          width: 800,
+          height: 1280,
+          container: container,
+          child: AlertDetailsScreen(alert: alert),
+        ),
+      );
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Alert Details'), findsOneWidget);
+    });
+  });
+}
