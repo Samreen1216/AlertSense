@@ -127,6 +127,88 @@ class AlertSenseWidgetProvider : HomeWidgetProvider() {
         }
     }
 
+    data class WidgetThemeConfig(
+        val bgDrawable: Int,
+        val cardBgDrawable: Int,
+        val btnPrimaryDrawable: Int,
+        val btnSecondaryDrawable: Int,
+        val btnIconDrawable: Int,
+        val indicatorPillDrawable: Int,
+        val pillPausedDrawable: Int,
+        val textPrimaryColor: Int,
+        val textSecondaryColor: Int,
+        val accentColor: Int,
+        val dividerColor: Int,
+        val btnPrimaryTextColor: Int,
+        val btnSecondaryTextColor: Int,
+        val btnDangerTextColor: Int = 0xFFFFFFFF.toInt()
+    )
+
+    private fun getThemeConfig(themeType: String?): WidgetThemeConfig {
+        return when (themeType?.lowercase()?.trim()) {
+            "light" -> WidgetThemeConfig(
+                bgDrawable = R.drawable.widget_background_light,
+                cardBgDrawable = R.drawable.widget_card_bg_light,
+                btnPrimaryDrawable = R.drawable.widget_btn_primary_light,
+                btnSecondaryDrawable = R.drawable.widget_btn_secondary_light,
+                btnIconDrawable = R.drawable.widget_btn_icon_light,
+                indicatorPillDrawable = R.drawable.widget_indicator_pill_light,
+                pillPausedDrawable = R.drawable.widget_pill_paused_light,
+                textPrimaryColor = 0xFF0F172A.toInt(),
+                textSecondaryColor = 0xFF64748B.toInt(),
+                accentColor = 0xFF0062FF.toInt(),
+                dividerColor = 0xFFE2E8F0.toInt(),
+                btnPrimaryTextColor = 0xFFFFFFFF.toInt(),
+                btnSecondaryTextColor = 0xFF0F172A.toInt()
+            )
+            "highcontrast", "high_contrast" -> WidgetThemeConfig(
+                bgDrawable = R.drawable.widget_background_hc,
+                cardBgDrawable = R.drawable.widget_card_bg_hc,
+                btnPrimaryDrawable = R.drawable.widget_btn_primary_hc,
+                btnSecondaryDrawable = R.drawable.widget_btn_secondary_hc,
+                btnIconDrawable = R.drawable.widget_btn_icon_hc,
+                indicatorPillDrawable = R.drawable.widget_indicator_pill_hc,
+                pillPausedDrawable = R.drawable.widget_pill_paused_hc,
+                textPrimaryColor = 0xFFFFFFFF.toInt(),
+                textSecondaryColor = 0xFFE2E8F0.toInt(),
+                accentColor = 0xFF38BDF8.toInt(),
+                dividerColor = 0xFF38BDF8.toInt(),
+                btnPrimaryTextColor = 0xFF000000.toInt(),
+                btnSecondaryTextColor = 0xFFFFFFFF.toInt()
+            )
+            "colorblindsafe", "color_blind_safe" -> WidgetThemeConfig(
+                bgDrawable = R.drawable.widget_background_cbs,
+                cardBgDrawable = R.drawable.widget_card_bg_cbs,
+                btnPrimaryDrawable = R.drawable.widget_btn_primary_cbs,
+                btnSecondaryDrawable = R.drawable.widget_btn_secondary_cbs,
+                btnIconDrawable = R.drawable.widget_btn_icon_cbs,
+                indicatorPillDrawable = R.drawable.widget_indicator_pill_cbs,
+                pillPausedDrawable = R.drawable.widget_pill_paused_cbs,
+                textPrimaryColor = 0xFF0F172A.toInt(),
+                textSecondaryColor = 0xFF57606A.toInt(),
+                accentColor = 0xFF0077BB.toInt(),
+                dividerColor = 0xFFD0D7DE.toInt(),
+                btnPrimaryTextColor = 0xFFFFFFFF.toInt(),
+                btnSecondaryTextColor = 0xFF0F172A.toInt()
+            )
+            else -> WidgetThemeConfig( // "dark" or default
+                bgDrawable = R.drawable.widget_background,
+                cardBgDrawable = R.drawable.widget_card_bg,
+                btnPrimaryDrawable = R.drawable.widget_btn_primary,
+                btnSecondaryDrawable = R.drawable.widget_btn_secondary,
+                btnIconDrawable = R.drawable.widget_btn_icon,
+                indicatorPillDrawable = R.drawable.widget_indicator_pill,
+                pillPausedDrawable = R.drawable.widget_pill_paused,
+                textPrimaryColor = 0xFFFFFFFF.toInt(),
+                textSecondaryColor = 0xFF94A3B8.toInt(),
+                accentColor = 0xFF00E5FF.toInt(),
+                dividerColor = 0x26FFFFFF.toInt(),
+                btnPrimaryTextColor = 0xFFFFFFFF.toInt(),
+                btnSecondaryTextColor = 0xFFFFFFFF.toInt()
+            )
+        }
+    }
+
     private fun buildViewsForHost(
         context: Context,
         appWidgetId: Int,
@@ -138,6 +220,9 @@ class AlertSenseWidgetProvider : HomeWidgetProvider() {
         } catch (_: Exception) {
             widgetData.getString("is_listening", "false")?.toBooleanStrictOrNull() ?: false
         }
+
+        val themeType       = widgetData.getString("widget_theme_type", "dark")
+        val theme           = getThemeConfig(themeType)
 
         val activeProfile   = widgetData.getString("active_profile",   "Home")        ?: "Home"
         val ambientDb       = widgetData.getString("ambient_db",        "38 dB")       ?: "38 dB"
@@ -157,6 +242,59 @@ class AlertSenseWidgetProvider : HomeWidgetProvider() {
         }
 
         val views = RemoteViews(context.packageName, R.layout.widget_layout)
+
+        // ── Apply Dynamic App Theme Styling ─────────────────────────────────────────
+        views.setInt(R.id.widget_root, "setBackgroundResource", theme.bgDrawable)
+        views.setInt(R.id.card_sound_status, "setBackgroundResource", theme.cardBgDrawable)
+        views.setInt(R.id.card_alert_feed, "setBackgroundResource", theme.cardBgDrawable)
+        views.setInt(R.id.card_emergency, "setBackgroundResource", theme.cardBgDrawable)
+
+        views.setInt(R.id.widget_divider, "setBackgroundColor", theme.dividerColor)
+        views.setInt(R.id.widget_bottom_divider, "setBackgroundColor", theme.dividerColor)
+
+        views.setInt(R.id.btn_header_app, "setBackgroundResource", theme.btnIconDrawable)
+        views.setInt(R.id.widget_status_pill_paused, "setBackgroundResource", theme.pillPausedDrawable)
+
+        views.setInt(R.id.btn_quick_scan, "setBackgroundResource", theme.btnPrimaryDrawable)
+        views.setInt(R.id.btn_toggle_listen, "setBackgroundResource", theme.btnSecondaryDrawable)
+
+        views.setInt(R.id.btn_view_history, "setBackgroundResource", theme.btnPrimaryDrawable)
+        views.setInt(R.id.btn_view_stats, "setBackgroundResource", theme.btnSecondaryDrawable)
+
+        views.setInt(R.id.btn_action_sleep, "setBackgroundResource", theme.btnSecondaryDrawable)
+        views.setInt(R.id.btn_action_settings, "setBackgroundResource", theme.btnSecondaryDrawable)
+
+        views.setInt(R.id.btn_prev_slide, "setBackgroundResource", theme.btnIconDrawable)
+        views.setInt(R.id.widget_slide_indicator, "setBackgroundResource", theme.indicatorPillDrawable)
+        views.setInt(R.id.btn_next_slide, "setBackgroundResource", theme.btnIconDrawable)
+
+        // Text Colors
+        views.setTextColor(R.id.widget_app_title, theme.textPrimaryColor)
+        views.setTextColor(R.id.btn_header_app, theme.accentColor)
+        views.setTextColor(R.id.widget_status_pill_paused, theme.textSecondaryColor)
+
+        views.setTextColor(R.id.widget_db_level, theme.accentColor)
+        views.setTextColor(R.id.widget_sound_status, theme.textPrimaryColor)
+        views.setTextColor(R.id.widget_profile_name, theme.textSecondaryColor)
+        views.setTextColor(R.id.widget_monitored_sounds, theme.textSecondaryColor)
+        views.setTextColor(R.id.btn_quick_scan, theme.btnPrimaryTextColor)
+        views.setTextColor(R.id.btn_toggle_listen, theme.btnSecondaryTextColor)
+
+        views.setTextColor(R.id.widget_alert_title, theme.textPrimaryColor)
+        views.setTextColor(R.id.widget_alert_meta, theme.textSecondaryColor)
+        views.setTextColor(R.id.widget_alert_stats, theme.accentColor)
+        views.setTextColor(R.id.btn_view_history, theme.btnPrimaryTextColor)
+        views.setTextColor(R.id.btn_view_stats, theme.btnSecondaryTextColor)
+
+        views.setTextColor(R.id.widget_emergency_headline, theme.textPrimaryColor)
+        views.setTextColor(R.id.widget_emergency_subtext, theme.textSecondaryColor)
+        views.setTextColor(R.id.btn_action_sos, theme.btnDangerTextColor)
+        views.setTextColor(R.id.btn_action_sleep, theme.btnSecondaryTextColor)
+        views.setTextColor(R.id.btn_action_settings, theme.btnSecondaryTextColor)
+
+        views.setTextColor(R.id.btn_prev_slide, theme.accentColor)
+        views.setTextColor(R.id.widget_slide_indicator, theme.accentColor)
+        views.setTextColor(R.id.btn_next_slide, theme.accentColor)
 
         // ── 1. Top Header Status Pill ───────────────────────────────────────────────
         if (isListening) {

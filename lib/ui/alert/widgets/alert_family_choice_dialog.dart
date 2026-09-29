@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 enum AlertChannel { whatsapp, sms }
 
-/// A reusable modal dialog that previously let users choose between WhatsApp and SMS.
-/// @deprecated Emergency alerts now directly dispatch via SMS with live GPS location pins
-/// for zero-latency, reliable emergency handling.
-@deprecated
+/// A reusable modal dialog that lets users choose between WhatsApp and SMS
+/// for emergency family notifications with live GPS location support.
 class AlertFamilyChoiceDialog extends StatefulWidget {
   final List<String> savedContacts;
   final String soundName;
@@ -17,6 +15,24 @@ class AlertFamilyChoiceDialog extends StatefulWidget {
     required this.soundName,
     this.initialChannel = AlertChannel.sms,
   });
+
+  /// Displays the AlertFamilyChoiceDialog and returns the selected [AlertChannel] (or null on dismiss).
+  static Future<AlertChannel?> show(
+    BuildContext context, {
+    required List<String> savedContacts,
+    required String soundName,
+    AlertChannel initialChannel = AlertChannel.sms,
+  }) {
+    return showDialog<AlertChannel>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => AlertFamilyChoiceDialog(
+        savedContacts: savedContacts,
+        soundName: soundName,
+        initialChannel: initialChannel,
+      ),
+    );
+  }
 
   @override
   State<AlertFamilyChoiceDialog> createState() => _AlertFamilyChoiceDialogState();
@@ -83,7 +99,9 @@ class _AlertFamilyChoiceDialogState extends State<AlertFamilyChoiceDialog> {
                 ),
                 if (primaryContact != null)
                   Text(
-                    'To: $primaryContact',
+                    widget.savedContacts.length > 1
+                        ? 'To: $primaryContact (+${widget.savedContacts.length - 1} more)'
+                        : 'To: $primaryContact',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white60 : Colors.black54,

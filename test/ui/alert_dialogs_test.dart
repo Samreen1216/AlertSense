@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:alertsense/ui/alert/dialogs/emergency_call_dialog.dart';
 import 'package:alertsense/ui/alert/dialogs/manual_whatsapp_dialog.dart';
 import 'package:alertsense/ui/alert/dialogs/manual_sms_dialog.dart';
+import 'package:alertsense/ui/alert/widgets/alert_family_choice_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -357,6 +358,136 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('GPS Pin Attached'), findsOneWidget);
+    });
+  });
+
+  group('AlertFamilyChoiceDialog Tests', () {
+    testWidgets('renders properly with saved contact and channel options', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterial(
+          const AlertFamilyChoiceDialog(
+            savedContacts: ['+923001234567'],
+            soundName: 'Fire Alarm',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Alert Family'), findsOneWidget);
+      expect(find.text('To: +923001234567'), findsOneWidget);
+      expect(find.text('Choose which messaging app to send the alert with:'), findsOneWidget);
+      expect(find.text('Messages (SMS)'), findsOneWidget);
+      expect(find.text('Send via native cellular SMS Inbox'), findsOneWidget);
+      expect(find.text('WhatsApp'), findsOneWidget);
+      expect(find.text('Send via WhatsApp chat'), findsOneWidget);
+      expect(find.text('JUST ONCE'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+    });
+
+    testWidgets('renders properly with multiple saved contacts indicating count', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterial(
+          const AlertFamilyChoiceDialog(
+            savedContacts: ['+923001234567', '+923009876543'],
+            soundName: 'Fire Alarm',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Alert Family'), findsOneWidget);
+      expect(find.text('To: +923001234567 (+1 more)'), findsOneWidget);
+    });
+
+    testWidgets('tapping JUST ONCE returns default SMS channel', (tester) async {
+      AlertChannel? chosenChannel;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                chosenChannel = await AlertFamilyChoiceDialog.show(
+                  context,
+                  savedContacts: ['+923001234567'],
+                  soundName: 'Smoke Alarm',
+                );
+              },
+              child: const Text('Open Dialog'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('JUST ONCE'));
+      await tester.pumpAndSettle();
+
+      expect(chosenChannel, equals(AlertChannel.sms));
+    });
+
+    testWidgets('selecting WhatsApp and tapping JUST ONCE returns WhatsApp channel', (tester) async {
+      AlertChannel? chosenChannel;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                chosenChannel = await AlertFamilyChoiceDialog.show(
+                  context,
+                  savedContacts: ['+923001234567'],
+                  soundName: 'Smoke Alarm',
+                );
+              },
+              child: const Text('Open Dialog'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      // Tap WhatsApp option tile
+      await tester.tap(find.text('WhatsApp'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('JUST ONCE'));
+      await tester.pumpAndSettle();
+
+      expect(chosenChannel, equals(AlertChannel.whatsapp));
+    });
+
+    testWidgets('tapping Cancel returns null channel', (tester) async {
+      AlertChannel? chosenChannel = AlertChannel.sms;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () async {
+                chosenChannel = await AlertFamilyChoiceDialog.show(
+                  context,
+                  savedContacts: ['+923001234567'],
+                  soundName: 'Smoke Alarm',
+                );
+              },
+              child: const Text('Open Dialog'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Dialog'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(chosenChannel, isNull);
     });
   });
 }

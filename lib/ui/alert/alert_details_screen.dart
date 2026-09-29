@@ -12,8 +12,11 @@ import '../../providers/alert_providers.dart';
 import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../services/sms_service.dart';
+import '../../services/location_service.dart';
 import '../../core/utils/responsive_utils.dart';
 import 'dialogs/manual_sms_dialog.dart';
+import 'dialogs/manual_whatsapp_dialog.dart';
+import 'widgets/alert_family_choice_dialog.dart';
 
 class AlertDetailsScreen extends ConsumerWidget {
   final AlertEvent alert;
@@ -302,7 +305,7 @@ class AlertDetailsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
 
-              // Alert Family via SMS action
+              // Alert Family via WhatsApp / SMS action
               SizedBox(
                 height: 50,
                 child: OutlinedButton.icon(
@@ -316,81 +319,192 @@ class AlertDetailsScreen extends ConsumerWidget {
                   onPressed: () async {
                     final settings = ref.read(userSettingsProvider);
                     final contacts = settings.emergencyContacts;
-                    final loc = await ref.read(locationServiceProvider).getCurrentLocation();
-                    final message = SmsService.emergencyMessage(
-                      label,
-                      location: loc,
+
+                    // Trigger GPS location resolution concurrently so choice modal mounts immediately without UI lag
+                    final locFuture = ref.read(locationServiceProvider).getCurrentLocation();
+
+                    final channel = await AlertFamilyChoiceDialog.show(
+                      context,
+                      savedContacts: contacts,
+                      soundName: label,
                     );
 
-                    if (contacts.isEmpty) {
-                      if (!context.mounted) return;
-                      final result = await ManualSmsDialog.show(
-                        context,
-                        initialPhone: '',
-                        defaultMessage: message,
+                    if (channel == null || !context.mounted) return;
+
+                    LocationResult? loc;
+                    try {
+                      loc = await locFuture;
+                    } catch (_) {}
+                    if (!context.mounted) return;
+
+                    if (channel == AlertChannel.whatsapp) {
+                      final message = SmsService.whatsAppEmergencyMessage(
+                        label,
+                        location: loc,
                       );
-                      if (result != null && result.phone.isNotEmpty && context.mounted) {
-                        final success = await SmsService.sendEmergencySms(
-                          recipients: [result.phone],
-                          message: result.message,
+
+                      if (contacts.isEmpty) {
+                        final result = await ManualWhatsAppDialog.show(
+                          context,
+                          initialPhone: '',
+                          defaultMessage: message,
                         );
-                        if (context.mounted && success) {
+                        if (result != null && context.mounted) {
+                          final success = await SmsService.sendEmergencyWhatsApp(
+                            phoneNumber: result.phone,
+                            message: result.message,
+                          );
+                          if (context.mounted && success) {
+                            ref
+                                .read(alertListProvider.notifier)
+                                .acknowledgeAlert(alert.id, action: 'alerted_family');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(result.phone != null && result.phone!.isNotEmpty
+                                    ? 'WhatsApp opened for ${result.phone}'
+                                    : 'WhatsApp opened'),
+                                backgroundColor: const Color(0xFF25D366),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        }
+                        return;
+                      }
+
+                      final success = await SmsService.sendEmergencyWhatsApp(
+                        phoneNumber: contacts.first,
+                        message: message,
+                      );
+                      if (context.mounted) {
+                        if (success) {
                           ref
                               .read(alertListProvider.notifier)
                               .acknowledgeAlert(alert.id, action: 'alerted_family');
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Messages (SMS) opened for ${result.phone}'),
+                              content: Text('WhatsApp opened for ${contacts.first}'),
+                              backgroundColor: const Color(0xFF25D366),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        } else {
+                          // Fallback to manual WhatsApp dialog
+                          final result = await ManualWhatsAppDialog.show(
+                            context,
+                            initialPhone: contacts.first,
+                            defaultMessage: message,
+                          );
+                          if (result != null && context.mounted) {
+                            final ok = await SmsService.sendEmergencyWhatsApp(
+                              phoneNumber: result.phone,
+                              message: result.message,
+                            );
+                            if (context.mounted && ok) {
+                              ref
+                                  .read(alertListProvider.notifier)
+                                  .acknowledgeAlert(alert.id, action: 'alerted_family');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(result.phone != null && result.phone!.isNotEmpty
+                                      ? 'WhatsApp opened for ${result.phone}'
+                                      : 'WhatsApp opened'),
+                                  backgroundColor: const Color(0xFF25D366),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      }
+                    } else if (channel == AlertChannel.sms) {
+                      final message = SmsService.emergencyMessage(
+                        label,
+                        location: loc,
+                      );
+
+                      if (contacts.isEmpty) {
+                        final result = await ManualSmsDialog.show(
+                          context,
+                          initialPhone: '',
+                          defaultMessage: message,
+                        );
+                        if (result != null && result.phone.isNotEmpty && context.mounted) {
+                          final success = await SmsService.sendEmergencySms(
+                            recipients: [result.phone],
+                            message: result.message,
+                          );
+                          if (context.mounted && success) {
+                            ref
+                                .read(alertListProvider.notifier)
+                                .acknowledgeAlert(alert.id, action: 'alerted_family');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Messages (SMS) opened for ${result.phone}'),
+                                backgroundColor: const Color(0xFFE65100),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
+                        }
+                        return;
+                      }
+
+                      final success = await SmsService.sendEmergencySms(
+                        recipients: contacts,
+                        message: message,
+                      );
+                      if (context.mounted) {
+                        if (success) {
+                          ref
+                              .read(alertListProvider.notifier)
+                              .acknowledgeAlert(alert.id, action: 'alerted_family');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(contacts.length > 1
+                                  ? 'Messages (SMS) opened for ${contacts.length} contacts'
+                                  : 'Messages (SMS) opened for ${contacts.first}'),
                               backgroundColor: const Color(0xFFE65100),
                               behavior: SnackBarBehavior.floating,
                               duration: const Duration(seconds: 3),
                             ),
                           );
-                        }
-                      }
-                      return;
-                    }
-
-                    final success = await SmsService.sendEmergencySms(
-                      recipients: contacts,
-                      message: message,
-                    );
-                    if (context.mounted) {
-                      if (success) {
-                        ref
-                            .read(alertListProvider.notifier)
-                            .acknowledgeAlert(alert.id, action: 'alerted_family');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Messages (SMS) opened for ${contacts.first}'),
-                            backgroundColor: const Color(0xFFE65100),
-                            behavior: SnackBarBehavior.floating,
-                            duration: const Duration(seconds: 3),
-                          ),
-                        );
-                      } else {
-                        // Fallback to manual SMS dialog if native intent failed
-                        final result = await ManualSmsDialog.show(
-                          context,
-                          initialPhone: contacts.first,
-                          defaultMessage: message,
-                        );
-                        if (result != null && result.phone.isNotEmpty && context.mounted) {
-                          final ok = await SmsService.sendEmergencySms(
-                            recipients: [result.phone],
-                            message: result.message,
+                        } else {
+                          // Fallback to manual SMS dialog if native intent failed
+                          final result = await ManualSmsDialog.show(
+                            context,
+                            initialPhone: contacts.first,
+                            defaultMessage: message,
                           );
-                          if (context.mounted && ok) {
-                            ref
-                                .read(alertListProvider.notifier)
-                                .acknowledgeAlert(alert.id, action: 'alerted_family');
+                          if (result != null && result.phone.isNotEmpty && context.mounted) {
+                            final ok = await SmsService.sendEmergencySms(
+                              recipients: [result.phone],
+                              message: result.message,
+                            );
+                            if (context.mounted && ok) {
+                              ref
+                                  .read(alertListProvider.notifier)
+                                  .acknowledgeAlert(alert.id, action: 'alerted_family');
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Messages (SMS) opened for ${result.phone}'),
+                                  backgroundColor: const Color(0xFFE65100),
+                                  behavior: SnackBarBehavior.floating,
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            }
                           }
                         }
                       }
                     }
                   },
-                  icon: const Icon(Icons.sms_rounded),
-                  label: const Text('Alert Family via SMS',
+                  icon: const Icon(Icons.family_restroom_rounded),
+                  label: const Text('Alert Family (WhatsApp / SMS)',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ),

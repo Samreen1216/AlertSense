@@ -58,8 +58,12 @@ class HomeWidgetService {
     required int alertsTodayCount,
     required int highPriorityCount,
     int monitoredCount = 9,
+    String themeType = 'dark',
   }) async {
     try {
+      // 0. Theme Configuration
+      await HomeWidget.saveWidgetData<String>('widget_theme_type', themeType);
+
       // 1. Status & Radar Data
       await HomeWidget.saveWidgetData<bool>('is_listening', isListening);
       await HomeWidget.saveWidgetData<String>('active_profile', _formatProfile(activeProfile));

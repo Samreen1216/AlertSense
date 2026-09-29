@@ -10,6 +10,7 @@ import 'alert_providers.dart';
 import 'service_providers.dart';
 import 'settings_providers.dart';
 import 'stats_providers.dart';
+import '../core/theme/theme_provider.dart';
 
 import '../core/constants/priority_levels.dart';
 
@@ -284,6 +285,7 @@ class ListeningNotifier extends StateNotifier<bool> {
       final highCount = _ref.read(highPriorityCountProvider);
       final lastAlert = event ?? _ref.read(lastAlertProvider);
       final enabledCount = _ref.read(enabledSoundsProvider).length;
+      final themeType = _ref.read(themeTypeProvider);
 
       widgetService.syncData(
         isListening: state,
@@ -293,6 +295,7 @@ class ListeningNotifier extends StateNotifier<bool> {
         alertsTodayCount: todayCount,
         highPriorityCount: highCount,
         monitoredCount: enabledCount,
+        themeType: themeType.name,
       );
     } catch (_) {}
   }

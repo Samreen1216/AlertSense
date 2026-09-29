@@ -111,6 +111,7 @@
 
         <!-- Sound Status Card -->
         <LinearLayout
+            android:id="@+id/card_sound_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/widget_card_bg"
@@ -218,6 +219,7 @@
 
         <!-- Alert Feed Card -->
         <LinearLayout
+            android:id="@+id/card_alert_feed"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/widget_card_bg"
@@ -362,6 +364,7 @@
 
         <!-- Emergency Action Card -->
         <LinearLayout
+            android:id="@+id/card_emergency"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/widget_card_bg"

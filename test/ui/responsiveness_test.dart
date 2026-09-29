@@ -100,7 +100,6 @@ void main() {
       data: MediaQueryData(
         size: Size(width, height),
         textScaler: TextScaler.linear(textScale),
-        orientation: orientation,
         padding: EdgeInsets.zero,
         viewInsets: EdgeInsets.zero,
         viewPadding: EdgeInsets.zero,
@@ -224,7 +223,6 @@ void main() {
             data: const MediaQueryData(
               size: Size(320, 568),
               textScaler: TextScaler.linear(1.0),
-              orientation: Orientation.portrait,
             ),
             child: MaterialApp.router(routerConfig: router),
           ),
@@ -254,7 +252,6 @@ void main() {
             data: const MediaQueryData(
               size: Size(320, 568),
               textScaler: TextScaler.linear(2.0),
-              orientation: Orientation.portrait,
             ),
             child: MaterialApp.router(routerConfig: router),
           ),
@@ -280,7 +277,6 @@ void main() {
             data: const MediaQueryData(
               size: Size(800, 360),
               textScaler: TextScaler.linear(1.0),
-              orientation: Orientation.landscape,
             ),
             child: MaterialApp.router(routerConfig: router),
           ),
@@ -311,7 +307,6 @@ void main() {
             data: const MediaQueryData(
               size: Size(800, 360),
               textScaler: TextScaler.linear(2.0),
-              orientation: Orientation.landscape,
             ),
             child: MaterialApp.router(routerConfig: router),
           ),
@@ -336,7 +331,6 @@ void main() {
             data: const MediaQueryData(
               size: Size(800, 1280),
               textScaler: TextScaler.linear(1.0),
-              orientation: Orientation.portrait,
             ),
             child: MaterialApp.router(routerConfig: router),
           ),

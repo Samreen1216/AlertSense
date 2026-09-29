@@ -6,9 +6,12 @@ import 'package:alertsense/core/constants/sound_categories.dart';
 import 'package:alertsense/providers/audio_providers.dart';
 import 'package:alertsense/ui/home/widgets/hero_sound_radar.dart';
 
-class _TestListeningNotifier extends StateNotifier<bool> {
-  _TestListeningNotifier([super.initialState = false]);
-  void toggle() => state = !state;
+class _TestListeningNotifier extends ListeningNotifier {
+  _TestListeningNotifier(super.ref, [bool initial = false]) {
+    state = initial;
+  }
+  @override
+  Future<void> toggle() async => state = !state;
   void setListening(bool value) => state = value;
 }
 
@@ -48,7 +51,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          isListeningProvider.overrideWith((ref) => _TestListeningNotifier(true)),
+          isListeningProvider.overrideWith((ref) => _TestListeningNotifier(ref, true)),
         ],
         child: const MaterialApp(
           home: Scaffold(
@@ -81,7 +84,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          isListeningProvider.overrideWith((ref) => _TestListeningNotifier(true)),
+          isListeningProvider.overrideWith((ref) => _TestListeningNotifier(ref, true)),
           detectedSoundsProvider.overrideWith((ref) => [sound]),
         ],
         child: const MaterialApp(

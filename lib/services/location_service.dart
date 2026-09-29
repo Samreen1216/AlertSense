@@ -479,10 +479,8 @@ class LocationService {
     // 4. Try geolocator plugin directly as hardware fallback
     try {
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 3),
-        ),
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 3),
       );
       return LocationResult(
         latitude: pos.latitude,

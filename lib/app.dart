@@ -82,6 +82,7 @@ class _AlertSenseAppState extends ConsumerState<AlertSenseApp> {
       final highCount = ref.read(highPriorityCountProvider);
       final lastAlert = ref.read(lastAlertProvider);
       final enabledCount = ref.read(enabledSoundsProvider).length;
+      final themeType = ref.read(themeTypeProvider);
 
       widgetService.syncData(
         isListening: isListening,
@@ -91,6 +92,7 @@ class _AlertSenseAppState extends ConsumerState<AlertSenseApp> {
         alertsTodayCount: todayCount,
         highPriorityCount: highCount,
         monitoredCount: enabledCount,
+        themeType: themeType.name,
       );
     } catch (_) {}
   }
@@ -108,6 +110,11 @@ class _AlertSenseAppState extends ConsumerState<AlertSenseApp> {
     final router = ref.watch(appRouterProvider);
 
     // Dynamic widget synchronization listeners
+    ref.listen<ThemeType>(themeTypeProvider, (prev, next) {
+      if (prev != next) {
+        _syncHomeWidget();
+      }
+    });
     ref.listen<String>(activeProfileProvider, (prev, next) {
       if (prev != next) {
         // Sync the enabled sounds widget count to the new profile
