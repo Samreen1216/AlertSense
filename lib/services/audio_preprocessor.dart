@@ -59,7 +59,7 @@ class AudioPreprocessor {
     required int inputSampleRate,
     int outputSampleRate = targetSampleRate,
   }) {
-    if (input.isEmpty) return const [];
+    if (input.isEmpty || inputSampleRate <= 0 || outputSampleRate <= 0) return const [];
     if (inputSampleRate == outputSampleRate) return List<double>.from(input);
 
     // Exact integer decimation (e.g. 48,000 Hz -> 16,000 Hz = 3:1)

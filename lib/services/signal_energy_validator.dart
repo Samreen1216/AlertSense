@@ -52,7 +52,7 @@ class SignalEnergyValidator {
     final rms = calculateRms(audioData);
     final db = rmsToDb(rms);
 
-    if (rms < config.minRms || db < config.minDbLevel) {
+    if (rms < (config.minRms - 1e-9) || db < (config.minDbLevel - 1e-9)) {
       final reason = 'RMS ${rms.toStringAsFixed(4)} < ${config.minRms.toStringAsFixed(4)} '
           '(${db.toStringAsFixed(1)} dB < ${config.minDbLevel.toStringAsFixed(1)} dB) → ambient noise floor';
       debugPrint('[Signal] Energy: REJECT ($reason)');

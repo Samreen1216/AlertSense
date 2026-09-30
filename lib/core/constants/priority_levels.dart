@@ -29,8 +29,8 @@ enum PriorityLevel {
     defaultVibrationPattern: [0, 200],
     requiresAcknowledgment: false,
     autoDismiss: Duration(seconds: 5),
-    enableFlash: false,
-    flashFrequencyHz: 0,
+    enableFlash: true,
+    flashFrequencyHz: 1,
   );
 
   final String label;

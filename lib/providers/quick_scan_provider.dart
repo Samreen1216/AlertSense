@@ -193,7 +193,7 @@ class QuickScanNotifier extends StateNotifier<QuickScanState> {
       final vibService = _ref.read(vibrationServiceProvider);
       vibService.vibrateForAlert(category: category, priority: priority);
     }
-    if (settings.flashEnabled && priority == PriorityLevel.high) {
+    if (settings.flashEnabled && priority.enableFlash) {
       final flash = _ref.read(flashServiceProvider);
       flash.triggerStrobe(
         frequencyHz: priority.flashFrequencyHz,

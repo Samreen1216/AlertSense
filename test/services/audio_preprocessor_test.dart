@@ -57,8 +57,9 @@ void main() {
 
     test('Stereo [L, R, L, R] averages to [(L+R)/2, (L+R)/2]', () {
       final input = [0.2, 0.4, 0.6, 0.8];
-      final expected = [0.3, 0.7];
-      expect(AudioPreprocessor.stereoToMono(input, numChannels: 2), expected);
+      final result = AudioPreprocessor.stereoToMono(input, numChannels: 2);
+      expect(result[0], closeTo(0.3, 1e-6));
+      expect(result[1], closeTo(0.7, 1e-6));
     });
 
     test('Empty input returns empty', () {

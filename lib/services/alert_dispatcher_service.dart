@@ -141,8 +141,8 @@ class AlertDispatcherService {
       );
     }
 
-    // 6. Trigger camera flash if high priority, enabled, and not in sleep mode
-    if (flashEnabled && priority.enableFlash && !isSleepMode) {
+    // 6. Trigger camera flash for all detection priorities (high, medium, low) when flash is enabled
+    if (flashEnabled && priority.enableFlash) {
       _flashService.triggerStrobe(
         frequencyHz: priority.flashFrequencyHz,
         duration: const Duration(seconds: 3),

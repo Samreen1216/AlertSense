@@ -117,7 +117,7 @@ class SettingsScreen extends ConsumerWidget {
                   isHighContrast: isHighContrast,
                 ),
                 title: const Text('Camera Flash Strobe'),
-                subtitle: const Text('Flash LED on high-priority life safety alarms'),
+                subtitle: const Text('Flash LED strobe on all sound detections (High, Medium, Low)'),
                 value: settings.flashEnabled,
                 onChanged: (val) {
                   ref.read(userSettingsProvider.notifier).setFlashEnabled(val);
