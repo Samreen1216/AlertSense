@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/router/app_router.dart';
 import '../../main.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/settings_providers.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -76,7 +77,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         Navigator.of(context).pop();
       } else {
         try {
-          context.go(AppRoutes.home);
+          final isAuthenticated = ref.read(isAuthenticatedProvider);
+          if (isAuthenticated) {
+            context.go(AppRoutes.home);
+          } else {
+            context.go(AppRoutes.login);
+          }
         } catch (e) {
           debugPrint('[Onboarding] Navigation ignored in test harness: $e');
         }

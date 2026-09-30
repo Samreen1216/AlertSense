@@ -7,6 +7,7 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/audio_providers.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../history/history_screen.dart';
 import 'widgets/theme_appearance_bottom_sheet.dart';
@@ -20,6 +21,8 @@ class SettingsScreen extends ConsumerWidget {
     final themeType = ref.watch(themeTypeProvider);
     final textScale = ref.watch(textScaleProvider);
     final enabledSounds = ref.watch(enabledSoundsProvider);
+    final currentUser = ref.watch(currentUserProvider);
+    final userProfile = ref.watch(userProfileProvider).valueOrNull;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isHighContrast = themeType == ThemeType.highContrast;
 
@@ -278,7 +281,76 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Section 6: App Information ──
+          // ── Section 6: Account & Session ──
+          _buildSectionHeader(context, 'ACCOUNT & AUTHENTICATION', Icons.manage_accounts_rounded),
+          _buildSettingsCard(
+            context,
+            children: [
+              ListTile(
+                leading: _buildLeadingIcon(
+                  Icons.person_rounded,
+                  const Color(0xFF0062FF),
+                  isDark: isDark,
+                  isHighContrast: isHighContrast,
+                ),
+                title: Text(
+                  userProfile?.fullName.isNotEmpty == true
+                      ? userProfile!.fullName
+                      : (currentUser?.email ?? 'AlertSense User'),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  currentUser?.email ??
+                      (currentUser != null ? 'Authenticated Session' : 'Local User'),
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.success.withValues(alpha: 0.35),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_rounded, size: 14, color: AppColors.success),
+                      SizedBox(width: 4),
+                      Text(
+                        'Active',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: _buildLeadingIcon(
+                  Icons.logout_rounded,
+                  const Color(0xFFEF4444),
+                  isDark: isDark,
+                  isHighContrast: isHighContrast,
+                ),
+                title: const Text(
+                  'Log Out',
+                  style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text('Sign out of your AlertSense account'),
+                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFEF4444)),
+                onTap: () => _showLogoutDialog(context, ref),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Section 7: App Information ──
           _buildSectionHeader(context, 'ABOUT ALERTSENSE', Icons.info_outline_rounded),
           _buildSettingsCard(
             context,
@@ -500,6 +572,35 @@ class SettingsScreen extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Log Out'),
+        content: const Text(
+          'Are you sure you want to log out of AlertSense? You will need to sign in again to access your account.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await ref.read(authControllerProvider.notifier).signOut();
+              if (context.mounted) {
+                context.go(AppRoutes.login);
+              }
+            },
+            child: const Text('Log Out'),
           ),
         ],
       ),

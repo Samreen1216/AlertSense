@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:alertsense/data/datasources/local_storage.dart';
 import 'package:alertsense/data/repositories/settings_repository.dart';
 import 'package:alertsense/main.dart';
+import 'package:alertsense/providers/auth_providers.dart';
 import 'package:alertsense/providers/settings_providers.dart';
 import 'package:alertsense/ui/onboarding/onboarding_screen.dart';
 import 'package:go_router/go_router.dart';
@@ -64,6 +65,10 @@ void main() {
           path: '/home',
           builder: (context, state) => const Scaffold(body: Text('Home Destination')),
         ),
+        GoRoute(
+          path: '/login',
+          builder: (context, state) => const Scaffold(body: Text('Login Destination')),
+        ),
       ],
     );
 
@@ -81,6 +86,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(prefs),
         localStorageProvider.overrideWithValue(localStorage),
         settingsRepositoryProvider.overrideWithValue(settingsRepo),
+        isAuthenticatedProvider.overrideWithValue(true),
       ],
     );
     addTearDown(container.dispose);
@@ -101,6 +107,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(prefs),
         localStorageProvider.overrideWithValue(localStorage),
         settingsRepositoryProvider.overrideWithValue(settingsRepo),
+        isAuthenticatedProvider.overrideWithValue(true),
       ],
     );
     addTearDown(container.dispose);
@@ -132,6 +139,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(prefs),
         localStorageProvider.overrideWithValue(localStorage),
         settingsRepositoryProvider.overrideWithValue(settingsRepo),
+        isAuthenticatedProvider.overrideWithValue(true),
       ],
     );
     addTearDown(container.dispose);
@@ -142,11 +150,14 @@ void main() {
     // Page 1 -> Next
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
+
     expect(find.text('Alerts You Can Feel'), findsOneWidget);
+    expect(find.text('Next'), findsOneWidget);
 
     // Page 2 -> Next
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
+
     expect(find.text("Let's Set Up"), findsOneWidget);
     expect(find.text('Get Started'), findsOneWidget);
 
@@ -159,7 +170,7 @@ void main() {
     expect(find.text('Home Destination'), findsOneWidget);
   });
 
-  testWidgets('LocalStorage setOnboardingComplete directly sets both prefs and model', () async {
+  test('LocalStorage setOnboardingComplete directly sets both prefs and model', () async {
     expect(localStorage.isOnboardingComplete(), isFalse);
     await localStorage.setOnboardingComplete();
     expect(localStorage.isOnboardingComplete(), isTrue);
@@ -172,7 +183,7 @@ void main() {
     expect(loaded.onboardingCompleted, isTrue);
   });
 
-  testWidgets('LocalStorage.loadSettings synchronizes onboardingCompleted when direct pref is set', () async {
+  test('LocalStorage.loadSettings synchronizes onboardingCompleted when direct pref is set', () async {
     final freshPrefs = await SharedPreferences.getInstance();
     await freshPrefs.setBool('onboarding_completed', true);
     // UserSettings JSON is deliberately not present

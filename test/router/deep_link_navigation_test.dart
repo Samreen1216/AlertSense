@@ -88,7 +88,7 @@ void main() {
       final onboardingUri = Uri.parse('alertsense://onboarding');
       expect(onboardingUri.host, equals('onboarding'));
       expect(onboardingUri.path, isEmpty);
-      expect(router.routeInformationParser.configuration.findMatch('/onboarding'), isNotNull);
+      expect(router.routeInformationParser.configuration.findMatch(Uri.parse('/onboarding')), isNotNull);
 
       // Test redirect with home host
       final homeUri = Uri.parse('alertsense://home');

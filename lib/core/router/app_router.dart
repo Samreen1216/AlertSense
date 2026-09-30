@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/alert_event.dart';
 import '../../main.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../../ui/onboarding/onboarding_screen.dart';
 import '../../ui/home/home_screen.dart';
@@ -20,11 +21,21 @@ import '../../ui/alert/full_screen_alert.dart';
 import '../../ui/shared/app_scaffold.dart';
 import '../../ui/widget/home_widget_showcase_screen.dart';
 import '../../ui/splash/splash_screen.dart';
+import '../../ui/auth/login_screen.dart';
+import '../../ui/auth/signup_screen.dart';
+import '../../ui/auth/forgot_password_screen.dart';
+import '../../ui/auth/reset_password_screen.dart';
+import '../../ui/auth/email_verification_screen.dart';
 
 // Route paths
 class AppRoutes {
   static const splash = '/splash';
   static const onboarding = '/onboarding';
+  static const login = '/login';
+  static const signup = '/signup';
+  static const forgotPassword = '/forgot-password';
+  static const resetPassword = '/reset-password';
+  static const verifyEmail = '/verify-email';
   static const home = '/home';
   static const history = '/history';
   static const stats = '/stats';
@@ -58,10 +69,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     }
   }
 
+  bool checkAuthenticated() {
+    try {
+      return ref.read(isAuthenticatedProvider);
+    } catch (_) {
+      try {
+        final authRepo = ref.read(authRepositoryProvider);
+        return authRepo.isAuthenticated;
+      } catch (_) {
+        return false;
+      }
+    }
+  }
+
   final initialOnboarding = checkOnboardingComplete();
+  final redirectNotifier = ref.watch(authRedirectListenableProvider);
 
   return GoRouter(
     initialLocation: initialOnboarding ? AppRoutes.home : AppRoutes.splash,
+    refreshListenable: redirectNotifier,
     errorBuilder: (context, state) {
       return const HomeScreen();
     },
@@ -70,17 +96,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final path = uri.path;
       final host = uri.host;
       final isOnboardingComplete = checkOnboardingComplete();
+      final isAuthenticated = checkAuthenticated();
 
-      // Guard: If onboarding completed, redirect /onboarding access to /home
+      // Guard: If authenticated, redirect away from login/signup/forgot-password to /home
+      if (isAuthenticated &&
+          (path == AppRoutes.login ||
+              path == AppRoutes.signup ||
+              path == AppRoutes.forgotPassword)) {
+        return AppRoutes.home;
+      }
+
+      // Guard: If onboarding completed, redirect /onboarding access
       if (isOnboardingComplete &&
           (path == AppRoutes.onboarding || path == '/onboarding' || host == 'onboarding')) {
-        return AppRoutes.home;
+        return isAuthenticated ? AppRoutes.home : AppRoutes.login;
       }
 
       // Handle root '/' or empty path with custom scheme host
       if (path == '/' || path.isEmpty) {
         if (host.isNotEmpty) {
           switch (host) {
+            case 'login':
+              return AppRoutes.login;
+            case 'signup':
+              return AppRoutes.signup;
+            case 'auth-callback':
+            case 'login-callback':
+              final type = uri.queryParameters['type'];
+              if (type == 'recovery') {
+                return AppRoutes.resetPassword;
+              }
+              return isAuthenticated ? AppRoutes.home : AppRoutes.login;
             case 'quick-scan':
               return '${AppRoutes.quickScan}?autoStart=true';
             case 'emergency':
@@ -94,11 +140,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             case 'stats':
               return AppRoutes.stats;
             case 'onboarding':
-              return isOnboardingComplete ? AppRoutes.home : AppRoutes.onboarding;
+              return isOnboardingComplete
+                  ? (isAuthenticated ? AppRoutes.home : AppRoutes.login)
+                  : AppRoutes.onboarding;
             case 'home':
             case 'toggle-listening':
             default:
-              return AppRoutes.home;
+              return isOnboardingComplete ? AppRoutes.home : AppRoutes.splash;
           }
         }
         return isOnboardingComplete ? AppRoutes.home : AppRoutes.splash;
@@ -110,6 +158,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
       if (path == '/toggle-listening') {
         return AppRoutes.home;
+      }
+      if (path == '/auth-callback' || path == '/login-callback') {
+        final type = uri.queryParameters['type'];
+        if (type == 'recovery') {
+          return AppRoutes.resetPassword;
+        }
+        return isAuthenticated ? AppRoutes.home : AppRoutes.login;
       }
 
       return null;
@@ -126,6 +181,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
+      ),
+
+      // Authentication Routes
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.signup,
+        builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        builder: (context, state) => const ResetPasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.verifyEmail,
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return EmailVerificationScreen(email: email);
+        },
       ),
 
       // Aliases for deep links

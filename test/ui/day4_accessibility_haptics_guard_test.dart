@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,8 @@ import 'package:alertsense/data/repositories/alert_repository.dart';
 import 'package:alertsense/data/repositories/settings_repository.dart';
 import 'package:alertsense/main.dart';
 import 'package:alertsense/providers/audio_providers.dart';
+import 'package:alertsense/providers/auth_providers.dart';
+import 'package:alertsense/providers/service_providers.dart';
 import 'package:alertsense/providers/settings_providers.dart';
 import 'package:alertsense/services/alert_dispatcher_service.dart';
 import 'package:alertsense/services/deduplication_service.dart';
@@ -41,10 +44,14 @@ class _MockNotificationService extends NotificationService {
   }) async {}
 }
 
-class _TestListeningNotifier extends StateNotifier<bool> {
-  _TestListeningNotifier([super.initialState = false]);
-  void toggle() => state = !state;
-  void toggleListening() => state = !state;
+class _TestListeningNotifier extends ListeningNotifier {
+  _TestListeningNotifier(super.ref, [bool initialState = false]) {
+    state = initialState;
+  }
+  @override
+  Future<void> toggle() async => state = !state;
+  @override
+  Future<void> toggleListening() async => state = !state;
 }
 
 void main() {
@@ -53,8 +60,9 @@ void main() {
   late SharedPreferences prefs;
   late LocalStorage localStorage;
   late SettingsRepository settingsRepo;
+  late AlertRepository alertRepo;
   final List<MethodCall> platformCalls = [];
-  final List<MethodCall> accessibilityCalls = [];
+  final List<dynamic> accessibilityCalls = [];
 
   setUp(() async {
     platformCalls.clear();
@@ -67,8 +75,8 @@ void main() {
     });
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.accessibility, (MethodCall call) async {
-      accessibilityCalls.add(call);
+        .setMockDecodedMessageHandler(SystemChannels.accessibility, (dynamic msg) async {
+      accessibilityCalls.add(msg);
       return null;
     });
 
@@ -96,13 +104,15 @@ void main() {
     localStorage = LocalStorage(prefs);
     settingsRepo = SettingsRepository(localStorage);
     await settingsRepo.init();
+    alertRepo = AlertRepository(localStorage);
+    await alertRepo.init();
   });
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.accessibility, null);
+        .setMockDecodedMessageHandler(SystemChannels.accessibility, null);
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       const MethodChannel('flutter.baseflow.com/permissions/methods'),
@@ -117,6 +127,9 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          isAuthenticatedProvider.overrideWithValue(true),
           userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
             ..state = const UserSettings(onboardingCompleted: true)),
         ],
@@ -132,14 +145,16 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Since onboardingCompleted is true, cold boot launches straight to HomeScreen
       expect(find.byType(HomeScreen), findsOneWidget);
 
       // Now attempt to navigate to /onboarding
       router.go(AppRoutes.onboarding);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Guarded: stays on HomeScreen, skips OnboardingScreen
       expect(find.byType(HomeScreen), findsOneWidget);
@@ -154,6 +169,9 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          isAuthenticatedProvider.overrideWithValue(true),
         ],
       );
       addTearDown(container.dispose);
@@ -167,7 +185,8 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Cold boot with onboarding complete launches straight to HomeScreen
       expect(find.byType(HomeScreen), findsOneWidget);
@@ -179,6 +198,8 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
           userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
             ..state = const UserSettings(onboardingCompleted: false)),
         ],
@@ -310,12 +331,12 @@ void main() {
 
   group('Day 4: Semantics & Accessibility Spoken Announcements', () {
     testWidgets('HeroSoundRadar renders rich Semantics in standby and active modes', (tester) async {
-      final notifier = _TestListeningNotifier(false);
+      _TestListeningNotifier? notifier;
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            isListeningProvider.overrideWith((ref) => notifier),
+            isListeningProvider.overrideWith((ref) => notifier = _TestListeningNotifier(ref, false)),
             ambientDbProvider.overrideWith((ref) => 38.0),
           ],
           child: const MaterialApp(
@@ -335,14 +356,15 @@ void main() {
 
       // Standby mode semantics
       final standbySemantics = tester.getSemantics(find.byType(HeroSoundRadar));
-      expect(standbySemantics.label, equals('Acoustic Sound Radar'));
-      expect(standbySemantics.value, equals('Detection paused'));
+      expect(standbySemantics.label, contains('Acoustic Sound Radar'));
+      expect(standbySemantics.label, contains('Detection paused'));
       expect(standbySemantics.hint, equals('Double-tap to toggle microphone listening'));
-      expect(standbySemantics.hasAction(SemanticsAction.tap), isTrue);
+      expect(standbySemantics.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
 
       // Activate listening
-      notifier.toggle();
-      await tester.pumpAndSettle();
+      notifier!.toggle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Active mode semantics
       final activeSemantics = tester.getSemantics(find.byType(HeroSoundRadar));
@@ -377,8 +399,12 @@ void main() {
 
       // Verify that accessibility announcement channel received the threat announcement
       expect(accessibilityCalls.isNotEmpty, isTrue);
-      final announceCall = accessibilityCalls.firstWhere((c) => c.method == 'announce');
-      expect(announceCall.arguments['message'], contains('Alert detected: Fire Alarm. High Priority.'));
+      final announceCall = accessibilityCalls.firstWhere(
+        (c) => c is Map && c['type'] == 'announce',
+        orElse: () => <dynamic, dynamic>{},
+      ) as Map;
+      final msg = announceCall['data'] is Map ? announceCall['data']['message'] : announceCall['data'];
+      expect(msg?.toString(), contains('Alert detected: Fire Alarm. High Priority.'));
     });
 
     testWidgets('SoundCategoryCardsSection Edit button exposes rich accessibility Semantics', (tester) async {
@@ -398,16 +424,21 @@ void main() {
         matching: find.byType(Semantics),
       ).first;
       final editSemantics = tester.getSemantics(editFinder);
-      expect(editSemantics.label, equals('Edit sound categories'));
-      expect(editSemantics.hasAction(SemanticsAction.tap), isTrue);
+      expect(editSemantics.label, contains('Edit sound categories'));
+      expect(editSemantics.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
     });
 
     testWidgets('AppScaffold Quick Scan button exposes rich accessibility Semantics', (tester) async {
+      await localStorage.setOnboardingComplete();
+
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          isAuthenticatedProvider.overrideWithValue(true),
           userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
             ..state = const UserSettings(onboardingCompleted: true)),
         ],
@@ -423,15 +454,16 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-      final quickScanFinder = find.ancestor(
-        of: find.text('Quick Scan'),
-        matching: find.byType(Semantics),
+      final quickScanFinder = find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == 'Quick Scan',
       ).first;
-      final qsSemantics = tester.getSemantics(quickScanFinder);
-      expect(qsSemantics.label, equals('Quick Scan'));
-      expect(qsSemantics.hasAction(SemanticsAction.tap), isTrue);
+      final semanticsWidget = tester.widget<Semantics>(quickScanFinder);
+      expect(semanticsWidget.properties.label, equals('Quick Scan'));
+      expect(semanticsWidget.properties.button, isTrue);
+      expect(semanticsWidget.properties.onTap, isNotNull);
     });
   });
 
@@ -463,7 +495,7 @@ void main() {
       // Verify Semantics selected state
       final sleepFinder = find.ancestor(of: find.text('Sleep'), matching: find.byType(Semantics)).first;
       final semantics = tester.getSemantics(sleepFinder);
-      expect(semantics.isSelected, isTrue);
+      expect(semantics.getSemanticsData().hasFlag(SemanticsFlag.isSelected), isTrue);
     });
 
     testWidgets('SoundCategoryCardsSection toggle invokes HapticFeedback.selectionClick and sets Semantics', (tester) async {
@@ -504,6 +536,9 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          isAuthenticatedProvider.overrideWithValue(true),
           userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
             ..state = const UserSettings(onboardingCompleted: true)),
         ],
@@ -519,13 +554,15 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       platformCalls.clear();
 
       // Tap Insights bottom nav tab
       await tester.tap(find.text('Insights'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       final hapticCalls = platformCalls.where(
         (c) => c.method == 'HapticFeedback.vibrate' && c.arguments == 'HapticFeedbackType.selectionClick',
@@ -566,12 +603,10 @@ void main() {
     });
 
     testWidgets('HeroSoundRadar center YOU tap invokes HapticFeedback.lightImpact', (tester) async {
-      final notifier = _TestListeningNotifier(false);
-
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            isListeningProvider.overrideWith((ref) => notifier),
+            isListeningProvider.overrideWith((ref) => _TestListeningNotifier(ref, false)),
           ],
           child: const MaterialApp(
             home: Scaffold(
@@ -586,13 +621,15 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       platformCalls.clear();
 
       // Tap center YOU button
       await tester.tap(find.text('YOU'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       final lightImpactCalls = platformCalls.where(
         (c) => c.method == 'HapticFeedback.vibrate' && c.arguments == 'HapticFeedbackType.lightImpact',

@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
+import 'core/config/supabase_config.dart';
 import 'core/theme/theme_provider.dart';
+export 'core/theme/theme_provider.dart' show sharedPreferencesProvider;
 import 'data/datasources/local_storage.dart';
 import 'data/repositories/alert_repository.dart';
 import 'data/repositories/settings_repository.dart';
@@ -14,6 +16,9 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase Auth & Client
+  await SupabaseConfig.initialize();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

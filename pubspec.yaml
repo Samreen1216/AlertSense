@@ -58,6 +58,7 @@ dependencies:
   # Icons
   cupertino_icons: ^1.0.8
   tflite_flutter: ^0.12.1
+  supabase_flutter: ^2.17.2
 
 dev_dependencies:
   flutter_test:

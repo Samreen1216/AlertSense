@@ -211,13 +211,17 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                 child: Semantics(
                   label: 'Quick Scan',
                   button: true,
-                  child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    context.push(AppRoutes.quickScan);
+                  },
+                  child: InkResponse(
                     onTap: () {
                       HapticFeedback.selectionClick();
                       ScaffoldMessenger.of(context).clearSnackBars();
                       context.push(AppRoutes.quickScan);
                     },
-                    behavior: HitTestBehavior.opaque,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
@@ -413,13 +417,17 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
                       Semantics(
                         label: 'Quick Scan',
                         button: true,
-                        child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          context.push(AppRoutes.quickScan);
+                        },
+                        child: InkResponse(
                           onTap: () {
                             HapticFeedback.selectionClick();
                             ScaffoldMessenger.of(context).clearSnackBars();
                             context.push(AppRoutes.quickScan);
                           },
-                          behavior: HitTestBehavior.opaque,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4.0),
                             child: Column(

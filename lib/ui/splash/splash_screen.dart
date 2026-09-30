@@ -8,6 +8,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../main.dart';
+import '../../providers/auth_providers.dart';
 import '../../providers/settings_providers.dart';
 
 /// Interactive shockwave model created when user touches the screen.
@@ -424,7 +425,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!isOnboarded) {
       context.go(AppRoutes.onboarding);
     } else {
-      context.go(AppRoutes.home);
+      final isAuthenticated = ref.read(isAuthenticatedProvider);
+      if (isAuthenticated) {
+        context.go(AppRoutes.home);
+      } else {
+        context.go(AppRoutes.login);
+      }
     }
   }
 

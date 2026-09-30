@@ -394,6 +394,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap 'Alert Family (WhatsApp / SMS)'
+      await tester.ensureVisible(find.text('Alert Family (WhatsApp / SMS)'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Alert Family (WhatsApp / SMS)'));
       await tester.pumpAndSettle();
 
@@ -462,6 +464,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap 'Alert Family (WhatsApp / SMS)'
+      await tester.ensureVisible(find.text('Alert Family (WhatsApp / SMS)'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Alert Family (WhatsApp / SMS)'));
       await tester.pumpAndSettle();
 
@@ -528,6 +532,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap 'Alert Family (WhatsApp / SMS)'
+      await tester.ensureVisible(find.text('Alert Family (WhatsApp / SMS)'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Alert Family (WhatsApp / SMS)'));
       await tester.pumpAndSettle();
 
