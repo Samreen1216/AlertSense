@@ -417,20 +417,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       return;
     }
 
-    final settings = ref.read(userSettingsProvider);
-    final localStorage = ref.read(localStorageProvider);
-    final isOnboarded =
-        settings.onboardingCompleted || localStorage.isOnboardingComplete();
-
-    if (!isOnboarded) {
-      context.go(AppRoutes.onboarding);
+    final isAuthenticated = ref.read(isAuthenticatedProvider);
+    if (isAuthenticated) {
+      context.go(AppRoutes.home);
     } else {
-      final isAuthenticated = ref.read(isAuthenticatedProvider);
-      if (isAuthenticated) {
-        context.go(AppRoutes.home);
-      } else {
-        context.go(AppRoutes.login);
-      }
+      context.go(AppRoutes.onboarding);
     }
   }
 

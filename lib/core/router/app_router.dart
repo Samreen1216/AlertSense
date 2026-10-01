@@ -26,6 +26,7 @@ import '../../ui/auth/signup_screen.dart';
 import '../../ui/auth/forgot_password_screen.dart';
 import '../../ui/auth/reset_password_screen.dart';
 import '../../ui/auth/email_verification_screen.dart';
+import '../../ui/settings/user_account_screen.dart';
 
 // Route paths
 class AppRoutes {
@@ -51,6 +52,7 @@ class AppRoutes {
   static const widgetShowcase = '/settings/widget';
   static const sleepMode = '/sleep';
   static const fullScreenAlert = '/alert';
+  static const userAccount = '/account';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -83,10 +85,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   }
 
   final initialOnboarding = checkOnboardingComplete();
+  final initialAuthenticated = checkAuthenticated();
   final redirectNotifier = ref.watch(authRedirectListenableProvider);
 
   return GoRouter(
-    initialLocation: initialOnboarding ? AppRoutes.home : AppRoutes.splash,
+    initialLocation: (initialOnboarding && initialAuthenticated)
+        ? AppRoutes.home
+        : AppRoutes.splash,
     refreshListenable: redirectNotifier,
     errorBuilder: (context, state) {
       return const HomeScreen();
@@ -106,10 +111,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return AppRoutes.home;
       }
 
-      // Guard: If onboarding completed, redirect /onboarding access
-      if (isOnboardingComplete &&
+      // Guard: If authenticated and onboarding completed, redirect /onboarding access to /home
+      if (isAuthenticated &&
+          isOnboardingComplete &&
           (path == AppRoutes.onboarding || path == '/onboarding' || host == 'onboarding')) {
-        return isAuthenticated ? AppRoutes.home : AppRoutes.login;
+        return AppRoutes.home;
       }
 
       // Handle root '/' or empty path with custom scheme host
@@ -140,16 +146,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             case 'stats':
               return AppRoutes.stats;
             case 'onboarding':
-              return isOnboardingComplete
-                  ? (isAuthenticated ? AppRoutes.home : AppRoutes.login)
+              return (isAuthenticated && isOnboardingComplete)
+                  ? AppRoutes.home
                   : AppRoutes.onboarding;
             case 'home':
             case 'toggle-listening':
             default:
-              return isOnboardingComplete ? AppRoutes.home : AppRoutes.splash;
+              return (isOnboardingComplete && isAuthenticated)
+                  ? AppRoutes.home
+                  : AppRoutes.splash;
           }
         }
-        return isOnboardingComplete ? AppRoutes.home : AppRoutes.splash;
+        return (isOnboardingComplete && isAuthenticated)
+            ? AppRoutes.home
+            : AppRoutes.splash;
+      }
+
+      // Guard: Protect home, settings, and other private screens from unauthenticated access
+      final isPublicRoute = path == AppRoutes.splash ||
+          path == AppRoutes.onboarding ||
+          path == AppRoutes.login ||
+          path == AppRoutes.signup ||
+          path == AppRoutes.forgotPassword ||
+          path == AppRoutes.resetPassword ||
+          path == AppRoutes.verifyEmail ||
+          path == '/emergency' ||
+          path == '/auth-callback' ||
+          path == '/login-callback';
+
+      if (!isAuthenticated && !isPublicRoute) {
+        return isOnboardingComplete ? AppRoutes.login : AppRoutes.splash;
       }
 
       // Handle path-based aliases from deep links
@@ -170,11 +196,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      // Root route redirect to home for onboarded users, splash for cold new launches
+      // Root route redirect to home for onboarded & authenticated users, splash for new launches
       GoRoute(
         path: '/',
         redirect: (context, state) =>
-            checkOnboardingComplete() ? AppRoutes.home : AppRoutes.splash,
+            (checkOnboardingComplete() && checkAuthenticated())
+                ? AppRoutes.home
+                : AppRoutes.splash,
       ),
 
       // Splash screen
@@ -222,7 +250,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.onboarding,
         redirect: (context, state) =>
-            checkOnboardingComplete() ? AppRoutes.home : null,
+            (checkAuthenticated() && checkOnboardingComplete()) ? AppRoutes.home : null,
         builder: (context, state) => const OnboardingScreen(),
       ),
 
@@ -321,6 +349,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.sleepMode,
         builder: (context, state) => const SleepModeScreen(),
+      ),
+
+      // User account details (full screen)
+      GoRoute(
+        path: AppRoutes.userAccount,
+        builder: (context, state) => const UserAccountScreen(),
       ),
 
       // Full-screen alert overlay

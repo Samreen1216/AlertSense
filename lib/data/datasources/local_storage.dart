@@ -83,4 +83,28 @@ class LocalStorage {
     if (direct == true) return true;
     return loadSettings().onboardingCompleted;
   }
+
+  Future<void> saveUserAuthDetails({
+    required String email,
+    String? fullName,
+    String? userId,
+  }) async {
+    await _prefs.setString('auth_user_email', email);
+    if (fullName != null && fullName.trim().isNotEmpty) {
+      await _prefs.setString('auth_user_full_name', fullName.trim());
+    }
+    if (userId != null && userId.isNotEmpty) {
+      await _prefs.setString('auth_user_id', userId);
+    }
+  }
+
+  String? getSavedUserFullName() => _prefs.getString('auth_user_full_name');
+  String? getSavedUserEmail() => _prefs.getString('auth_user_email');
+  String? getSavedUserId() => _prefs.getString('auth_user_id');
+
+  Future<void> clearUserAuthDetails() async {
+    await _prefs.remove('auth_user_email');
+    await _prefs.remove('auth_user_full_name');
+    await _prefs.remove('auth_user_id');
+  }
 }

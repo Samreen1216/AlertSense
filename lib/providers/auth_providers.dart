@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide LocalStorage;
+import '../data/datasources/local_storage.dart';
 import '../data/datasources/supabase_auth_datasource.dart';
 import '../data/models/user_profile.dart';
 import '../data/repositories/auth_repository.dart';
+import '../main.dart';
 
 /// Provider for the Supabase Auth data source.
 final authDataSourceProvider = Provider<ISupabaseAuthDataSource>((ref) {
@@ -37,12 +39,73 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
   return user != null;
 });
 
-/// Provider for the current user's profile from the `profiles` table.
+/// Provider for the current user's profile from the `profiles` table or cached auth details.
 final userProfileProvider = FutureProvider<UserProfile?>((ref) async {
   final user = ref.watch(currentUserProvider);
-  if (user == null) return null;
+  LocalStorage? storage;
+  try {
+    storage = ref.read(localStorageProvider);
+  } catch (_) {}
+
+  final savedName = storage?.getSavedUserFullName();
+  final savedEmail = storage?.getSavedUserEmail();
+
+  if (user == null) {
+    if (savedName != null || savedEmail != null) {
+      return UserProfile(
+        id: storage?.getSavedUserId() ?? 'local_user',
+        fullName: savedName ?? '',
+        email: savedEmail ?? '',
+      );
+    }
+    return null;
+  }
+
   final repo = ref.watch(authRepositoryProvider);
-  return await repo.getProfile(user.id);
+  UserProfile? profile;
+  try {
+    profile = await repo.getProfile(user.id);
+  } catch (_) {}
+
+  if (profile != null && profile.fullName.trim().isNotEmpty) {
+    storage?.saveUserAuthDetails(
+      email: profile.email.isNotEmpty ? profile.email : (user.email ?? ''),
+      fullName: profile.fullName,
+      userId: profile.id,
+    );
+    return profile;
+  }
+
+  // Resolve best full name from userMetadata, local storage, or email prefix
+  final fallbackName = (user.userMetadata?['full_name'] as String?)?.trim().isNotEmpty == true
+      ? (user.userMetadata!['full_name'] as String).trim()
+      : ((user.userMetadata?['name'] as String?)?.trim().isNotEmpty == true
+          ? (user.userMetadata!['name'] as String).trim()
+          : ((user.userMetadata?['fullName'] as String?)?.trim().isNotEmpty == true
+              ? (user.userMetadata!['fullName'] as String).trim()
+              : (savedName?.trim().isNotEmpty == true
+                  ? savedName!.trim()
+                  : (user.email?.split('@').first ?? 'AlertSense User'))));
+
+  final fallbackEmail = (profile?.email.isNotEmpty == true)
+      ? profile!.email
+      : (user.email ?? savedEmail ?? '');
+
+  final resolvedProfile = UserProfile(
+    id: user.id,
+    fullName: fallbackName,
+    email: fallbackEmail,
+    createdAt: user.createdAt.isNotEmpty ? DateTime.tryParse(user.createdAt) : null,
+  );
+
+  // Sync back to local storage
+  storage?.saveUserAuthDetails(
+    email: fallbackEmail,
+    fullName: fallbackName,
+    userId: user.id,
+  );
+
+  return resolvedProfile;
 });
 
 /// Listenable that alerts GoRouter whenever authentication status shifts.
@@ -100,8 +163,9 @@ class AuthActionState {
 /// State notifier managing auth actions with loading, error, and feedback states.
 class AuthController extends StateNotifier<AuthActionState> {
   final AuthRepository _repository;
+  final LocalStorage? _localStorage;
 
-  AuthController(this._repository) : super(const AuthActionState());
+  AuthController(this._repository, [this._localStorage]) : super(const AuthActionState());
 
   void clearMessages() {
     state = const AuthActionState();
@@ -114,7 +178,16 @@ class AuthController extends StateNotifier<AuthActionState> {
   }) async {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     try {
-      await _repository.signIn(email: email, password: password);
+      final response = await _repository.signIn(email: email, password: password);
+      final user = response.user;
+      final nameFromMeta = user?.userMetadata?['full_name'] as String? ??
+          user?.userMetadata?['name'] as String? ??
+          user?.userMetadata?['fullName'] as String?;
+      await _localStorage?.saveUserAuthDetails(
+        email: email.trim(),
+        fullName: nameFromMeta,
+        userId: user?.id,
+      );
       state = state.copyWith(isLoading: false, successMessage: 'Welcome back to AlertSense!');
       return true;
     } on AuthFailure catch (e) {
@@ -141,6 +214,11 @@ class AuthController extends StateNotifier<AuthActionState> {
         email: email,
         password: password,
         fullName: fullName,
+      );
+      await _localStorage?.saveUserAuthDetails(
+        email: email.trim(),
+        fullName: fullName.trim(),
+        userId: response.user?.id,
       );
       final hasSession = response.session != null;
       state = state.copyWith(
@@ -233,6 +311,7 @@ class AuthController extends StateNotifier<AuthActionState> {
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     try {
       await _repository.signOut();
+      await _localStorage?.clearUserAuthDetails();
       state = const AuthActionState();
       return true;
     } on AuthFailure catch (e) {
@@ -247,5 +326,9 @@ class AuthController extends StateNotifier<AuthActionState> {
 
 final authControllerProvider = StateNotifierProvider<AuthController, AuthActionState>((ref) {
   final repo = ref.watch(authRepositoryProvider);
-  return AuthController(repo);
+  LocalStorage? storage;
+  try {
+    storage = ref.read(localStorageProvider);
+  } catch (_) {}
+  return AuthController(repo, storage);
 });

@@ -49,7 +49,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     if (success && mounted) {
       final user = ref.read(currentUserProvider);
-      if (user != null && user.emailConfirmedAt != null) {
+      final isAuthed = ref.read(isAuthenticatedProvider);
+      if (isAuthed || (user != null && user.emailConfirmedAt != null)) {
         context.go(AppRoutes.home);
       } else {
         // Direct user to email verification step

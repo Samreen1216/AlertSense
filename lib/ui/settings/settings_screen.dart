@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
@@ -10,6 +13,7 @@ import '../../providers/audio_providers.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/settings_providers.dart';
 import '../history/history_screen.dart';
+import '../home/widgets/user_account_sheet.dart';
 import 'widgets/theme_appearance_bottom_sheet.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -74,6 +78,19 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: const Text('Fine-tune AI confidence per sound category'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push(AppRoutes.sensitivity),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: _buildLeadingIcon(
+                  Icons.tune_rounded,
+                  const Color(0xFF0062FF),
+                  isDark: isDark,
+                  isHighContrast: isHighContrast,
+                ),
+                title: const Text('Sound Profiles'),
+                subtitle: const Text('Configure Home, Sleep, and Outdoor detection modes'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push(AppRoutes.profileEditor),
               ),
             ],
           ),
@@ -303,32 +320,40 @@ class SettingsScreen extends ConsumerWidget {
                   currentUser?.email ??
                       (currentUser != null ? 'Authenticated Session' : 'Local User'),
                 ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.success.withValues(alpha: 0.35),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check_circle_rounded, size: 14, color: AppColors.success),
-                      SizedBox(width: 4),
-                      Text(
-                        'Active',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.success,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.success.withValues(alpha: 0.35),
+                          width: 1.0,
                         ),
                       ),
-                    ],
-                  ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle_rounded, size: 14, color: AppColors.success),
+                          SizedBox(width: 4),
+                          Text(
+                            'Active',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right_rounded),
+                  ],
                 ),
+                onTap: () => UserAccountSheet.show(context),
               ),
               const Divider(height: 1),
               ListTile(
@@ -370,27 +395,28 @@ class SettingsScreen extends ConsumerWidget {
               const Divider(height: 1),
               ListTile(
                 leading: _buildLeadingIcon(
-                  Icons.school_outlined,
-                  const Color(0xFF64748B),
+                  Icons.share_rounded,
+                  const Color(0xFF0284C7),
                   isDark: isDark,
                   isHighContrast: isHighContrast,
                 ),
-                title: const Text('Replay Onboarding Tutorial'),
+                title: const Text('Share App'),
+                subtitle: const Text('Recommend AlertSense to friends and family'),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push(AppRoutes.onboarding),
+                onTap: () => _shareApp(context),
               ),
               const Divider(height: 1),
               ListTile(
                 leading: _buildLeadingIcon(
-                  Icons.auto_awesome_rounded,
-                  const Color(0xFF64748B),
+                  Icons.star_rate_rounded,
+                  const Color(0xFFF59E0B),
                   isDark: isDark,
                   isHighContrast: isHighContrast,
                 ),
-                title: const Text('Preview Animated Splash Screen'),
-                subtitle: const Text('Experience the interactive intro & animations'),
+                title: const Text('Rate Us'),
+                subtitle: const Text('Rate your experience and support our mission'),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push(AppRoutes.splash),
+                onTap: () => _showRatingDialog(context),
               ),
               const Divider(height: 1),
               ListTile(
@@ -605,5 +631,214 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _shareApp(BuildContext context) async {
+    final box = context.findRenderObject() as RenderBox?;
+    final sharePositionOrigin = box != null
+        ? box.localToGlobal(Offset.zero) & box.size
+        : null;
+
+    const message =
+        'AlertSense - AI Environmental Sound Awareness System\n\n'
+        'Turn important sounds like fire alarms, emergency sirens, doorbells, knocks, '
+        'and baby crying into visual notifications and custom vibrations!\n\n'
+        'Download and explore AlertSense:\n'
+        'https://github.com/Samreen1216/AlertSense';
+
+    try {
+      await Share.share(
+        message,
+        subject: 'Check out AlertSense — AI Sound Awareness',
+        sharePositionOrigin: sharePositionOrigin,
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open share menu: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showRatingDialog(BuildContext context) {
+    int selectedRating = 5;
+    final feedbackController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          final isHighContrast = Theme.of(context).colorScheme.primary == const Color(0xFF00FF41);
+          final starColor = isHighContrast ? const Color(0xFFFFD600) : const Color(0xFFF59E0B);
+
+          String ratingLabel;
+          switch (selectedRating) {
+            case 5:
+              ratingLabel = 'Loved it! ⭐⭐⭐⭐⭐';
+              break;
+            case 4:
+              ratingLabel = 'Great experience! ⭐⭐⭐⭐';
+              break;
+            case 3:
+              ratingLabel = 'It is good, can be better ⭐⭐⭐';
+              break;
+            case 2:
+              ratingLabel = 'Needs improvement ⭐⭐';
+              break;
+            default:
+              ratingLabel = 'Did not meet expectations ⭐';
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: isHighContrast
+                  ? const BorderSide(color: Color(0xFF00FF41), width: 2)
+                  : BorderSide.none,
+            ),
+            title: Row(
+              children: [
+                Icon(Icons.star_rounded, color: starColor, size: 28),
+                const SizedBox(width: 8),
+                const Text('Rate AlertSense'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Your feedback helps us make environmental sound awareness accessible and reliable for everyone.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, height: 1.4),
+                  ),
+                  const SizedBox(height: 18),
+                  // Interactive Star Rating Bar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final starIndex = index + 1;
+                      return IconButton(
+                        iconSize: 34,
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        icon: Icon(
+                          starIndex <= selectedRating
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: starIndex <= selectedRating
+                              ? starColor
+                              : (isHighContrast ? Colors.white54 : Colors.grey.shade400),
+                        ),
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            selectedRating = starIndex;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    ratingLabel,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isHighContrast ? const Color(0xFF00FF41) : starColor,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  if (selectedRating < 4) ...[
+                    TextField(
+                      controller: feedbackController,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        hintText: 'What can we improve? (optional)',
+                        hintStyle: const TextStyle(fontSize: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Maybe Later'),
+              ),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: isHighContrast
+                      ? const Color(0xFF00FF41)
+                      : Theme.of(context).colorScheme.primary,
+                  foregroundColor: isHighContrast ? Colors.black : Colors.white,
+                ),
+                icon: Icon(
+                  selectedRating >= 4 ? Icons.open_in_new_rounded : Icons.check_rounded,
+                  size: 16,
+                ),
+                label: Text(
+                  selectedRating >= 4 ? 'Rate on Store' : 'Submit Feedback',
+                ),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  if (selectedRating >= 4) {
+                    await _launchStoreUrl(context);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Thank you! Your feedback helps us improve AlertSense.'),
+                          duration: Duration(seconds: 3),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _launchStoreUrl(BuildContext context) async {
+    const packageName = 'com.alertsense';
+    final marketUri = Uri.parse('market://details?id=$packageName');
+    final playStoreUri = Uri.parse('https://play.google.com/store/apps/details?id=$packageName');
+    final githubFallbackUri = Uri.parse('https://github.com/Samreen1216/AlertSense');
+
+    try {
+      if (await canLaunchUrl(marketUri)) {
+        await launchUrl(marketUri, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(playStoreUri)) {
+        await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(githubFallbackUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open store link: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }

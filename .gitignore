@@ -45,3 +45,6 @@ migrate_working_dir/
 
 # Symbol processing
 .gensources/
+
+*.apk
+
