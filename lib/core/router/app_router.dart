@@ -89,9 +89,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final redirectNotifier = ref.watch(authRedirectListenableProvider);
 
   return GoRouter(
-    initialLocation: (initialOnboarding && initialAuthenticated)
-        ? AppRoutes.home
-        : AppRoutes.splash,
+    initialLocation: redirectNotifier.isPasswordRecovery
+        ? AppRoutes.resetPassword
+        : ((initialOnboarding && initialAuthenticated)
+            ? AppRoutes.home
+            : AppRoutes.splash),
     refreshListenable: redirectNotifier,
     errorBuilder: (context, state) {
       return const HomeScreen();
@@ -100,8 +102,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final uri = state.uri;
       final path = uri.path;
       final host = uri.host;
+      final fragment = uri.fragment;
+      final type = uri.queryParameters['type'];
       final isOnboardingComplete = checkOnboardingComplete();
       final isAuthenticated = checkAuthenticated();
+
+      // Check if current flow is password recovery (via auth event or deep link URL)
+      final isRecoveryLink = type == 'recovery' ||
+          fragment.contains('type=recovery') ||
+          host == 'reset-password' ||
+          path == AppRoutes.resetPassword;
+
+      final isRecoveryMode = redirectNotifier.isPasswordRecovery || isRecoveryLink;
+
+      // When in password recovery mode, ensure navigation leads directly to Reset Password screen
+      if (isRecoveryMode) {
+        if (path != AppRoutes.resetPassword) {
+          return AppRoutes.resetPassword;
+        }
+        return null;
+      }
 
       // Guard: If authenticated, redirect away from login/signup/forgot-password to /home
       if (isAuthenticated &&
@@ -126,10 +146,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               return AppRoutes.login;
             case 'signup':
               return AppRoutes.signup;
+            case 'forgot-password':
+              return AppRoutes.forgotPassword;
+            case 'reset-password':
+              return AppRoutes.resetPassword;
             case 'auth-callback':
             case 'login-callback':
-              final type = uri.queryParameters['type'];
-              if (type == 'recovery') {
+              if (type == 'recovery' || fragment.contains('type=recovery') || redirectNotifier.isPasswordRecovery) {
                 return AppRoutes.resetPassword;
               }
               return isAuthenticated ? AppRoutes.home : AppRoutes.login;
@@ -186,8 +209,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return AppRoutes.home;
       }
       if (path == '/auth-callback' || path == '/login-callback') {
-        final type = uri.queryParameters['type'];
-        if (type == 'recovery') {
+        if (type == 'recovery' || fragment.contains('type=recovery') || redirectNotifier.isPasswordRecovery) {
           return AppRoutes.resetPassword;
         }
         return isAuthenticated ? AppRoutes.home : AppRoutes.login;

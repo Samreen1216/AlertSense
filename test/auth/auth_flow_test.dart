@@ -95,6 +95,18 @@ class _MockSupabaseAuthDataSource implements ISupabaseAuthDataSource {
   Future<UserProfile> upsertProfile(UserProfile profile) async {
     return profile;
   }
+
+  Future<void> Function(String userId)? onDeleteAccount;
+
+  @override
+  Future<void> deleteAccount(String userId) async {
+    if (onDeleteAccount != null) {
+      await onDeleteAccount!(userId);
+      return;
+    }
+    mockUser = null;
+    mockSession = null;
+  }
 }
 
 void main() {
@@ -233,7 +245,7 @@ void main() {
         throwsA(isA<AuthFailure>().having(
           (e) => e.message,
           'message',
-          contains('Too many requests'),
+          contains('rate limit reached'),
         )),
       );
     });
@@ -493,6 +505,37 @@ void main() {
       expect(find.text('Reset Password'), findsOneWidget);
       expect(find.text('Update Password'), findsNWidgets(2)); // Header brand & Primary button
       expect(find.byType(TextFormField), findsNWidgets(2));
+      expect(find.text('Back to Login'), findsOneWidget);
+    });
+
+    testWidgets('ResetPasswordScreen submits password update successfully', (tester) async {
+      bool passwordUpdated = false;
+      mockDataSource.onUpdatePassword = (newPass) async {
+        passwordUpdated = true;
+        return UserResponse.fromJson({'user': null});
+      };
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(AuthRepository(mockDataSource)),
+          ],
+          child: const MaterialApp(
+            home: ResetPasswordScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), 'brandNewPassword123');
+      await tester.enterText(fields.at(1), 'brandNewPassword123');
+
+      final updateBtn = find.widgetWithText(AuthPrimaryButton, 'Update Password');
+      await tester.tap(updateBtn);
+      await tester.pumpAndSettle();
+
+      expect(passwordUpdated, isTrue);
     });
 
     testWidgets('EmailVerificationScreen renders verification instructions and resend button', (tester) async {
@@ -512,6 +555,56 @@ void main() {
       expect(find.text('user@example.com'), findsOneWidget);
       expect(find.textContaining('Resend Email'), findsOneWidget);
       expect(find.text('Back to Login'), findsOneWidget);
+    });
+  });
+
+  group('Password Recovery & Deep Link Routing Tests', () {
+    late _MockSupabaseAuthDataSource mockDataSource;
+
+    setUp(() {
+      mockDataSource = _MockSupabaseAuthDataSource();
+    });
+
+    test('AuthRedirectNotifier activates recovery mode on AuthChangeEvent.passwordRecovery', () async {
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(AuthRepository(mockDataSource)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(authRedirectListenableProvider);
+      expect(notifier.isPasswordRecovery, isFalse);
+
+      mockDataSource.authStateController.add(
+        const AuthState(AuthChangeEvent.passwordRecovery, null),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(notifier.isPasswordRecovery, isTrue);
+
+      notifier.clearPasswordRecovery();
+      expect(notifier.isPasswordRecovery, isFalse);
+    });
+
+    test('AuthRedirectNotifier clears recovery mode on AuthChangeEvent.signedOut or userUpdated', () async {
+      final container = ProviderContainer(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(AuthRepository(mockDataSource)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(authRedirectListenableProvider);
+      notifier.setPasswordRecovery(true);
+      expect(notifier.isPasswordRecovery, isTrue);
+
+      mockDataSource.authStateController.add(
+        const AuthState(AuthChangeEvent.userUpdated, null),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(notifier.isPasswordRecovery, isFalse);
     });
   });
 }

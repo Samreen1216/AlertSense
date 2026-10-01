@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
+import '../../data/datasources/local_storage.dart';
+import '../../main.dart';
 import '../../providers/alert_providers.dart';
 import '../../providers/audio_providers.dart';
 import '../../providers/auth_providers.dart';
@@ -47,8 +49,11 @@ class SettingsScreen extends ConsumerWidget {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
+          // ── Top Hero Header: Account & Authentication Session ──
+          _buildHeroAccountHeader(context, ref),
+
           // ── Section 1: Sound Detection ──
           _buildSectionHeader(context, 'SOUND DETECTION & PROFILES', Icons.graphic_eq_rounded),
           _buildSettingsCard(
@@ -298,84 +303,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Section 6: Account & Session ──
-          _buildSectionHeader(context, 'ACCOUNT & AUTHENTICATION', Icons.manage_accounts_rounded),
-          _buildSettingsCard(
-            context,
-            children: [
-              ListTile(
-                leading: _buildLeadingIcon(
-                  Icons.person_rounded,
-                  const Color(0xFF0062FF),
-                  isDark: isDark,
-                  isHighContrast: isHighContrast,
-                ),
-                title: Text(
-                  userProfile?.fullName.isNotEmpty == true
-                      ? userProfile!.fullName
-                      : (currentUser?.email ?? 'AlertSense User'),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                subtitle: Text(
-                  currentUser?.email ??
-                      (currentUser != null ? 'Authenticated Session' : 'Local User'),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.success.withValues(alpha: 0.35),
-                          width: 1.0,
-                        ),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.check_circle_rounded, size: 14, color: AppColors.success),
-                          SizedBox(width: 4),
-                          Text(
-                            'Active',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.success,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right_rounded),
-                  ],
-                ),
-                onTap: () => UserAccountSheet.show(context),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: _buildLeadingIcon(
-                  Icons.logout_rounded,
-                  const Color(0xFFEF4444),
-                  isDark: isDark,
-                  isHighContrast: isHighContrast,
-                ),
-                title: const Text(
-                  'Log Out',
-                  style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600),
-                ),
-                subtitle: const Text('Sign out of your AlertSense account'),
-                trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFEF4444)),
-                onTap: () => _showLogoutDialog(context, ref),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // ── Section 7: App Information ──
+          // ── Section 6: App Information ──
           _buildSectionHeader(context, 'ABOUT ALERTSENSE', Icons.info_outline_rounded),
           _buildSettingsCard(
             context,
@@ -465,6 +393,355 @@ class SettingsScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(icon, color: color, size: 20),
+    );
+  }
+
+  Widget _buildHeroAccountHeader(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final profileAsync = ref.watch(userProfileProvider);
+    final profile = profileAsync.valueOrNull;
+    final themeType = ref.watch(themeTypeProvider);
+    final isHighContrast = themeType == ThemeType.highContrast;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    LocalStorage? storage;
+    try {
+      storage = ref.read(localStorageProvider);
+    } catch (_) {}
+
+    final savedName = storage?.getSavedUserFullName();
+    final savedEmail = storage?.getSavedUserEmail();
+
+    final name = profile?.fullName.isNotEmpty == true
+        ? profile!.fullName
+        : ((user?.userMetadata?['full_name'] as String?)?.trim().isNotEmpty == true
+            ? (user!.userMetadata!['full_name'] as String).trim()
+            : ((user?.userMetadata?['name'] as String?)?.trim().isNotEmpty == true
+                ? (user!.userMetadata!['name'] as String).trim()
+                : ((user?.userMetadata?['fullName'] as String?)?.trim().isNotEmpty == true
+                    ? (user!.userMetadata!['fullName'] as String).trim()
+                    : (savedName?.trim().isNotEmpty == true
+                        ? savedName!.trim()
+                        : (user?.email?.split('@').first ?? 'AlertSense User')))));
+
+    final email = profile?.email.isNotEmpty == true
+        ? profile!.email
+        : (user?.email ?? (savedEmail?.isNotEmpty == true ? savedEmail! : ''));
+
+    final isUserActive = user != null || (savedEmail?.isNotEmpty == true);
+
+    String initials = '';
+    if (name.isNotEmpty) {
+      final parts = name.trim().split(RegExp(r'\s+'));
+      if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+        initials = '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+        initials = parts[0][0].toUpperCase();
+      }
+    }
+
+    final heroDecoration = isHighContrast
+        ? BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.hcPrimary, width: 2.0),
+          )
+        : BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: isDark
+                ? LinearGradient(
+                    colors: [
+                      const Color(0xFF1E293B),
+                      const Color(0xFF0F172A).withValues(alpha: 0.95),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : const LinearGradient(
+                    colors: [
+                      Colors.white,
+                      Color(0xFFF8FAFC),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : const Color(0xFFE2E8F0),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.35)
+                    : const Color(0xFF0062FF).withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+      decoration: heroDecoration,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Centered Avatar Hero
+          Center(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                GestureDetector(
+                  onTap: () => UserAccountSheet.show(context),
+                  child: Container(
+                    width: 84,
+                    height: 84,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isHighContrast
+                          ? Colors.black
+                          : (isUserActive ? null : const Color(0xFFE2E8F0)),
+                      gradient: (!isHighContrast && isUserActive)
+                          ? const LinearGradient(
+                              colors: [Color(0xFF0072FF), Color(0xFF00C6FF)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
+                      border: Border.all(
+                        color: isHighContrast
+                            ? AppColors.hcPrimary
+                            : (isDark
+                                ? Colors.white24
+                                : const Color(0xFF0072FF).withValues(alpha: 0.25)),
+                        width: isHighContrast ? 2.5 : 2.0,
+                      ),
+                      boxShadow: [
+                        if (!isHighContrast && isUserActive)
+                          BoxShadow(
+                            color: const Color(0xFF0072FF).withValues(alpha: 0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                      ],
+                    ),
+                    child: Center(
+                      child: initials.isNotEmpty
+                          ? Text(
+                              initials,
+                              style: TextStyle(
+                                color: isHighContrast ? AppColors.hcPrimary : Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.0,
+                              ),
+                            )
+                          : Icon(
+                              Icons.person_rounded,
+                              size: 44,
+                              color: isHighContrast
+                                  ? AppColors.hcPrimary
+                                  : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                            ),
+                    ),
+                  ),
+                ),
+                // Corner status indicator badge
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: isHighContrast
+                          ? Colors.black
+                          : (isUserActive ? AppColors.success : const Color(0xFF94A3B8)),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isHighContrast
+                            ? AppColors.hcPrimary
+                            : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                        width: 2.0,
+                      ),
+                    ),
+                    child: Icon(
+                      isUserActive ? Icons.check_rounded : Icons.lock_outline_rounded,
+                      size: 14,
+                      color: isHighContrast ? AppColors.hcPrimary : Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // User Name
+          Text(
+            name.isNotEmpty ? name : 'AlertSense Guest',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+              color: isHighContrast
+                  ? Colors.white
+                  : (isDark ? Colors.white : const Color(0xFF0F172A)),
+            ),
+          ),
+          const SizedBox(height: 4),
+
+          // User Email or Session Label
+          Text(
+            email.isNotEmpty
+                ? email
+                : (isUserActive ? 'Authenticated Session' : 'Offline Guest Session'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: isHighContrast
+                  ? AppColors.hcPrimary
+                  : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Status Badge Pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: isHighContrast
+                  ? Colors.black
+                  : (isUserActive
+                      ? AppColors.success.withValues(alpha: 0.12)
+                      : const Color(0xFF64748B).withValues(alpha: 0.12)),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isHighContrast
+                    ? AppColors.hcPrimary
+                    : (isUserActive
+                        ? AppColors.success.withValues(alpha: 0.35)
+                        : const Color(0xFF64748B).withValues(alpha: 0.3)),
+                width: 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isHighContrast
+                        ? AppColors.hcPrimary
+                        : (isUserActive ? AppColors.success : const Color(0xFF94A3B8)),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isUserActive ? 'Active Account Session' : 'Guest Mode',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: isHighContrast
+                        ? AppColors.hcPrimary
+                        : (isUserActive ? AppColors.success : const Color(0xFF64748B)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Action Buttons: Manage Account & Log Out
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton.icon(
+                    style: isHighContrast
+                        ? OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.hcPrimary,
+                            side: const BorderSide(color: AppColors.hcPrimary, width: 1.5),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          )
+                        : OutlinedButton.styleFrom(
+                            foregroundColor: isDark ? Colors.white : const Color(0xFF0062FF),
+                            side: BorderSide(
+                              color: isDark
+                                  ? Colors.white24
+                                  : const Color(0xFF0062FF).withValues(alpha: 0.35),
+                              width: 1.2,
+                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                    onPressed: () => UserAccountSheet.show(context),
+                    icon: const Icon(Icons.manage_accounts_rounded, size: 18),
+                    label: const Text(
+                      'Manage Account',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 44,
+                child: isUserActive
+                    ? OutlinedButton.icon(
+                        style: isHighContrast
+                            ? OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.hcHighAlert,
+                                side: const BorderSide(color: AppColors.hcHighAlert, width: 1.5),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              )
+                            : OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFFEF4444),
+                                side: const BorderSide(
+                                  color: Color(0xFFEF4444),
+                                  width: 1.2,
+                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                        onPressed: () => _showLogoutDialog(context, ref),
+                        icon: const Icon(Icons.logout_rounded, size: 18),
+                        label: const Text(
+                          'Log Out',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      )
+                    : FilledButton.icon(
+                        style: isHighContrast
+                            ? FilledButton.styleFrom(
+                                backgroundColor: AppColors.hcPrimary,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              )
+                            : FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFF0062FF),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              ),
+                        onPressed: () => context.push(AppRoutes.login),
+                        icon: const Icon(Icons.login_rounded, size: 18),
+                        label: const Text(
+                          'Sign In',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

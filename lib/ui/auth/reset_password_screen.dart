@@ -40,6 +40,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         .updatePassword(_newPasswordController.text);
 
     if (success && mounted) {
+      ref.read(authRedirectListenableProvider).clearPasswordRecovery();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Password updated successfully! Welcome back.'),
@@ -48,7 +49,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
-      context.go(AppRoutes.home);
+      try {
+        context.go(AppRoutes.home);
+      } catch (_) {}
     }
   }
 
@@ -62,6 +65,22 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: 'Back',
+          onPressed: () {
+            ref.read(authRedirectListenableProvider).clearPasswordRecovery();
+            ref.read(authControllerProvider.notifier).clearMessages();
+            final isAuth = ref.read(isAuthenticatedProvider);
+            try {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop();
+              } else {
+                context.go(isAuth ? AppRoutes.home : AppRoutes.login);
+              }
+            } catch (_) {}
+          },
+        ),
         title: const Text('Reset Password'),
       ),
       body: SafeArea(
@@ -185,6 +204,32 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       icon: Icons.check_circle_outline_rounded,
                       isLoading: authState.isLoading,
                       onPressed: _handleUpdatePassword,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Cancel / Back to Login
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: authState.isLoading
+                            ? null
+                            : () {
+                                ref.read(authRedirectListenableProvider).clearPasswordRecovery();
+                                ref.read(authControllerProvider.notifier).clearMessages();
+                                final isAuth = ref.read(isAuthenticatedProvider);
+                                try {
+                                  if (Navigator.of(context).canPop()) {
+                                    Navigator.of(context).pop();
+                                  } else {
+                                    context.go(isAuth ? AppRoutes.home : AppRoutes.login);
+                                  }
+                                } catch (_) {}
+                              },
+                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                        label: Text(
+                          ref.watch(isAuthenticatedProvider) ? 'Return to Home' : 'Back to Login',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
                   ],
                 ),

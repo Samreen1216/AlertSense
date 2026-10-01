@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_svg_icons.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../data/datasources/local_storage.dart';
@@ -53,7 +52,6 @@ class UserAccountSheet extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final profileAsync = ref.watch(userProfileProvider);
     final userProfile = profileAsync.valueOrNull;
-    final activeProfile = ref.watch(activeProfileProvider);
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -337,28 +335,11 @@ class UserAccountSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: 18),
 
-                    // ── 3. Sound Profiles Integration (Maintains app functionality) ──
+                    // ── 3. Simple Account Options & Security ──
                     _buildSectionHeader(
                       context,
-                      'SOUND DETECTION PROFILE',
-                      Icons.tune_rounded,
-                      isDark: isDark,
-                      isHighContrast: isHighContrast,
-                    ),
-                    const SizedBox(height: 8),
-                    _buildSoundProfileCard(
-                      context: context,
-                      activeProfile: activeProfile,
-                      isDark: isDark,
-                      isHighContrast: isHighContrast,
-                    ),
-                    const SizedBox(height: 18),
-
-                    // ── 4. App Preferences & Security Shortcuts ──
-                    _buildSectionHeader(
-                      context,
-                      'PREFERENCES & SECURITY',
-                      Icons.security_rounded,
+                      'ACCOUNT OPTIONS & SECURITY',
+                      Icons.manage_accounts_outlined,
                       isDark: isDark,
                       isHighContrast: isHighContrast,
                     ),
@@ -368,24 +349,23 @@ class UserAccountSheet extends ConsumerWidget {
                       isDark: isDark,
                       isHighContrast: isHighContrast,
                       children: [
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                          leading: _buildTileIcon(
-                            Icons.settings_outlined,
-                            const Color(0xFF0062FF),
-                            isDark: isDark,
-                            isHighContrast: isHighContrast,
-                          ),
-                          title: const Text('App Settings & Preferences', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                          subtitle: const Text('Sensitivities, notifications, vibrations, strobe flash', style: TextStyle(fontSize: 12)),
-                          trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () {
-                            Navigator.of(context).pop();
-                            context.push(AppRoutes.settings);
-                          },
-                        ),
+                        // Option 1: Change Password (authenticated user)
                         if (user != null) ...[
+                          ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                            leading: _buildTileIcon(
+                              Icons.lock_outline_rounded,
+                              const Color(0xFF10B981),
+                              isDark: isDark,
+                              isHighContrast: isHighContrast,
+                            ),
+                            title: const Text('Change Password', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                            subtitle: const Text('Enter a new password directly', style: TextStyle(fontSize: 12)),
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: () => _showChangePasswordDialog(context, ref),
+                          ),
                           const Divider(height: 1),
+                          // Option 2: Reset Password (authenticated user)
                           ListTile(
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                             leading: _buildTileIcon(
@@ -394,24 +374,57 @@ class UserAccountSheet extends ConsumerWidget {
                               isDark: isDark,
                               isHighContrast: isHighContrast,
                             ),
-                            title: const Text('Send Password Reset Email', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                            subtitle: const Text('Receive a secure reset link to change your password', style: TextStyle(fontSize: 12)),
+                            title: const Text('Reset Password', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                            subtitle: const Text('Send password reset link to your email', style: TextStyle(fontSize: 12)),
                             trailing: const Icon(Icons.chevron_right_rounded),
                             onTap: () => _handleSendPasswordReset(context, ref, user.email ?? ''),
                           ),
+                          const Divider(height: 1),
                         ],
+
+                        // Option 4: Delete Account (placed ONLY ONE TIME)
+                        const Divider(height: 1),
+                        ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                          leading: _buildTileIcon(
+                            Icons.delete_forever_rounded,
+                            AppColors.error,
+                            isDark: isDark,
+                            isHighContrast: isHighContrast,
+                          ),
+                          title: Text(
+                            'Delete Account',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: isHighContrast ? AppColors.hcHighAlert : AppColors.error,
+                            ),
+                          ),
+                          subtitle: Text(
+                            user != null
+                                ? 'Permanently erase account, profile, and all data'
+                                : 'Permanently clear local guest credentials and cached data',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_right_rounded,
+                            color: isHighContrast ? AppColors.hcHighAlert : AppColors.error,
+                          ),
+                          onTap: () => _showDeleteAccountDialog(context, ref, user?.id),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 22),
 
-                    // ── 5. Session Actions (Log Out or Sign In) ──
+                    // ── 4. Session Action (Log Out or Sign In) ──
                     if (user != null)
                       FilledButton.icon(
                         icon: const Icon(Icons.logout_rounded, size: 18),
                         label: const Text('Log Out of AlertSense', style: TextStyle(fontWeight: FontWeight.w700)),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          foregroundColor: Colors.white,
+                          backgroundColor: isHighContrast ? Colors.black : AppColors.error,
+                          foregroundColor: isHighContrast ? AppColors.hcHighAlert : Colors.white,
+                          side: isHighContrast ? const BorderSide(color: AppColors.hcHighAlert, width: 2) : null,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
@@ -422,8 +435,8 @@ class UserAccountSheet extends ConsumerWidget {
                         icon: const Icon(Icons.login_rounded, size: 18),
                         label: const Text('Sign In or Create Account', style: TextStyle(fontWeight: FontWeight.w700)),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF0062FF),
-                          foregroundColor: Colors.white,
+                          backgroundColor: isHighContrast ? AppColors.hcPrimary : const Color(0xFF0062FF),
+                          foregroundColor: isHighContrast ? Colors.black : Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
@@ -607,119 +620,6 @@ class UserAccountSheet extends ConsumerWidget {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSoundProfileCard({
-    required BuildContext context,
-    required String activeProfile,
-    required bool isDark,
-    required bool isHighContrast,
-  }) {
-    String profileName;
-    Color profileColor;
-    String profileDescription;
-
-    switch (activeProfile.toLowerCase()) {
-      case 'sleep':
-        profileName = 'Sleep Mode Profile';
-        profileColor = const Color(0xFF8B5CF6);
-        profileDescription = 'Critical safety sounds only (Alarms, sirens, baby crying)';
-        break;
-      case 'outdoor':
-        profileName = 'Outdoor Profile';
-        profileColor = const Color(0xFF10B981);
-        profileDescription = 'Traffic, siren & vehicle horn acoustic awareness';
-        break;
-      default:
-        profileName = 'Home Profile';
-        profileColor = const Color(0xFF0062FF);
-        profileDescription = 'All configured acoustic detectors active';
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isHighContrast
-            ? Colors.black
-            : (isDark ? const Color(0xFF1E2638) : Colors.white),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isHighContrast
-              ? AppColors.hcPrimary
-              : (isDark ? Colors.white10 : const Color(0xFFE2E8F0)),
-          width: isHighContrast ? 1.5 : 1.0,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: profileColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: profileColor.withValues(alpha: 0.4), width: 1),
-                ),
-                child: Center(
-                  child: AppSvgIcon(
-                    iconKey: activeProfile,
-                    size: 20,
-                    color: profileColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      profileName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: isHighContrast
-                            ? AppColors.hcTextPrimary
-                            : (isDark ? Colors.white : const Color(0xFF0F172A)),
-                      ),
-                    ),
-                    Text(
-                      profileDescription,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isHighContrast
-                            ? AppColors.hcTextSecondary
-                            : (isDark ? Colors.white60 : const Color(0xFF64748B)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            icon: const Icon(Icons.tune_rounded, size: 16),
-            label: const Text('Customize Sound Detection Profiles', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: isHighContrast ? AppColors.hcPrimary : const Color(0xFF0062FF),
-              side: BorderSide(
-                color: isHighContrast ? AppColors.hcPrimary : const Color(0xFF0062FF).withValues(alpha: 0.5),
-              ),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              context.push(AppRoutes.profileEditor);
-            },
           ),
         ],
       ),
@@ -944,6 +844,156 @@ class UserAccountSheet extends ConsumerWidget {
     );
   }
 
+  void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    String? errorMessage;
+    bool isProcessing = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) {
+          final theme = Theme.of(ctx);
+          final isDark = theme.brightness == Brightness.dark;
+          final themeType = ref.read(themeTypeProvider);
+          final isHighContrast = themeType == ThemeType.highContrast;
+
+          return AlertDialog(
+            backgroundColor: isHighContrast
+                ? Colors.black
+                : (isDark ? const Color(0xFF1E2638) : Colors.white),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: isHighContrast
+                  ? const BorderSide(color: AppColors.hcPrimary, width: 2)
+                  : (isDark ? const BorderSide(color: Colors.white12) : const BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0062FF).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.lock_outline_rounded,
+                    color: isHighContrast ? AppColors.hcPrimary : const Color(0xFF0062FF),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text('Change Password', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: newPasswordController,
+                    obscureText: obscureNew,
+                    decoration: InputDecoration(
+                      labelText: 'New Password',
+                      hintText: 'Enter new password (min. 6 chars)',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(obscureNew ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                        onPressed: () => setState(() => obscureNew = !obscureNew),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: confirmPasswordController,
+                    obscureText: obscureConfirm,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      hintText: 'Re-enter new password',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: Icon(obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                        onPressed: () => setState(() => obscureConfirm = !obscureConfirm),
+                      ),
+                    ),
+                  ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      errorMessage!,
+                      style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isProcessing ? null : () => Navigator.of(ctx).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: isProcessing
+                    ? null
+                    : () async {
+                        final newPass = newPasswordController.text;
+                        final confirmPass = confirmPasswordController.text;
+
+                        if (newPass.length < 6) {
+                          setState(() => errorMessage = 'Password must be at least 6 characters long.');
+                          return;
+                        }
+                        if (newPass != confirmPass) {
+                          setState(() => errorMessage = 'Passwords do not match.');
+                          return;
+                        }
+
+                        setState(() {
+                          isProcessing = true;
+                          errorMessage = null;
+                        });
+
+                        final success = await ref
+                            .read(authControllerProvider.notifier)
+                            .updatePassword(newPass);
+
+                        if (ctx.mounted) {
+                          Navigator.of(ctx).pop();
+                        }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                success
+                                    ? 'Password successfully updated!'
+                                    : 'Failed to update password. Please try again.',
+                              ),
+                              backgroundColor: success ? AppColors.success : AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          );
+                        }
+                      },
+                child: isProcessing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Update Password'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _handleSendPasswordReset(BuildContext context, WidgetRef ref, String email) {
     showDialog(
       context: context,
@@ -962,13 +1012,15 @@ class UserAccountSheet extends ConsumerWidget {
                   .read(authControllerProvider.notifier)
                   .sendPasswordResetEmail(email);
               if (context.mounted) {
+                final authState = ref.read(authControllerProvider);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
                       success
                           ? 'Password reset email sent! Please check your inbox.'
-                          : 'Failed to send reset link. Please try again.',
+                          : (authState.errorMessage ?? 'Failed to send reset link. Please try again.'),
                     ),
+                    backgroundColor: success ? AppColors.success : AppColors.error,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -1006,6 +1058,266 @@ class UserAccountSheet extends ConsumerWidget {
               }
             },
             child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref, String? userId) {
+    bool wipeAlertHistory = true;
+    bool confirmIrreversible = false;
+    bool isProcessing = false;
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final themeType = ref.read(themeTypeProvider);
+    final isHighContrast = themeType == ThemeType.highContrast;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          final dialogBg = isHighContrast
+              ? Colors.black
+              : (isDark ? const Color(0xFF1E2638) : Colors.white);
+
+          return AlertDialog(
+            backgroundColor: dialogBg,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: isHighContrast
+                  ? const BorderSide(color: AppColors.hcHighAlert, width: 2)
+                  : (isDark ? const BorderSide(color: Colors.white12) : const BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.warning_amber_rounded,
+                    color: isHighContrast ? AppColors.hcHighAlert : AppColors.error,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Delete Account',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      color: isHighContrast ? AppColors.hcHighAlert : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'This action is permanent and irreversible. Once deleted, your account and associated personal data cannot be recovered.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: isHighContrast ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF475569)),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Data breakdown box
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isHighContrast
+                          ? Colors.black
+                          : (isDark ? Colors.black26 : const Color(0xFFF8FAFC)),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isHighContrast
+                            ? AppColors.hcHighAlert.withValues(alpha: 0.5)
+                            : (isDark ? Colors.white12 : const Color(0xFFE2E8F0)),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'The following will be deleted:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isHighContrast ? AppColors.hcHighAlert : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        _buildBulletItem('Account profile, email & login credentials', isHighContrast, isDark),
+                        _buildBulletItem('Sound detection configurations & thresholds', isHighContrast, isDark),
+                        _buildBulletItem('Local device session & cached auth tokens', isHighContrast, isDark),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Option: Wipe local alert logs
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    value: wipeAlertHistory,
+                    activeColor: isHighContrast ? AppColors.hcHighAlert : AppColors.error,
+                    title: Text(
+                      'Wipe all recorded alert logs & notification history',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: isHighContrast ? Colors.white : (isDark ? Colors.white : const Color(0xFF0F172A)),
+                      ),
+                    ),
+                    onChanged: isProcessing
+                        ? null
+                        : (val) => setState(() => wipeAlertHistory = val ?? true),
+                  ),
+
+                  // Safeguard Confirmation Checkbox
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    value: confirmIrreversible,
+                    activeColor: isHighContrast ? AppColors.hcHighAlert : AppColors.error,
+                    title: Text(
+                      'I understand that my account will be permanently deleted and cannot be undone.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: isHighContrast ? AppColors.hcHighAlert : AppColors.error,
+                      ),
+                    ),
+                    onChanged: isProcessing
+                        ? null
+                        : (val) => setState(() => confirmIrreversible = val ?? false),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isProcessing ? null : () => Navigator.pop(ctx),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: isHighContrast ? AppColors.hcTextPrimary : (isDark ? Colors.white70 : const Color(0xFF64748B)),
+                  ),
+                ),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: isHighContrast ? Colors.black : AppColors.error,
+                  foregroundColor: isHighContrast ? AppColors.hcHighAlert : Colors.white,
+                  side: isHighContrast ? const BorderSide(color: AppColors.hcHighAlert, width: 2) : null,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: (!confirmIrreversible || isProcessing)
+                    ? null
+                    : () async {
+                        setState(() => isProcessing = true);
+                        try {
+                          if (userId != null && userId.isNotEmpty) {
+                            await ref.read(authControllerProvider.notifier).deleteAccount(userId);
+                          } else {
+                            await ref.read(authControllerProvider.notifier).signOut();
+                          }
+
+                          try {
+                            final storage = ref.read(localStorageProvider);
+                            await storage.clearUserAuthDetails();
+                          } catch (_) {}
+
+                          if (wipeAlertHistory) {
+                            try {
+                              await ref.read(alertListProvider.notifier).clear();
+                            } catch (_) {}
+                          }
+
+                          if (ctx.mounted) {
+                            Navigator.pop(ctx); // Close dialog
+                          }
+                          if (context.mounted) {
+                            Navigator.of(context).pop(); // Close bottom sheet
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Row(
+                                  children: [
+                                    Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 20),
+                                    SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text('Your account and data have been permanently deleted.'),
+                                    ),
+                                  ],
+                                ),
+                                backgroundColor: isHighContrast ? Colors.black : AppColors.error,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                duration: const Duration(seconds: 4),
+                              ),
+                            );
+                            context.go(AppRoutes.login);
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            setState(() => isProcessing = false);
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to delete account: $e'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                child: isProcessing
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildBulletItem(String text, bool isHighContrast, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '• ',
+            style: TextStyle(
+              color: isHighContrast ? AppColors.hcHighAlert : AppColors.error,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 11,
+                color: isHighContrast ? Colors.white70 : (isDark ? Colors.white60 : const Color(0xFF64748B)),
+              ),
+            ),
           ),
         ],
       ),

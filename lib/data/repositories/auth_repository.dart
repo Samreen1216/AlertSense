@@ -101,6 +101,15 @@ class AuthRepository {
     }
   }
 
+  /// Delete user account and all remote profile data.
+  Future<void> deleteAccount(String userId) async {
+    try {
+      await _dataSource.deleteAccount(userId);
+    } catch (e) {
+      throw _mapExceptionToAuthFailure(e);
+    }
+  }
+
   /// Retrieve the user profile from the `profiles` table.
   Future<UserProfile?> getProfile(String userId) async {
     try {
@@ -165,9 +174,12 @@ class AuthRepository {
 
       if (msg.contains('rate limit') ||
           msg.contains('too many requests') ||
-          msg.contains('over_email_send_rate_limit')) {
+          msg.contains('over_email_send_rate_limit') ||
+          msg.contains('email rate limit exceeded') ||
+          code == '429' ||
+          code == 'over_email_send_rate_limit') {
         return const AuthFailure(
-          'Too many requests sent. Please wait a few moments before trying again.',
+          'Email rate limit reached. Supabase temporarily restricts email requests to prevent spam. Please wait a few minutes before trying again.',
           code: 'rate_limit',
         );
       }

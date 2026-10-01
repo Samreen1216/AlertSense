@@ -24,6 +24,8 @@ abstract class ISupabaseAuthDataSource {
 
   Future<void> resendVerificationEmail(String email);
 
+  Future<void> deleteAccount(String userId);
+
   Future<UserProfile?> fetchProfile(String userId);
 
   Future<void> upsertProfile(UserProfile profile);
@@ -118,6 +120,21 @@ class SupabaseAuthDataSource implements ISupabaseAuthDataSource {
       email: email.trim(),
       emailRedirectTo: SupabaseConfig.authCallbackUrl,
     );
+  }
+
+  @override
+  Future<void> deleteAccount(String userId) async {
+    try {
+      await _client.from('profiles').delete().eq('id', userId);
+    } catch (e) {
+      debugPrint('[SupabaseAuthDataSource] Failed to delete profile row: $e');
+    }
+    try {
+      await _client.rpc('delete_user');
+    } catch (e) {
+      debugPrint('[SupabaseAuthDataSource] delete_user RPC note: $e');
+    }
+    await signOut();
   }
 
   @override

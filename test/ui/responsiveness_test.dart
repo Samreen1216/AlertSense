@@ -13,6 +13,7 @@ import 'package:alertsense/data/repositories/settings_repository.dart';
 import 'package:alertsense/main.dart';
 import 'package:alertsense/providers/alert_providers.dart';
 import 'package:alertsense/providers/audio_providers.dart';
+import 'package:alertsense/providers/auth_providers.dart';
 import 'package:alertsense/providers/service_providers.dart';
 import 'package:alertsense/providers/settings_providers.dart';
 import 'package:alertsense/services/notification_service.dart';
@@ -204,6 +205,7 @@ void main() {
           alertRepositoryProvider.overrideWithValue(alertRepo),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
           notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          isAuthenticatedProvider.overrideWithValue(true),
           userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
             ..state = const UserSettings(onboardingCompleted: true)),
         ],

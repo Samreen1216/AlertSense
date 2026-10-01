@@ -21,22 +21,34 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 /// Stream of Supabase AuthState events (signedIn, signedOut, passwordRecovery, tokenRefreshed, etc.).
 final authStateStreamProvider = StreamProvider<AuthState>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
-  return repository.authStateChanges;
+  try {
+    final repository = ref.watch(authRepositoryProvider);
+    return repository.authStateChanges;
+  } catch (_) {
+    return const Stream.empty();
+  }
 });
 
 /// Currently authenticated Supabase User (or null if signed out).
 final currentUserProvider = Provider<User?>((ref) {
-  // Trigger update whenever auth state stream emits
-  ref.watch(authStateStreamProvider);
-  final repository = ref.watch(authRepositoryProvider);
-  return repository.currentUser;
+  try {
+    // Trigger update whenever auth state stream emits
+    ref.watch(authStateStreamProvider);
+    final repository = ref.watch(authRepositoryProvider);
+    return repository.currentUser;
+  } catch (_) {
+    return null;
+  }
 });
 
 /// Whether a user is currently authenticated.
 final isAuthenticatedProvider = Provider<bool>((ref) {
-  final user = ref.watch(currentUserProvider);
-  return user != null;
+  try {
+    final user = ref.watch(currentUserProvider);
+    return user != null;
+  } catch (_) {
+    return false;
+  }
 });
 
 /// Provider for the current user's profile from the `profiles` table or cached auth details.
@@ -112,12 +124,37 @@ final userProfileProvider = FutureProvider<UserProfile?>((ref) async {
 class AuthRedirectNotifier extends ChangeNotifier {
   final Ref _ref;
   StreamSubscription<AuthState>? _sub;
+  bool _isPasswordRecovery = false;
+
+  bool get isPasswordRecovery => _isPasswordRecovery;
 
   AuthRedirectNotifier(this._ref) {
-    final repo = _ref.read(authRepositoryProvider);
-    _sub = repo.authStateChanges.listen((_) {
+    try {
+      final repo = _ref.read(authRepositoryProvider);
+      _sub = repo.authStateChanges.listen((state) {
+        if (state.event == AuthChangeEvent.passwordRecovery) {
+          _isPasswordRecovery = true;
+        } else if (state.event == AuthChangeEvent.signedOut ||
+            state.event == AuthChangeEvent.userUpdated) {
+          _isPasswordRecovery = false;
+        }
+        notifyListeners();
+      });
+    } catch (_) {}
+  }
+
+  void setPasswordRecovery(bool value) {
+    if (_isPasswordRecovery != value) {
+      _isPasswordRecovery = value;
       notifyListeners();
-    });
+    }
+  }
+
+  void clearPasswordRecovery() {
+    if (_isPasswordRecovery) {
+      _isPasswordRecovery = false;
+      notifyListeners();
+    }
   }
 
   @override
@@ -253,10 +290,13 @@ class AuthController extends StateNotifier<AuthActionState> {
     } on AuthFailure catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
       return false;
-    } catch (_) {
+    } catch (e) {
+      final str = e.toString().replaceAll('Exception:', '').trim();
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to send reset link. Please try again.',
+        errorMessage: str.contains('rate')
+            ? 'Email rate limit reached. Please wait a few minutes before trying again.'
+            : 'Failed to send reset link: $str',
       );
       return false;
     }
@@ -319,6 +359,23 @@ class AuthController extends StateNotifier<AuthActionState> {
       return false;
     } catch (_) {
       state = state.copyWith(isLoading: false, errorMessage: 'Failed to sign out.');
+      return false;
+    }
+  }
+
+  /// Delete the current user's account, wipe local credentials, and reset state.
+  Future<bool> deleteAccount(String userId) async {
+    state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
+    try {
+      await _repository.deleteAccount(userId);
+      await _localStorage?.clearUserAuthDetails();
+      state = const AuthActionState();
+      return true;
+    } on AuthFailure catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      return false;
+    } catch (_) {
+      state = state.copyWith(isLoading: false, errorMessage: 'Failed to delete account. Please try again.');
       return false;
     }
   }
