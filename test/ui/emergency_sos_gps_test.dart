@@ -8,7 +8,6 @@ import 'package:alertsense/data/models/user_settings.dart';
 import 'package:alertsense/data/repositories/alert_repository.dart';
 import 'package:alertsense/data/repositories/settings_repository.dart';
 import 'package:alertsense/main.dart';
-import 'package:alertsense/providers/alert_providers.dart';
 import 'package:alertsense/providers/service_providers.dart';
 import 'package:alertsense/providers/settings_providers.dart';
 import 'package:alertsense/services/location_service.dart';
@@ -138,8 +137,8 @@ void main() {
     });
   });
 
-  group('EmergencyContactsScreen SOS GPS Test Feature', () {
-    testWidgets('renders Test Emergency SOS Message button', (tester) async {
+  group('EmergencyContactsScreen Tests', () {
+    testWidgets('does not render removed Test Emergency SOS Message button', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -164,23 +163,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Test Emergency SOS Message (with GPS)'), findsOneWidget);
+      expect(find.text('Test Emergency SOS Message (with GPS)'), findsNothing);
+      expect(find.text('Save Contacts'), findsOneWidget);
+      expect(find.text('Add Another Contact'), findsOneWidget);
     });
 
-    testWidgets('tapping Test Emergency SOS Message opens preview modal with GPS pin', (tester) async {
-      final mockLoc = LocationResult(
-        latitude: 31.5204,
-        longitude: 74.3587,
-        accuracy: 10.0,
-        timestamp: DateTime.now(),
-      );
-
+    testWidgets('allows adding and saving emergency contacts cleanly', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           localStorageProvider.overrideWithValue(localStorage),
           settingsRepositoryProvider.overrideWithValue(settingsRepo),
-          locationServiceProvider.overrideWithValue(_FakeLocationService(mockLocation: mockLoc)),
           userSettingsProvider.overrideWith((ref) => SettingsNotifier(ref)
             ..state = const UserSettings(
               onboardingCompleted: true,
@@ -200,24 +193,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Tap the test button
-      await tester.tap(find.text('Test Emergency SOS Message (with GPS)'));
+      // Ensure test emergency SOS button is not present
+      expect(find.text('Test Emergency SOS Message (with GPS)'), findsNothing);
+      expect(find.text('Save Contacts'), findsOneWidget);
+
+      // Tap Save Contacts and verify success snackbar
+      await tester.tap(find.text('Save Contacts'));
       await tester.pumpAndSettle();
 
-      // Verify modal dialog appeared
-      expect(find.text('Emergency SOS Test'), findsOneWidget);
-      expect(find.textContaining('GPS Locked: 31.5204, 74.3587 (±10m)'), findsOneWidget);
-      expect(find.text('Target: +923001234567'), findsOneWidget);
-      expect(find.textContaining('https://maps.google.com/?q=31.5204,74.3587 (±10m)'), findsOneWidget);
-      expect(find.text('WhatsApp'), findsOneWidget);
-      expect(find.text('Send SMS'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-
-      // Tap Cancel to dismiss
-      await tester.tap(find.text('Cancel'));
+      expect(find.text('Emergency contacts saved successfully!'), findsOneWidget);
+      // Advance past the 3-second SnackBar timer
+      await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
-
-      expect(find.text('Emergency SOS Test'), findsNothing);
     });
   });
 

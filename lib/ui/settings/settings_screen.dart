@@ -416,7 +416,7 @@ class SettingsScreen extends ConsumerWidget {
                 title: const Text('Rate Us'),
                 subtitle: const Text('Rate your experience and support our mission'),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _showRatingDialog(context),
+                onTap: () => _showRatingDialog(context, ref),
               ),
               const Divider(height: 1),
               ListTile(
@@ -664,15 +664,16 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
-  void _showRatingDialog(BuildContext context) {
-    int selectedRating = 5;
+  void _showRatingDialog(BuildContext context, WidgetRef ref) {
+    final hostContext = context;
+    int selectedRating = 0;
     final feedbackController = TextEditingController();
 
     showDialog(
-      context: context,
+      context: hostContext,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) {
-          final isHighContrast = Theme.of(context).colorScheme.primary == const Color(0xFF00FF41);
+        builder: (dialogCtx, setState) {
+          final isHighContrast = Theme.of(dialogCtx).colorScheme.primary == const Color(0xFF00FF41);
           final starColor = isHighContrast ? const Color(0xFFFFD600) : const Color(0xFFF59E0B);
 
           String ratingLabel;
@@ -689,9 +690,16 @@ class SettingsScreen extends ConsumerWidget {
             case 2:
               ratingLabel = 'Needs improvement ⭐⭐';
               break;
-            default:
+            case 1:
               ratingLabel = 'Did not meet expectations ⭐';
+              break;
+            default:
+              ratingLabel = 'Tap a star to rate';
           }
+
+          final labelColor = selectedRating == 0
+              ? (isHighContrast ? Colors.white70 : Colors.grey.shade600)
+              : (isHighContrast ? const Color(0xFF00FF41) : starColor);
 
           return AlertDialog(
             shape: RoundedRectangleBorder(
@@ -702,7 +710,13 @@ class SettingsScreen extends ConsumerWidget {
             ),
             title: Row(
               children: [
-                Icon(Icons.star_rounded, color: starColor, size: 28),
+                Icon(
+                  selectedRating == 0 ? Icons.star_outline_rounded : Icons.star_rounded,
+                  color: selectedRating == 0
+                      ? (isHighContrast ? Colors.white54 : Colors.grey.shade400)
+                      : starColor,
+                  size: 28,
+                ),
                 const SizedBox(width: 8),
                 const Text('Rate AlertSense'),
               ],
@@ -718,19 +732,20 @@ class SettingsScreen extends ConsumerWidget {
                     style: TextStyle(fontSize: 13, height: 1.4),
                   ),
                   const SizedBox(height: 18),
-                  // Interactive Star Rating Bar
+                  // Interactive Star Rating Bar (starts empty and uncolored)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
                       final starIndex = index + 1;
+                      final isSelected = starIndex <= selectedRating;
                       return IconButton(
                         iconSize: 34,
                         padding: const EdgeInsets.symmetric(horizontal: 2),
                         icon: Icon(
-                          starIndex <= selectedRating
+                          isSelected
                               ? Icons.star_rounded
                               : Icons.star_outline_rounded,
-                          color: starIndex <= selectedRating
+                          color: isSelected
                               ? starColor
                               : (isHighContrast ? Colors.white54 : Colors.grey.shade400),
                         ),
@@ -749,16 +764,18 @@ class SettingsScreen extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: isHighContrast ? const Color(0xFF00FF41) : starColor,
+                      color: labelColor,
                     ),
                   ),
-                  const SizedBox(height: 14),
-                  if (selectedRating < 4) ...[
+                  if (selectedRating > 0) ...[
+                    const SizedBox(height: 14),
                     TextField(
                       controller: feedbackController,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        hintText: 'What can we improve? (optional)',
+                        hintText: selectedRating < 4
+                            ? 'What can we improve? (optional)'
+                            : 'What did you like most? (optional)',
                         hintStyle: const TextStyle(fontSize: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -782,63 +799,54 @@ class SettingsScreen extends ConsumerWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: isHighContrast
                       ? const Color(0xFF00FF41)
-                      : Theme.of(context).colorScheme.primary,
+                      : Theme.of(dialogCtx).colorScheme.primary,
                   foregroundColor: isHighContrast ? Colors.black : Colors.white,
                 ),
-                icon: Icon(
-                  selectedRating >= 4 ? Icons.open_in_new_rounded : Icons.check_rounded,
+                icon: const Icon(
+                  Icons.check_rounded,
                   size: 16,
                 ),
-                label: Text(
-                  selectedRating >= 4 ? 'Rate on Store' : 'Submit Feedback',
-                ),
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  if (selectedRating >= 4) {
-                    await _launchStoreUrl(context);
-                  } else {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Thank you! Your feedback helps us improve AlertSense.'),
-                          duration: Duration(seconds: 3),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  }
-                },
+                label: const Text('Submit Feedback'),
+                onPressed: selectedRating == 0
+                    ? null
+                    : () async {
+                        final rating = selectedRating;
+                        final feedback = feedbackController.text.trim();
+
+                        // Save rating and feedback to local storage
+                        try {
+                          final prefs = ref.read(sharedPreferencesProvider);
+                          await prefs?.setInt('user_app_rating', rating);
+                          if (feedback.isNotEmpty) {
+                            await prefs?.setString('user_app_feedback', feedback);
+                          }
+                        } catch (_) {}
+
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+
+                        if (hostContext.mounted) {
+                          final messenger = ScaffoldMessenger.of(hostContext);
+                          messenger.clearSnackBars();
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                rating >= 4
+                                    ? 'Thank you for rating AlertSense $rating star${rating > 1 ? 's' : ''}! Your feedback helps us improve.'
+                                    : 'Thank you! Your feedback helps us improve AlertSense.',
+                              ),
+                              duration: const Duration(seconds: 3),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
               ),
             ],
           );
         },
       ),
     );
-  }
-
-  Future<void> _launchStoreUrl(BuildContext context) async {
-    const packageName = 'com.alertsense';
-    final marketUri = Uri.parse('market://details?id=$packageName');
-    final playStoreUri = Uri.parse('https://play.google.com/store/apps/details?id=$packageName');
-    final githubFallbackUri = Uri.parse('https://github.com/Samreen1216/AlertSense');
-
-    try {
-      if (await canLaunchUrl(marketUri)) {
-        await launchUrl(marketUri, mode: LaunchMode.externalApplication);
-      } else if (await canLaunchUrl(playStoreUri)) {
-        await launchUrl(playStoreUri, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(githubFallbackUri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open store link: $e'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
   }
 }
