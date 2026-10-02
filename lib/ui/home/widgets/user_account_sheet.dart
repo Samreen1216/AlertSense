@@ -764,6 +764,55 @@ class UserAccountSheet extends ConsumerWidget {
   void _showEditNameDialog(BuildContext context, WidgetRef ref, String currentName) {
     final controller = TextEditingController(text: currentName);
 
+    Future<void> saveName(BuildContext ctx) async {
+      final newName = controller.text.trim();
+      if (newName.isNotEmpty) {
+        final user = ref.read(currentUserProvider);
+        try {
+          try {
+            final storage = ref.read(localStorageProvider);
+            await storage.saveUserAuthDetails(
+              email: user?.email ?? storage.getSavedUserEmail() ?? '',
+              fullName: newName,
+              userId: user?.id,
+            );
+          } catch (_) {}
+
+          if (user != null) {
+            await ref.read(authRepositoryProvider).updateProfile(
+                  UserProfile(
+                    id: user.id,
+                    fullName: newName,
+                    email: user.email ?? '',
+                    updatedAt: DateTime.now().toUtc(),
+                  ),
+                );
+          }
+          ref.invalidate(userProfileProvider);
+          if (context.mounted) {
+            Navigator.of(ctx).pop();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Profile name updated successfully'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to update name: $e'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      }
+    }
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -771,6 +820,10 @@ class UserAccountSheet extends ConsumerWidget {
         content: TextField(
           controller: controller,
           autofocus: true,
+          keyboardType: TextInputType.name,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => saveName(ctx),
           decoration: const InputDecoration(
             labelText: 'Full Name',
             hintText: 'Enter your full name',
@@ -783,54 +836,7 @@ class UserAccountSheet extends ConsumerWidget {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () async {
-              final newName = controller.text.trim();
-              if (newName.isNotEmpty) {
-                final user = ref.read(currentUserProvider);
-                try {
-                  try {
-                    final storage = ref.read(localStorageProvider);
-                    await storage.saveUserAuthDetails(
-                      email: user?.email ?? storage.getSavedUserEmail() ?? '',
-                      fullName: newName,
-                      userId: user?.id,
-                    );
-                  } catch (_) {}
-
-                  if (user != null) {
-                    await ref.read(authRepositoryProvider).updateProfile(
-                          UserProfile(
-                            id: user.id,
-                            fullName: newName,
-                            email: user.email ?? '',
-                            updatedAt: DateTime.now().toUtc(),
-                          ),
-                        );
-                  }
-                  ref.invalidate(userProfileProvider);
-                  if (context.mounted) {
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Profile name updated successfully'),
-                        duration: const Duration(seconds: 2),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to update name: $e'),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
+            onPressed: () => saveName(ctx),
             child: const Text('Save'),
           ),
         ],
@@ -841,6 +847,8 @@ class UserAccountSheet extends ConsumerWidget {
   void _showChangePasswordDialog(BuildContext context, WidgetRef ref) {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
+    final newPasswordFocusNode = FocusNode();
+    final confirmPasswordFocusNode = FocusNode();
     bool obscureNew = true;
     bool obscureConfirm = true;
     String? errorMessage;
@@ -854,6 +862,49 @@ class UserAccountSheet extends ConsumerWidget {
           final isDark = theme.brightness == Brightness.dark;
           final themeType = ref.read(themeTypeProvider);
           final isHighContrast = themeType == ThemeType.highContrast;
+
+          Future<void> submitPassword() async {
+            final newPass = newPasswordController.text;
+            final confirmPass = confirmPasswordController.text;
+
+            if (newPass.length < 6) {
+              setState(() => errorMessage = 'Password must be at least 6 characters long.');
+              newPasswordFocusNode.requestFocus();
+              return;
+            }
+            if (newPass != confirmPass) {
+              setState(() => errorMessage = 'Passwords do not match.');
+              confirmPasswordFocusNode.requestFocus();
+              return;
+            }
+
+            setState(() {
+              isProcessing = true;
+              errorMessage = null;
+            });
+
+            final success = await ref
+                .read(authControllerProvider.notifier)
+                .updatePassword(newPass);
+
+            if (ctx.mounted) {
+              Navigator.of(ctx).pop();
+            }
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success
+                        ? 'Password successfully updated!'
+                        : 'Failed to update password. Please try again.',
+                  ),
+                  backgroundColor: success ? AppColors.success : AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              );
+            }
+          }
 
           return AlertDialog(
             backgroundColor: isHighContrast
@@ -884,13 +935,20 @@ class UserAccountSheet extends ConsumerWidget {
               ],
             ),
             content: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   TextField(
                     controller: newPasswordController,
+                    focusNode: newPasswordFocusNode,
                     obscureText: obscureNew,
+                    keyboardType: TextInputType.visiblePassword,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    onSubmitted: (_) => confirmPasswordFocusNode.requestFocus(),
                     decoration: InputDecoration(
                       labelText: 'New Password',
                       hintText: 'Enter new password (min. 6 chars)',
@@ -904,7 +962,13 @@ class UserAccountSheet extends ConsumerWidget {
                   const SizedBox(height: 14),
                   TextField(
                     controller: confirmPasswordController,
+                    focusNode: confirmPasswordFocusNode,
                     obscureText: obscureConfirm,
+                    keyboardType: TextInputType.visiblePassword,
+                    textInputAction: TextInputAction.done,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    onSubmitted: (_) => submitPassword(),
                     decoration: InputDecoration(
                       labelText: 'Confirm Password',
                       hintText: 'Re-enter new password',
@@ -931,48 +995,7 @@ class UserAccountSheet extends ConsumerWidget {
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                onPressed: isProcessing
-                    ? null
-                    : () async {
-                        final newPass = newPasswordController.text;
-                        final confirmPass = confirmPasswordController.text;
-
-                        if (newPass.length < 6) {
-                          setState(() => errorMessage = 'Password must be at least 6 characters long.');
-                          return;
-                        }
-                        if (newPass != confirmPass) {
-                          setState(() => errorMessage = 'Passwords do not match.');
-                          return;
-                        }
-
-                        setState(() {
-                          isProcessing = true;
-                          errorMessage = null;
-                        });
-
-                        final success = await ref
-                            .read(authControllerProvider.notifier)
-                            .updatePassword(newPass);
-
-                        if (ctx.mounted) {
-                          Navigator.of(ctx).pop();
-                        }
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                success
-                                    ? 'Password successfully updated!'
-                                    : 'Failed to update password. Please try again.',
-                              ),
-                              backgroundColor: success ? AppColors.success : AppColors.error,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          );
-                        }
-                      },
+                onPressed: isProcessing ? null : submitPassword,
                 child: isProcessing
                     ? const SizedBox(
                         width: 18,

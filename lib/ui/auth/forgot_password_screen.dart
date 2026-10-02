@@ -19,18 +19,23 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
+  final _emailFocusNode = FocusNode();
   bool _emailSent = false;
 
   @override
   void dispose() {
     _emailController.dispose();
+    _emailFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _handleSendResetLink() async {
-    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) {
+      _emailFocusNode.requestFocus();
+      return;
+    }
 
-    if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
     final success = await ref
         .read(authControllerProvider.notifier)
@@ -67,15 +72,22 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: _emailSent
-                  ? _buildSuccessView(theme)
-                  : _buildResetForm(theme, authState),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Center(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: AutofillGroup(
+                  child: _emailSent
+                      ? _buildSuccessView(theme)
+                      : _buildResetForm(theme, authState),
+                ),
+              ),
             ),
           ),
         ),
@@ -136,11 +148,16 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           // Email Input Field
           AuthTextField(
             controller: _emailController,
+            focusNode: _emailFocusNode,
             labelText: 'Registered Email',
             hintText: 'name@example.com',
             prefixIcon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
+            textCapitalization: TextCapitalization.none,
+            autocorrect: false,
+            enableSuggestions: false,
+            autofillHints: const [AutofillHints.email],
             onFieldSubmitted: (_) => _handleSendResetLink(),
             validator: AuthValidators.validateEmail,
             enabled: !authState.isLoading,

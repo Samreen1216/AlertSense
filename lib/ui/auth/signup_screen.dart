@@ -23,6 +23,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  final _nameFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -32,13 +37,32 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+
+    _nameFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _handleSignup() async {
-    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) {
+      if (_nameController.text.trim().isEmpty ||
+          AuthValidators.validateFullName(_nameController.text.trim()) != null) {
+        _nameFocusNode.requestFocus();
+      } else if (_emailController.text.trim().isEmpty ||
+          AuthValidators.validateEmail(_emailController.text.trim()) != null) {
+        _emailFocusNode.requestFocus();
+      } else if (_passwordController.text.isEmpty ||
+          AuthValidators.validatePassword(_passwordController.text) != null) {
+        _passwordFocusNode.requestFocus();
+      } else if (_confirmPasswordController.text != _passwordController.text) {
+        _confirmPasswordFocusNode.requestFocus();
+      }
+      return;
+    }
 
-    if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
     final email = _emailController.text.trim();
     final success = await ref.read(authControllerProvider.notifier).signUp(
@@ -83,154 +107,182 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         ),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // AlertSense Branding Header
-                    const AuthHeaderBrand(
-                      title: 'Create Account',
-                      subtitle: 'Join AlertSense for intelligent, real-time sound awareness',
-                      topSpacing: 8,
-                    ),
-
-                    // Error Message Banner (if any)
-                    if (authState.errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: AppColors.error.withValues(alpha: 0.35),
-                            width: 1.0,
-                          ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Center(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // AlertSense Branding Header
+                        const AuthHeaderBrand(
+                          title: 'Create Account',
+                          subtitle: 'Join AlertSense for intelligent, real-time sound awareness',
+                          topSpacing: 8,
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              color: AppColors.error,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                authState.errorMessage!,
-                                style: const TextStyle(
-                                  color: AppColors.error,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
+
+                        // Error Message Banner (if any)
+                        if (authState.errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppColors.error.withValues(alpha: 0.35),
+                                width: 1.0,
                               ),
                             ),
-                          ],
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline_rounded,
+                                  color: AppColors.error,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    authState.errorMessage!,
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Full Name Input
+                        AuthTextField(
+                          controller: _nameController,
+                          focusNode: _nameFocusNode,
+                          labelText: 'Full Name',
+                          hintText: 'e.g. Alex Morgan',
+                          prefixIcon: Icons.person_outline_rounded,
+                          keyboardType: TextInputType.name,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.words,
+                          autocorrect: true,
+                          autofillHints: const [AutofillHints.name],
+                          validator: AuthValidators.validateFullName,
+                          onFieldSubmitted: (_) => _emailFocusNode.requestFocus(),
+                          enabled: !authState.isLoading,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                        const SizedBox(height: 16),
 
-                    // Full Name Input
-                    AuthTextField(
-                      controller: _nameController,
-                      labelText: 'Full Name',
-                      hintText: 'e.g. Alex Morgan',
-                      prefixIcon: Icons.person_outline_rounded,
-                      textInputAction: TextInputAction.next,
-                      validator: AuthValidators.validateFullName,
-                      enabled: !authState.isLoading,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Email Address Input
-                    AuthTextField(
-                      controller: _emailController,
-                      labelText: 'Email Address',
-                      hintText: 'name@example.com',
-                      prefixIcon: Icons.email_outlined,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      validator: AuthValidators.validateEmail,
-                      enabled: !authState.isLoading,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Password Input
-                    AuthTextField(
-                      controller: _passwordController,
-                      labelText: 'Password',
-                      hintText: 'At least 6 characters',
-                      prefixIcon: Icons.lock_outline_rounded,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.next,
-                      validator: AuthValidators.validatePassword,
-                      enabled: !authState.isLoading,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 20,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        // Email Address Input
+                        AuthTextField(
+                          controller: _emailController,
+                          focusNode: _emailFocusNode,
+                          labelText: 'Email Address',
+                          hintText: 'name@example.com',
+                          prefixIcon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.none,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [AutofillHints.email],
+                          validator: AuthValidators.validateEmail,
+                          onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
+                          enabled: !authState.isLoading,
                         ),
-                        tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                    // Confirm Password Input
-                    AuthTextField(
-                      controller: _confirmPasswordController,
-                      labelText: 'Confirm Password',
-                      hintText: 'Re-enter your password',
-                      prefixIcon: Icons.lock_outline_rounded,
-                      obscureText: _obscureConfirmPassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleSignup(),
-                      validator: (value) => AuthValidators.validateConfirmPassword(
-                        _passwordController.text,
-                        value,
-                      ),
-                      enabled: !authState.isLoading,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 20,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        // Password Input
+                        AuthTextField(
+                          controller: _passwordController,
+                          focusNode: _passwordFocusNode,
+                          labelText: 'Password',
+                          hintText: 'At least 6 characters',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.none,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [AutofillHints.newPassword],
+                          validator: AuthValidators.validatePassword,
+                          onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
+                          enabled: !authState.isLoading,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              size: 20,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                            tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
-                        tooltip: _obscureConfirmPassword ? 'Show password' : 'Hide password',
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 16),
 
-                    // Create Account Action Button
-                    AuthPrimaryButton(
-                      text: 'Create Account',
-                      icon: Icons.person_add_rounded,
-                      isLoading: authState.isLoading,
-                      onPressed: _handleSignup,
-                    ),
-                    const SizedBox(height: 20),
+                        // Confirm Password Input
+                        AuthTextField(
+                          controller: _confirmPasswordController,
+                          focusNode: _confirmPasswordFocusNode,
+                          labelText: 'Confirm Password',
+                          hintText: 'Re-enter your password',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscureConfirmPassword,
+                          textInputAction: TextInputAction.done,
+                          textCapitalization: TextCapitalization.none,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [AutofillHints.newPassword],
+                          onFieldSubmitted: (_) => _handleSignup(),
+                          validator: (value) => AuthValidators.validateConfirmPassword(
+                            _passwordController.text,
+                            value,
+                          ),
+                          enabled: !authState.isLoading,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              size: 20,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                            tooltip: _obscureConfirmPassword ? 'Show password' : 'Hide password',
+                            onPressed: () {
+                              setState(() {
+                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Create Account Action Button
+                        AuthPrimaryButton(
+                          text: 'Create Account',
+                          icon: Icons.person_add_rounded,
+                          isLoading: authState.isLoading,
+                          onPressed: _handleSignup,
+                        ),
+                        const SizedBox(height: 20),
 
                     // Already have an account? Login link
                     Wrap(
@@ -272,6 +324,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

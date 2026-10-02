@@ -20,23 +20,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
-    // Dismiss keyboard
+    // Validate first without closing the keyboard abruptly
+    if (!_formKey.currentState!.validate()) {
+      if (_emailController.text.trim().isEmpty ||
+          AuthValidators.validateEmail(_emailController.text.trim()) != null) {
+        _emailFocusNode.requestFocus();
+      } else if (_passwordController.text.isEmpty ||
+          AuthValidators.validatePassword(_passwordController.text) != null) {
+        _passwordFocusNode.requestFocus();
+      }
+      return;
+    }
+
+    // Dismiss keyboard only once validation has succeeded
     FocusScope.of(context).unfocus();
 
-    if (!_formKey.currentState!.validate()) return;
-
     final success = await ref.read(authControllerProvider.notifier).signIn(
-          email: _emailController.text,
+          email: _emailController.text.trim(),
           password: _passwordController.text,
         );
 
@@ -53,112 +67,128 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // AlertSense Branding Header
-                    const AuthHeaderBrand(
-                      title: 'Welcome back',
-                      subtitle: 'Sign in to access your sound awareness and emergency alerts',
-                    ),
-
-                    // Error Message Banner (if any)
-                    if (authState.errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: AppColors.error.withValues(alpha: 0.35),
-                            width: 1.0,
-                          ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Center(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // AlertSense Branding Header
+                        const AuthHeaderBrand(
+                          title: 'Welcome back',
+                          subtitle: 'Sign in to access your sound awareness and emergency alerts',
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              color: AppColors.error,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                authState.errorMessage!,
-                                style: const TextStyle(
-                                  color: AppColors.error,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
+
+                        // Error Message Banner (if any)
+                        if (authState.errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppColors.error.withValues(alpha: 0.35),
+                                width: 1.0,
                               ),
                             ),
-                          ],
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline_rounded,
+                                  color: AppColors.error,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    authState.errorMessage!,
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Email Input
+                        AuthTextField(
+                          controller: _emailController,
+                          focusNode: _emailFocusNode,
+                          labelText: 'Email Address',
+                          hintText: 'name@example.com',
+                          prefixIcon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.none,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [AutofillHints.email],
+                          validator: AuthValidators.validateEmail,
+                          onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
+                          enabled: !authState.isLoading,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                        const SizedBox(height: 16),
 
-                    // Email Input
-                    AuthTextField(
-                      controller: _emailController,
-                      labelText: 'Email Address',
-                      hintText: 'name@example.com',
-                      prefixIcon: Icons.email_outlined,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      validator: AuthValidators.validateEmail,
-                      enabled: !authState.isLoading,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Password Input
-                    AuthTextField(
-                      controller: _passwordController,
-                      labelText: 'Password',
-                      hintText: 'Enter your password',
-                      prefixIcon: Icons.lock_outline_rounded,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleLogin(),
-                      validator: AuthValidators.validatePassword,
-                      enabled: !authState.isLoading,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 20,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        // Password Input
+                        AuthTextField(
+                          controller: _passwordController,
+                          focusNode: _passwordFocusNode,
+                          labelText: 'Password',
+                          hintText: 'Enter your password',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          textCapitalization: TextCapitalization.none,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [AutofillHints.password],
+                          onFieldSubmitted: (_) => _handleLogin(),
+                          validator: AuthValidators.validatePassword,
+                          enabled: !authState.isLoading,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              size: 20,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                            tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
                         ),
-                        tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                        const SizedBox(height: 8),
 
-                    // Forgot Password Link
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: authState.isLoading
-                            ? null
-                            : () {
-                                ref.read(authControllerProvider.notifier).clearMessages();
-                                context.push(AppRoutes.forgotPassword);
-                              },
+                        // Forgot Password Link
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: authState.isLoading
+                                ? null
+                                : () {
+                                    ref.read(authControllerProvider.notifier).clearMessages();
+                                    context.push(AppRoutes.forgotPassword);
+                                  },
                         style: TextButton.styleFrom(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           visualDensity: VisualDensity.compact,
@@ -220,6 +250,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

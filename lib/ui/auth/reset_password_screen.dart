@@ -20,6 +20,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _newPasswordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
+
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
 
@@ -27,13 +30,23 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   void dispose() {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
+    _newPasswordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
   Future<void> _handleUpdatePassword() async {
-    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) {
+      if (_newPasswordController.text.isEmpty ||
+          AuthValidators.validatePassword(_newPasswordController.text) != null) {
+        _newPasswordFocusNode.requestFocus();
+      } else if (_confirmPasswordController.text != _newPasswordController.text) {
+        _confirmPasswordFocusNode.requestFocus();
+      }
+      return;
+    }
 
-    if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
 
     final success = await ref
         .read(authControllerProvider.notifier)
@@ -84,119 +97,135 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         title: const Text('Reset Password'),
       ),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const AuthHeaderBrand(
-                      title: 'Update Password',
-                      subtitle: 'Choose a strong new password for your AlertSense account',
-                      topSpacing: 8,
-                    ),
-
-                    // Error Message Banner
-                    if (authState.errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: AppColors.error.withValues(alpha: 0.35),
-                            width: 1.0,
-                          ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Center(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: AutofillGroup(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const AuthHeaderBrand(
+                          title: 'Update Password',
+                          subtitle: 'Choose a strong new password for your AlertSense account',
+                          topSpacing: 8,
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              color: AppColors.error,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                authState.errorMessage!,
-                                style: const TextStyle(
-                                  color: AppColors.error,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
+
+                        // Error Message Banner
+                        if (authState.errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppColors.error.withValues(alpha: 0.35),
+                                width: 1.0,
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline_rounded,
+                                  color: AppColors.error,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    authState.errorMessage!,
+                                    style: const TextStyle(
+                                      color: AppColors.error,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
-                    // New Password Input
-                    AuthTextField(
-                      controller: _newPasswordController,
-                      labelText: 'New Password',
-                      hintText: 'At least 6 characters',
-                      prefixIcon: Icons.lock_outline_rounded,
-                      obscureText: _obscureNewPassword,
-                      textInputAction: TextInputAction.next,
-                      validator: AuthValidators.validatePassword,
-                      enabled: !authState.isLoading,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureNewPassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 20,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        // New Password Input
+                        AuthTextField(
+                          controller: _newPasswordController,
+                          focusNode: _newPasswordFocusNode,
+                          labelText: 'New Password',
+                          hintText: 'At least 6 characters',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscureNewPassword,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.none,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [AutofillHints.newPassword],
+                          validator: AuthValidators.validatePassword,
+                          onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
+                          enabled: !authState.isLoading,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureNewPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              size: 20,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                            tooltip: _obscureNewPassword ? 'Show password' : 'Hide password',
+                            onPressed: () {
+                              setState(() {
+                                _obscureNewPassword = !_obscureNewPassword;
+                              });
+                            },
+                          ),
                         ),
-                        tooltip: _obscureNewPassword ? 'Show password' : 'Hide password',
-                        onPressed: () {
-                          setState(() {
-                            _obscureNewPassword = !_obscureNewPassword;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                    // Confirm Password Input
-                    AuthTextField(
-                      controller: _confirmPasswordController,
-                      labelText: 'Confirm New Password',
-                      hintText: 'Re-enter your new password',
-                      prefixIcon: Icons.lock_outline_rounded,
-                      obscureText: _obscureConfirmPassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _handleUpdatePassword(),
-                      validator: (value) => AuthValidators.validateConfirmPassword(
-                        _newPasswordController.text,
-                        value,
-                      ),
-                      enabled: !authState.isLoading,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
-                          size: 20,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        // Confirm Password Input
+                        AuthTextField(
+                          controller: _confirmPasswordController,
+                          focusNode: _confirmPasswordFocusNode,
+                          labelText: 'Confirm New Password',
+                          hintText: 'Re-enter your new password',
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscureConfirmPassword,
+                          textInputAction: TextInputAction.done,
+                          textCapitalization: TextCapitalization.none,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [AutofillHints.newPassword],
+                          onFieldSubmitted: (_) => _handleUpdatePassword(),
+                          validator: (value) => AuthValidators.validateConfirmPassword(
+                            _newPasswordController.text,
+                            value,
+                          ),
+                          enabled: !authState.isLoading,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              size: 20,
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                            tooltip: _obscureConfirmPassword ? 'Show password' : 'Hide password',
+                            onPressed: () {
+                              setState(() {
+                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
                         ),
-                        tooltip: _obscureConfirmPassword ? 'Show password' : 'Hide password',
-                        onPressed: () {
-                          setState(() {
-                            _obscureConfirmPassword = !_obscureConfirmPassword;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
                     // Update Password Button
                     AuthPrimaryButton(
@@ -238,6 +267,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
           ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 }

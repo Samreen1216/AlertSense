@@ -38,18 +38,24 @@ class ManualWhatsAppDialog extends StatefulWidget {
 class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
   late final TextEditingController _phoneController;
   late final TextEditingController _messageController;
+  late final FocusNode _phoneFocusNode;
+  late final FocusNode _messageFocusNode;
 
   @override
   void initState() {
     super.initState();
     _phoneController = TextEditingController(text: widget.initialPhone);
     _messageController = TextEditingController(text: widget.defaultMessage);
+    _phoneFocusNode = FocusNode();
+    _messageFocusNode = FocusNode();
   }
 
   @override
   void dispose() {
     _phoneController.dispose();
     _messageController.dispose();
+    _phoneFocusNode.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
   }
 
@@ -72,6 +78,7 @@ class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
         ],
       ),
       content: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +90,14 @@ class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _phoneController,
+              focusNode: _phoneFocusNode,
               keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              autocorrect: false,
+              enableSuggestions: false,
+              scrollPadding: const EdgeInsets.all(24.0),
+              onSubmitted: (_) => _messageFocusNode.requestFocus(),
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
@@ -161,7 +175,15 @@ class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _messageController,
+              focusNode: _messageFocusNode,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              textCapitalization: TextCapitalization.sentences,
+              autocorrect: true,
+              enableSuggestions: true,
               maxLines: 4,
+              scrollPadding: const EdgeInsets.all(24.0),
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               style: const TextStyle(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
                 filled: true,

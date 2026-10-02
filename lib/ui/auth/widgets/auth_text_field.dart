@@ -15,6 +15,14 @@ class AuthTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onFieldSubmitted;
   final bool enabled;
+  final FocusNode? focusNode;
+  final bool autofocus;
+  final TextCapitalization textCapitalization;
+  final bool autocorrect;
+  final bool enableSuggestions;
+  final Iterable<String>? autofillHints;
+  final EdgeInsets scrollPadding;
+  final void Function(PointerDownEvent)? onTapOutside;
 
   const AuthTextField({
     super.key,
@@ -29,6 +37,14 @@ class AuthTextField extends StatelessWidget {
     this.validator,
     this.onFieldSubmitted,
     this.enabled = true,
+    this.focusNode,
+    this.autofocus = false,
+    this.textCapitalization = TextCapitalization.none,
+    this.autocorrect = true,
+    this.enableSuggestions = true,
+    this.autofillHints,
+    this.scrollPadding = const EdgeInsets.all(24.0),
+    this.onTapOutside,
   });
 
   @override
@@ -38,9 +54,17 @@ class AuthTextField extends StatelessWidget {
 
     return TextFormField(
       controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
       obscureText: obscureText,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
+      autocorrect: autocorrect,
+      enableSuggestions: enableSuggestions,
+      autofillHints: autofillHints,
+      scrollPadding: scrollPadding,
+      onTapOutside: onTapOutside ?? (event) => FocusScope.of(context).unfocus(),
       validator: validator,
       onFieldSubmitted: onFieldSubmitted,
       enabled: enabled,

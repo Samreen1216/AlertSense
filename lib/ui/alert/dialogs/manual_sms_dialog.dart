@@ -35,6 +35,8 @@ class ManualSmsDialog extends StatefulWidget {
 class _ManualSmsDialogState extends State<ManualSmsDialog> {
   late final TextEditingController _phoneController;
   late final TextEditingController _messageController;
+  late final FocusNode _phoneFocusNode;
+  late final FocusNode _messageFocusNode;
   String? _phoneError;
 
   @override
@@ -42,6 +44,8 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
     super.initState();
     _phoneController = TextEditingController(text: widget.initialPhone);
     _messageController = TextEditingController(text: widget.defaultMessage);
+    _phoneFocusNode = FocusNode();
+    _messageFocusNode = FocusNode();
     _phoneController.addListener(() {
       if (_phoneError != null && _phoneController.text.trim().isNotEmpty) {
         setState(() => _phoneError = null);
@@ -53,7 +57,20 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
   void dispose() {
     _phoneController.dispose();
     _messageController.dispose();
+    _phoneFocusNode.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
+  }
+
+  void _sendSms() {
+    final phone = _phoneController.text.trim();
+    final msg = _messageController.text.trim();
+    if (phone.isNotEmpty) {
+      Navigator.of(context).pop((phone: phone, message: msg));
+    } else {
+      setState(() => _phoneError = 'Please enter a recipient phone number');
+      _phoneFocusNode.requestFocus();
+    }
   }
 
   @override
@@ -75,6 +92,7 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
         ],
       ),
       content: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,8 +104,15 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _phoneController,
+              focusNode: _phoneFocusNode,
               keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.next,
+              autocorrect: false,
+              enableSuggestions: false,
               autofocus: true,
+              scrollPadding: const EdgeInsets.all(24.0),
+              onSubmitted: (_) => _messageFocusNode.requestFocus(),
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
@@ -166,7 +191,15 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
             const SizedBox(height: 8),
             TextField(
               controller: _messageController,
+              focusNode: _messageFocusNode,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              textCapitalization: TextCapitalization.sentences,
+              autocorrect: true,
+              enableSuggestions: true,
               maxLines: 4,
+              scrollPadding: const EdgeInsets.all(24.0),
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               style: const TextStyle(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
                 filled: true,
@@ -200,15 +233,7 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE65100)),
-          onPressed: () {
-            final phone = _phoneController.text.trim();
-            final msg = _messageController.text.trim();
-            if (phone.isNotEmpty) {
-              Navigator.of(context).pop((phone: phone, message: msg));
-            } else {
-              setState(() => _phoneError = 'Please enter a recipient phone number');
-            }
-          },
+          onPressed: _sendSms,
           child: const Text('SEND SMS', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],

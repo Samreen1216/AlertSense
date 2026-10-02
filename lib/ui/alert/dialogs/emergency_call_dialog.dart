@@ -50,6 +50,11 @@ class _EmergencyCallDialogState extends State<EmergencyCallDialog> {
     super.dispose();
   }
 
+  void _callNow() {
+    final number = _controller.text.trim();
+    Navigator.of(context).pop(number.isNotEmpty ? number : null);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -69,6 +74,7 @@ class _EmergencyCallDialogState extends State<EmergencyCallDialog> {
         ],
       ),
       content: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +87,13 @@ class _EmergencyCallDialogState extends State<EmergencyCallDialog> {
             TextField(
               controller: _controller,
               keyboardType: TextInputType.phone,
+              textInputAction: TextInputAction.done,
+              autocorrect: false,
+              enableSuggestions: false,
               autofocus: true,
+              scrollPadding: const EdgeInsets.all(24.0),
+              onSubmitted: (_) => _callNow(),
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
               style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
@@ -149,10 +161,7 @@ class _EmergencyCallDialogState extends State<EmergencyCallDialog> {
         ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: Colors.red),
-          onPressed: () {
-            final number = _controller.text.trim();
-            Navigator.of(context).pop(number.isNotEmpty ? number : null);
-          },
+          onPressed: _callNow,
           child: const Text('CALL NOW', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],

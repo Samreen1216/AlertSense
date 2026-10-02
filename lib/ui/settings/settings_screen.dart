@@ -1011,6 +1011,7 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
             content: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -1061,6 +1062,12 @@ class SettingsScreen extends ConsumerWidget {
                     TextField(
                       controller: feedbackController,
                       maxLines: 2,
+                      keyboardType: TextInputType.text,
+                      textCapitalization: TextCapitalization.sentences,
+                      autocorrect: true,
+                      enableSuggestions: true,
+                      scrollPadding: const EdgeInsets.all(24.0),
+                      onTapOutside: (_) => FocusScope.of(dialogCtx).unfocus(),
                       decoration: InputDecoration(
                         hintText: selectedRating < 4
                             ? 'What can we improve? (optional)'
