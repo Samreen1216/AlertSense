@@ -161,10 +161,10 @@ class EvaluationReport {
     for (final entry in categoryMetrics.entries) {
       final m = entry.value;
       final catName = m.category.label.padRight(16).substring(0, 16);
-      final pStr = (m.precision * 100).toStringAsFixed(0).padLeft(3) + '%';
-      final rStr = (m.recall * 100).toStringAsFixed(0).padLeft(3) + '%';
-      final fStr = (m.f1Score * 100).toStringAsFixed(0).padLeft(3) + '%';
-      final farStr = (m.falseAlertRate * 100).toStringAsFixed(0).padLeft(3) + '%';
+      final pStr = '${(m.precision * 100).toStringAsFixed(0).padLeft(3)}%';
+      final rStr = '${(m.recall * 100).toStringAsFixed(0).padLeft(3)}%';
+      final fStr = '${(m.f1Score * 100).toStringAsFixed(0).padLeft(3)}%';
+      final farStr = '${(m.falseAlertRate * 100).toStringAsFixed(0).padLeft(3)}%';
       final counts = '${m.truePositives}/${m.falsePositives}/${m.falseNegatives}';
       buffer.writeln('$catName | $pStr  | $rStr  | $fStr  | $farStr  | $counts');
     }
@@ -173,7 +173,7 @@ class EvaluationReport {
     buffer.writeln('PERFORMANCE BY ACOUSTIC CONDITION:');
     for (final entry in accuracyByCondition.entries) {
       final condName = entry.key.label.padRight(32);
-      final acc = (entry.value * 100).toStringAsFixed(1) + '%';
+      final acc = '${(entry.value * 100).toStringAsFixed(1)}%';
       buffer.writeln(' - $condName: $acc');
     }
     buffer.writeln('===============================================================');

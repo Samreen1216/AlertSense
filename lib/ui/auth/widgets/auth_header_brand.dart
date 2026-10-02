@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/constants/app_colors.dart';
 
 /// Reusable AlertSense Brand Header for authentication screens.
@@ -24,30 +25,27 @@ class AuthHeaderBrand extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         SizedBox(height: topSpacing),
-        // AlertSense Acoustic Squircle Emblem
+        // AlertSense App Icon Emblem — Matches App Icon exactly
         Container(
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0072FF), Color(0xFF00C6FF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF0072FF).withValues(alpha: 0.4),
+                color: const Color(0xFF0072FF).withValues(alpha: 0.35),
                 blurRadius: 18,
-                offset: const Offset(0, 8),
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-          child: const Center(
-            child: Icon(
-              Icons.hearing_rounded,
-              color: Colors.white,
-              size: 40,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              AppAssets.appIcon,
+              width: 72,
+              height: 72,
+              fit: BoxFit.contain,
             ),
           ),
         ),

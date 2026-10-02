@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
@@ -27,8 +27,6 @@ class SettingsScreen extends ConsumerWidget {
     final themeType = ref.watch(themeTypeProvider);
     final textScale = ref.watch(textScaleProvider);
     final enabledSounds = ref.watch(enabledSoundsProvider);
-    final currentUser = ref.watch(currentUserProvider);
-    final userProfile = ref.watch(userProfileProvider).valueOrNull;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isHighContrast = themeType == ThemeType.highContrast;
 
@@ -858,7 +856,21 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('About AlertSense'),
+        title: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                AppAssets.appIcon,
+                width: 32,
+                height: 32,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('About AlertSense'),
+          ],
+        ),
         content: const SingleChildScrollView(
           child: Text(
             'AlertSense is an AI-powered accessibility tool designed specifically for deaf and hard-of-hearing individuals.\n\n'

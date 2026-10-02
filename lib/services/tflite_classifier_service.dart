@@ -22,7 +22,7 @@ class TFLiteClassifierService {
 
   Interpreter? _interpreter;
   final Map<int, String> _labels = {};
-  final AcousticDspAnalyzer _analyzer = AcousticDspAnalyzer();
+  final AcousticDspAnalyzer _analyzer = const AcousticDspAnalyzer();
 
   bool _isLoaded = false;
   bool _isTfLiteReady = false;

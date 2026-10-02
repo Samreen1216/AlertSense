@@ -10,8 +10,7 @@ import 'widgets/hero_profile_card.dart';
 import 'widgets/hero_battery_card.dart';
 import 'widgets/segmented_profile_selector.dart';
 import 'widgets/sound_category_cards.dart';
-import 'widgets/reference_last_alert_card.dart';
-import 'widgets/quick_stats_grid.dart';
+import 'widgets/recent_alerts_section.dart';
 import 'widgets/profile_side_navigation.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -129,12 +128,8 @@ class HomeScreen extends ConsumerWidget {
                     SoundCategoryCardsSection(),
                     SizedBox(height: 22),
 
-                    // Last Alert Card
-                    ReferenceLastAlertCard(),
-                    SizedBox(height: 22),
-
-                    // Quick Stats (2x2 Grid)
-                    QuickStatsGrid(),
+                    // Recent Alerts Section (Dynamic alerts from original data)
+                    RecentAlertsSection(),
                   ],
                 ),
               ),

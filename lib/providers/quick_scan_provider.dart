@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
-import '../core/constants/priority_levels.dart';
 import '../core/constants/sound_categories.dart';
 import '../data/models/alert_event.dart';
 import '../data/models/classification_result.dart';
 import 'alert_providers.dart';
 import 'audio_providers.dart';
+import '../services/audio_stream_service.dart';
 import 'service_providers.dart';
 import 'settings_providers.dart';
 
@@ -60,6 +60,7 @@ class QuickScanState {
 
 class QuickScanNotifier extends StateNotifier<QuickScanState> {
   final Ref _ref;
+  final AudioStreamService _audioService;
   StreamSubscription? _audioSub;
   StreamSubscription? _dbSub;
   Timer? _countdownTimer;
@@ -67,7 +68,8 @@ class QuickScanNotifier extends StateNotifier<QuickScanState> {
   static const int _scanDurationSeconds = 4;
 
   QuickScanNotifier(this._ref)
-      : super(const QuickScanState(status: QuickScanStatus.idle));
+      : _audioService = _ref.read(audioStreamServiceProvider),
+        super(const QuickScanState(status: QuickScanStatus.idle));
 
   /// Start a real 4-second environmental audio scan.
   Future<void> startScan() async {
@@ -219,7 +221,9 @@ class QuickScanNotifier extends StateNotifier<QuickScanState> {
     _audioSub = null;
     await _dbSub?.cancel();
     _dbSub = null;
-    await _ref.read(audioStreamServiceProvider).stopListening();
+    try {
+      await _audioService.stopListening();
+    } catch (_) {}
   }
 
   void _restoreContinuousListeningIfNeeded() {
@@ -227,7 +231,9 @@ class QuickScanNotifier extends StateNotifier<QuickScanState> {
       _wasContinuousListening = false;
       // Re-start continuous monitoring cleanly
       Future.microtask(() {
-        _ref.read(isListeningProvider.notifier).start();
+        try {
+          _ref.read(isListeningProvider.notifier).start();
+        } catch (_) {}
       });
     }
   }

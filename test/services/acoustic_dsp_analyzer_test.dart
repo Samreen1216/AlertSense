@@ -10,7 +10,7 @@ void main() {
     late AcousticDspAnalyzer analyzer;
 
     setUp(() {
-      analyzer = AcousticDspAnalyzer();
+      analyzer = const AcousticDspAnalyzer();
     });
 
     test('Bell Ring (Doorbell chime ~800 Hz) is accurately identified', () {
@@ -123,7 +123,7 @@ void main() {
     });
 
     test('SoundCategory.doorbell has Doorbell label and YAMNet mappings', () {
-      final category = SoundCategory.doorbell;
+      const category = SoundCategory.doorbell;
       expect(category.label, equals('Doorbell'));
       expect(category.yamnetLabels, contains('Bell ring'));
       expect(category.yamnetLabels, contains('Doorbell'));

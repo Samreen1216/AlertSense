@@ -45,7 +45,7 @@ class AcousticDspAnalyzer {
     // Scan across audio window to locate the frame containing the peak sound event
     int bestStart = 0;
     double maxFrameRms = 0.0;
-    final hopSize = _fftSize ~/ 2; // 512 samples = 32ms hop
+    const hopSize = _fftSize ~/ 2; // 512 samples = 32ms hop
 
     for (int i = 0; i <= audioData.length - _fftSize; i += hopSize) {
       final frame = audioData.sublist(i, i + _fftSize);

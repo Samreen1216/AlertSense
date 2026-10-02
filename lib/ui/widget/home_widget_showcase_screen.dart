@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
@@ -386,8 +387,16 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('🛡️', style: TextStyle(fontSize: 15)),
-                      const SizedBox(width: 5),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.asset(
+                          AppAssets.appIcon,
+                          width: 16,
+                          height: 16,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
                       Text(
                         'AlertSense',
                         style: TextStyle(

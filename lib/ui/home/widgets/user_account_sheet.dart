@@ -76,7 +76,6 @@ class UserAccountSheet extends ConsumerWidget {
 
     final savedName = storage?.getSavedUserFullName();
     final savedEmail = storage?.getSavedUserEmail();
-    final savedId = storage?.getSavedUserId();
 
     final resolvedName = userProfile?.fullName.isNotEmpty == true
         ? userProfile!.fullName
@@ -90,17 +89,12 @@ class UserAccountSheet extends ConsumerWidget {
                         ? savedName!.trim()
                         : (user?.email?.split('@').first ?? 'AlertSense User')))));
 
-    final email = (user?.email != null && user!.email!.isNotEmpty)
-        ? user!.email!
+    final userEmail = user?.email;
+    final email = (userEmail != null && userEmail.isNotEmpty)
+        ? userEmail
         : (userProfile?.email.isNotEmpty == true
             ? userProfile!.email
             : (savedEmail?.isNotEmpty == true ? savedEmail! : 'Local Offline Session'));
-
-    final userId = (user?.id != null && user!.id.isNotEmpty)
-        ? user!.id
-        : (userProfile?.id.isNotEmpty == true
-            ? userProfile!.id
-            : (savedId?.isNotEmpty == true ? savedId! : 'local_device_session'));
 
     String initials = '';
     if (resolvedName.isNotEmpty) {

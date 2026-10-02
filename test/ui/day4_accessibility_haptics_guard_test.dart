@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:alertsense/core/constants/priority_levels.dart';
 import 'package:alertsense/core/constants/sound_categories.dart';
@@ -495,6 +494,7 @@ void main() {
       // Verify Semantics selected state
       final sleepFinder = find.ancestor(of: find.text('Sleep'), matching: find.byType(Semantics)).first;
       final semantics = tester.getSemantics(sleepFinder);
+      // ignore: deprecated_member_use
       expect(semantics.getSemanticsData().hasFlag(SemanticsFlag.isSelected), isTrue);
     });
 

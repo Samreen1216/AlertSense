@@ -98,10 +98,15 @@ final hourlyDistributionProvider = Provider<Map<String, int>>((ref) {
   final dist = {'Morning': 0, 'Afternoon': 0, 'Evening': 0, 'Night': 0};
   for (final alert in alerts) {
     final h = alert.timestamp.hour;
-    if (h >= 6 && h < 12) dist['Morning'] = dist['Morning']! + 1;
-    else if (h >= 12 && h < 17) dist['Afternoon'] = dist['Afternoon']! + 1;
-    else if (h >= 17 && h < 21) dist['Evening'] = dist['Evening']! + 1;
-    else dist['Night'] = dist['Night']! + 1;
+    if (h >= 6 && h < 12) {
+      dist['Morning'] = dist['Morning']! + 1;
+    } else if (h >= 12 && h < 17) {
+      dist['Afternoon'] = dist['Afternoon']! + 1;
+    } else if (h >= 17 && h < 21) {
+      dist['Evening'] = dist['Evening']! + 1;
+    } else {
+      dist['Night'] = dist['Night']! + 1;
+    }
   }
   return dist;
 });

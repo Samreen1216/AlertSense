@@ -7,7 +7,6 @@ import 'package:alertsense/data/datasources/local_storage.dart';
 import 'package:alertsense/data/repositories/alert_repository.dart';
 import 'package:alertsense/data/repositories/settings_repository.dart';
 import 'package:alertsense/main.dart';
-import 'package:alertsense/providers/settings_providers.dart';
 import 'package:alertsense/providers/service_providers.dart';
 import 'package:alertsense/services/notification_service.dart';
 import 'package:alertsense/ui/settings/settings_screen.dart';

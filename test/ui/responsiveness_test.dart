@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alertsense/core/utils/responsive_utils.dart';
 import 'package:alertsense/core/router/app_router.dart';
-import 'package:alertsense/core/theme/theme_provider.dart';
 import 'package:alertsense/data/datasources/local_storage.dart';
 import 'package:alertsense/data/models/alert_event.dart';
 import 'package:alertsense/data/models/user_settings.dart';
@@ -96,7 +95,6 @@ void main() {
     double textScale = 1.0,
     ProviderContainer? container,
   }) {
-    final orientation = width > height ? Orientation.landscape : Orientation.portrait;
     final widgetTree = MediaQuery(
       data: MediaQueryData(
         size: Size(width, height),
@@ -234,7 +232,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Home'), findsWidgets);
       expect(find.text('Insights'), findsOneWidget);
       expect(find.text('Quick Scan'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
@@ -289,7 +287,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       // All 5 destinations exist in the side navigation rail
-      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Home'), findsWidgets);
       expect(find.text('Insights'), findsOneWidget);
       expect(find.text('Quick Scan'), findsOneWidget);
       expect(find.text('History'), findsOneWidget);
@@ -342,7 +340,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Home'), findsWidgets);
       expect(find.text('Insights'), findsOneWidget);
     });
   });

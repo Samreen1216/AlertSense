@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/router/app_router.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../data/datasources/local_storage.dart';
 import '../../../main.dart';
@@ -23,30 +22,27 @@ class AlertSenseHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // App Logo Squircle
+          // App Logo Squircle — Matches App Icon exactly
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0072FF), Color(0xFF00C6FF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0072FF).withValues(alpha: 0.4),
+                  color: const Color(0xFF0072FF).withValues(alpha: 0.35),
                   blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: const Center(
-              child: Icon(
-                Icons.hearing_rounded,
-                color: Colors.white,
-                size: 26,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                AppAssets.appIcon,
+                width: 44,
+                height: 44,
+                fit: BoxFit.contain,
               ),
             ),
           ),

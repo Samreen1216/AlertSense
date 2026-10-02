@@ -135,7 +135,7 @@ class AudioStreamService {
   }
 
   /// Synchronously processes incoming PCM data for direct callers.
-  void _onAudioData(Uint8List data, {int inputSampleRate = sampleRate}) {
+  void onAudioData(Uint8List data, {int inputSampleRate = sampleRate}) {
     final samples = AudioPreprocessor.processIncomingPcm(
       pcmBytes: data,
       inputSampleRate: inputSampleRate,

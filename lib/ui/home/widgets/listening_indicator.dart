@@ -1,4 +1,4 @@
-﻿import 'dart:math';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/audio_providers.dart';
@@ -147,7 +147,7 @@ class _ListeningIndicatorState extends ConsumerState<ListeningIndicator>
               Row(
                 children: [
                   Text(
-                    '${ambientDb.toStringAsFixed(1)}',
+                    ambientDb.toStringAsFixed(1),
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,

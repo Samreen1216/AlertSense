@@ -243,7 +243,7 @@ void main() {
 
   group('Group 9: Confidence Aggregation Methods', () {
     test('Average aggregation', () {
-      final config = TemporalSmoothingConfig(aggregationMethod: ConfidenceAggregationMethod.average);
+      const config = TemporalSmoothingConfig(aggregationMethod: ConfidenceAggregationMethod.average);
       final service = TemporalSmoothingService(config: config);
       
       service.processPrediction(category: SoundCategory.fireAlarm, confidence: 0.8, timestamp: baseTime);
@@ -253,7 +253,7 @@ void main() {
     });
 
     test('Maximum aggregation', () {
-      final config = TemporalSmoothingConfig(aggregationMethod: ConfidenceAggregationMethod.maximum);
+      const config = TemporalSmoothingConfig(aggregationMethod: ConfidenceAggregationMethod.maximum);
       final service = TemporalSmoothingService(config: config);
       
       service.processPrediction(category: SoundCategory.fireAlarm, confidence: 0.8, timestamp: baseTime);
@@ -263,7 +263,7 @@ void main() {
     });
 
     test('Weighted average aggregation', () {
-      final config = TemporalSmoothingConfig(aggregationMethod: ConfidenceAggregationMethod.weightedAverage);
+      const config = TemporalSmoothingConfig(aggregationMethod: ConfidenceAggregationMethod.weightedAverage);
       final service = TemporalSmoothingService(config: config);
       
       service.processPrediction(category: SoundCategory.fireAlarm, confidence: 0.8, timestamp: baseTime);

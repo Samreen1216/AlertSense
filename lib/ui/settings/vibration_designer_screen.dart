@@ -38,7 +38,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
 
   @override
   void dispose() {
-    _stopPlayback();
+    _stopPlayback(notify: false);
     super.dispose();
   }
 
@@ -94,7 +94,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
     });
   }
 
-  void _stopPlayback() {
+  void _stopPlayback({bool notify = true}) {
     _playbackTimer?.cancel();
     _playbackTimer = null;
     for (final t in _stepTimers) {
@@ -104,11 +104,10 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
     try {
       Vibration.cancel();
     } catch (_) {}
-    if (mounted) {
-      setState(() {
-        _isPlaying = false;
-        _activePlayingIndex = -1;
-      });
+    _isPlaying = false;
+    _activePlayingIndex = -1;
+    if (notify && mounted) {
+      setState(() {});
     }
   }
 

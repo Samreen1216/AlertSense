@@ -282,7 +282,6 @@ void main() {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day, 10, 0);
       final yesterday = today.subtract(const Duration(days: 1));
-      final twoDaysAgo = today.subtract(const Duration(days: 2));
 
       await repository.addAlert(createAlert(id: '1', timestamp: today));
       await repository.addAlert(createAlert(id: '2', timestamp: today));

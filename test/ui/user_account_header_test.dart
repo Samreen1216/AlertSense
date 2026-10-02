@@ -16,7 +16,6 @@ import 'package:alertsense/providers/service_providers.dart';
 import 'package:alertsense/core/router/app_router.dart';
 import 'package:alertsense/core/theme/theme_provider.dart';
 import 'package:alertsense/data/models/alert_event.dart';
-import 'package:alertsense/providers/alert_providers.dart';
 import 'package:alertsense/services/notification_service.dart';
 import 'package:alertsense/ui/home/widgets/alertsense_header.dart';
 import 'package:alertsense/ui/home/widgets/notification_center_sheet.dart';
@@ -128,10 +127,10 @@ void main() {
   }) {
     if (authenticated) {
       mockAuthDataSource.mockUser = customUser ??
-          User(
+          const User(
             id: '12345678-abcd-ef01-2345-6789abcdef01',
-            appMetadata: const {},
-            userMetadata: const {'full_name': 'John Doe'},
+            appMetadata: {},
+            userMetadata: {'full_name': 'John Doe'},
             aud: 'authenticated',
             createdAt: '2026-01-15T12:00:00.000Z',
             email: 'john@example.com',
@@ -298,10 +297,10 @@ void main() {
         userId: 'sam-user-999',
       );
 
-      final user = User(
+      const user = User(
         id: 'sam-user-999',
-        appMetadata: const {},
-        userMetadata: const {'full_name': 'Samreen Developer'},
+        appMetadata: {},
+        userMetadata: {'full_name': 'Samreen Developer'},
         aud: 'authenticated',
         createdAt: '2026-02-01T12:00:00.000Z',
         email: 'samreen@alertsense.com',

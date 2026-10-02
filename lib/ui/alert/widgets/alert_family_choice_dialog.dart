@@ -259,8 +259,10 @@ class _ChannelOptionTile extends StatelessWidget {
             ),
             Radio<AlertChannel>(
               value: channel,
+              // ignore: deprecated_member_use
               groupValue: isSelected ? channel : null,
               activeColor: accentColor,
+              // ignore: deprecated_member_use
               onChanged: (_) => onTap(),
             ),
           ],

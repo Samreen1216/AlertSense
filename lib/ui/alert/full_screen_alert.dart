@@ -249,6 +249,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
     String? prefilledMessage,
   }) async {
     final loc = await _resolveLocation();
+    if (!mounted) return;
     final defaultMsg = prefilledMessage ?? SmsService.emergencyMessage(soundName, location: loc);
     final result = await ManualSmsDialog.show(
       context,

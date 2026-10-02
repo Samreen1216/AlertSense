@@ -50,16 +50,13 @@ class MockNotificationService extends NotificationService {
     bool suppressFullScreenIntent = false,
   }) async {}
 
-  @override
   Future<void> showForegroundServiceNotification({
     required String title,
     required String text,
   }) async {}
 
-  @override
   Future<void> cancelAlert(int id) async {}
 
-  @override
   Future<void> cancelAll() async {}
 }
 

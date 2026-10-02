@@ -60,16 +60,7 @@ class _HeroSoundRadarState extends ConsumerState<HeroSoundRadar>
 
     void toggleListening() {
       HapticFeedback.lightImpact();
-      final notifier = ref.read(isListeningProvider.notifier);
-      if (notifier is ListeningNotifier) {
-        notifier.toggleListening();
-      } else {
-        try {
-          (notifier as dynamic).toggleListening();
-        } catch (_) {
-          (notifier as dynamic).toggle();
-        }
-      }
+      ref.read(isListeningProvider.notifier).toggleListening();
     }
 
     return Semantics(
@@ -161,24 +152,27 @@ class _HeroSoundRadarState extends ConsumerState<HeroSoundRadar>
                               width: 1.5,
                             ),
                           ),
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.person_rounded,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                              Text(
-                                'YOU',
-                                style: TextStyle(
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.person_rounded,
                                   color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
+                                  size: 20,
                                 ),
-                              ),
-                            ],
+                                Text(
+                                  'YOU',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

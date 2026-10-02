@@ -4,12 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
-import '../../main.dart';
 import '../../providers/auth_providers.dart';
-import '../../providers/settings_providers.dart';
 
 /// Interactive shockwave model created when user touches the screen.
 class _Shockwave {
@@ -741,6 +740,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             ..setEntry(3, 2, 0.001)
             ..rotateX(tiltX)
             ..rotateY(tiltY)
+            // ignore: deprecated_member_use
             ..scale(effectiveScale, effectiveScale, 1.0),
           child: Opacity(
             opacity: _logoOpacity.value,
@@ -768,7 +768,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     ),
                   ),
 
-                  // Emblem Outer Orbital Glass Ring
+                  // Emblem Outer Orbital Glass Ring with exact App Icon
                   Container(
                     width: emblemSize,
                     height: emblemSize,
@@ -783,64 +783,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                           ? null
                           : [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.12),
+                                color: colors.primaryGlow.withValues(alpha: 0.35),
                                 blurRadius: 18,
-                                offset: const Offset(0, 8),
+                                offset: const Offset(0, 6),
                               ),
                             ],
                     ),
-                    child: Center(
-                      child: Container(
-                        width: emblemSize - 20,
-                        height: emblemSize - 20,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              colors.primaryGlow,
-                              colors.secondaryAccent,
-                            ],
-                          ),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.hearing_rounded,
-                            size: emblemSize * 0.46,
-                            color: colors.isHighContrast
-                                ? Colors.black
-                                : Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Floating AI Shield Overlay Badge
-                  Positioned(
-                    bottom: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.all(5),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: colors.isHighContrast
-                            ? Colors.black
-                            : colors.primaryGlow,
-                        border: Border.all(
-                          color: colors.isHighContrast
-                              ? colors.primaryGlow
-                              : Colors.white,
-                          width: 2.0,
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.shield_rounded,
-                        size: 15,
-                        color: colors.isHighContrast
-                            ? colors.primaryGlow
-                            : Colors.white,
+                    child: ClipOval(
+                      child: Image.asset(
+                        AppAssets.appIconRound,
+                        width: emblemSize,
+                        height: emblemSize,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),

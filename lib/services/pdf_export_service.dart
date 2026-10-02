@@ -78,7 +78,7 @@ class PdfExportService {
             children: [
               pw.Text(
                 'Acoustic Incident Log',
-                style: pw.TextStyle(
+                style: const pw.TextStyle(
                   fontSize: 14,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColors.blueGrey900,
@@ -120,7 +120,7 @@ class PdfExportService {
             children: [
               pw.Text(
                 'AlertSense',
-                style: pw.TextStyle(
+                style: const pw.TextStyle(
                   fontSize: 22,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColors.blue900,
@@ -153,7 +153,7 @@ class PdfExportService {
                 ),
                 child: pw.Text(
                   'CONFIDENTIAL & ACCESSIBLE',
-                  style: pw.TextStyle(
+                  style: const pw.TextStyle(
                     fontSize: 7,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColors.blue800,
@@ -260,7 +260,7 @@ class PdfExportService {
     return pw.TableHelper.fromTextArray(
       headers: ['Timestamp', 'Sound Category', 'Priority', 'Conf.', 'Source', 'Status'],
       data: rows,
-      headerStyle: pw.TextStyle(
+      headerStyle: const pw.TextStyle(
         fontWeight: pw.FontWeight.bold,
         color: PdfColors.white,
         fontSize: 9,
@@ -291,7 +291,7 @@ class PdfExportService {
           ),
           pw.Text(
             'Page ${context.pageNumber} of ${context.pagesCount}',
-            style: pw.TextStyle(
+            style: const pw.TextStyle(
               fontSize: 8,
               fontWeight: pw.FontWeight.bold,
               color: PdfColors.grey700,

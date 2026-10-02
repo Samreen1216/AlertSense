@@ -6,7 +6,7 @@ void main() {
   /// Group 1: Empty Audio Rejection
   group('SignalEnergyValidator: Empty Audio Rejection', () {
     test('Empty list returns isSufficient=false, rms=0.0, dbLevel=0.0', () {
-      final validator = SignalEnergyValidator();
+      const validator = SignalEnergyValidator();
       final result = validator.validate([]);
       
       expect(result.isSufficient, isFalse);
@@ -19,7 +19,7 @@ void main() {
   /// Group 2: Silent Audio (Near-Zero Samples)
   group('SignalEnergyValidator: Silent Audio (Near-Zero Samples)', () {
     test('List of 100 samples all 0.0001 -> isSufficient=false (RMS too low)', () {
-      final validator = SignalEnergyValidator();
+      const validator = SignalEnergyValidator();
       final samples = List.filled(100, 0.0001);
       final result = validator.validate(samples);
       
@@ -27,7 +27,7 @@ void main() {
     });
 
     test('List of 100 samples all 0.0 -> isSufficient=false, rms=0.0', () {
-      final validator = SignalEnergyValidator();
+      const validator = SignalEnergyValidator();
       final samples = List.filled(100, 0.0);
       final result = validator.validate(samples);
       
@@ -39,7 +39,7 @@ void main() {
   /// Group 3: Loud Audio (Passes Validation)
   group('SignalEnergyValidator: Loud Audio (Passes Validation)', () {
     test('List of 100 samples all 0.5 -> isSufficient=true (RMS=0.5, well above 0.004)', () {
-      final validator = SignalEnergyValidator();
+      const validator = SignalEnergyValidator();
       final samples = List.filled(100, 0.5);
       final result = validator.validate(samples);
       
@@ -48,7 +48,7 @@ void main() {
     });
 
     test('List of 100 samples all 1.0 -> isSufficient=true', () {
-      final validator = SignalEnergyValidator();
+      const validator = SignalEnergyValidator();
       final samples = List.filled(100, 1.0);
       final result = validator.validate(samples);
       
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('Realistic sine wave at moderate amplitude passes', () {
-      final validator = SignalEnergyValidator();
+      const validator = SignalEnergyValidator();
       final samples = List.generate(44100, (i) => 0.5 * sin(2 * pi * 440 * i / 44100));
       final result = validator.validate(samples);
       
@@ -71,8 +71,8 @@ void main() {
       const minRms = 0.004;
       // Using very low minDbLevel to ensure dbLevel passes and only RMS boundary is tested
       const minDbLevel = 0.0;
-      final validator = SignalEnergyValidator(
-        config: SignalValidationConfig(minRms: minRms, minDbLevel: minDbLevel)
+      const validator = SignalEnergyValidator(
+        config: SignalValidationConfig(minRms: minRms, minDbLevel: minDbLevel),
       );
       
       // RMS is exactly minRms
@@ -83,8 +83,8 @@ void main() {
     });
 
     test('Custom config with different minRms and minDbLevel values', () {
-      final validator = SignalEnergyValidator(
-        config: SignalValidationConfig(minRms: 0.1, minDbLevel: 50.0)
+      const validator = SignalEnergyValidator(
+        config: SignalValidationConfig(minRms: 0.1, minDbLevel: 50.0),
       );
       
       final samples1 = List.filled(100, 0.05); // Below minRms
@@ -160,9 +160,9 @@ void main() {
   /// Group 7: Custom Config
   group('SignalEnergyValidator: Custom Config', () {
     test('Custom minRms=0.01, minDbLevel=40.0 rejects signals that default config would pass', () {
-      final defaultValidator = SignalEnergyValidator();
-      final customValidator = SignalEnergyValidator(
-        config: SignalValidationConfig(minRms: 0.01, minDbLevel: 40.0)
+      const defaultValidator = SignalEnergyValidator();
+      const customValidator = SignalEnergyValidator(
+        config: SignalValidationConfig(minRms: 0.01, minDbLevel: 40.0),
       );
 
       // RMS of 0.005 is > default minRms (0.004) but < custom minRms (0.01)
@@ -173,8 +173,8 @@ void main() {
     });
 
     test('Custom config with very low thresholds passes almost everything', () {
-      final customValidator = SignalEnergyValidator(
-        config: SignalValidationConfig(minRms: 0.00001, minDbLevel: 1.0)
+      const customValidator = SignalEnergyValidator(
+        config: SignalValidationConfig(minRms: 0.00001, minDbLevel: 1.0),
       );
 
       final samples = List.filled(100, 0.0001);
@@ -185,7 +185,7 @@ void main() {
   /// Group 8: Realistic Sine Wave
   group('SignalEnergyValidator: Realistic Sine Wave', () {
     test('Generate a 440Hz sine wave at amplitude 0.3 -> should pass', () {
-      final validator = SignalEnergyValidator();
+      const validator = SignalEnergyValidator();
       final samples = List.generate(44100, (i) => 0.3 * sin(2 * pi * 440 * i / 44100));
       
       final result = validator.validate(samples);
@@ -193,7 +193,7 @@ void main() {
     });
 
     test('Generate a 440Hz sine wave at amplitude 0.001 -> should fail', () {
-      final validator = SignalEnergyValidator();
+      const validator = SignalEnergyValidator();
       final samples = List.generate(44100, (i) => 0.001 * sin(2 * pi * 440 * i / 44100));
       
       final result = validator.validate(samples);

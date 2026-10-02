@@ -156,28 +156,32 @@ class _HeroListeningCardState extends ConsumerState<HeroListeningCard>
                       child: AnimatedBuilder(
                         animation: _waveController,
                         builder: (context, child) {
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: List.generate(12, (i) {
-                              double height = 4.0;
-                              if (isListening) {
-                                final normDb = (ambientDb / 100.0).clamp(0.1, 1.0);
-                                final wave = sin((_waveController.value * 2 * pi) + (i * 0.5));
-                                height = (8.0 + (wave.abs() * 18.0 * normDb)).clamp(4.0, 26.0);
-                              }
-                              return Container(
-                                width: 3,
-                                height: height,
-                                margin: const EdgeInsets.only(right: 3),
-                                decoration: BoxDecoration(
-                                  color: isListening
-                                      ? const Color(0xFF00E5FF)
-                                      : Colors.white.withValues(alpha: 0.25),
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              );
-                            }),
+                          return FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: List.generate(12, (i) {
+                                double height = 4.0;
+                                if (isListening) {
+                                  final normDb = (ambientDb / 100.0).clamp(0.1, 1.0);
+                                  final wave = sin((_waveController.value * 2 * pi) + (i * 0.5));
+                                  height = (8.0 + (wave.abs() * 18.0 * normDb)).clamp(4.0, 26.0);
+                                }
+                                return Container(
+                                  width: 3,
+                                  height: height,
+                                  margin: const EdgeInsets.only(right: 3),
+                                  decoration: BoxDecoration(
+                                    color: isListening
+                                        ? const Color(0xFF00E5FF)
+                                        : Colors.white.withValues(alpha: 0.25),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                );
+                              }),
+                            ),
                           );
                         },
                       ),
