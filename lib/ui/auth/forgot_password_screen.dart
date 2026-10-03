@@ -31,7 +31,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Future<void> _handleSendResetLink() async {
     if (!_formKey.currentState!.validate()) {
-      _emailFocusNode.requestFocus();
       return;
     }
 
@@ -152,7 +151,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             textCapitalization: TextCapitalization.none,
             autocorrect: false,
             enableSuggestions: false,
-            onFieldSubmitted: (_) => _handleSendResetLink(),
+            onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
             validator: AuthValidators.validateEmail,
             enabled: !authState.isLoading,
           ),

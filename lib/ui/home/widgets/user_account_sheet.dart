@@ -871,12 +871,10 @@ class UserAccountSheet extends ConsumerWidget {
             final passError = AuthValidators.validateStrongPassword(newPass);
             if (passError != null) {
               setState(() => errorMessage = passError);
-              newPasswordFocusNode.requestFocus();
               return;
             }
             if (newPass != confirmPass) {
               setState(() => errorMessage = 'Passwords do not match.');
-              confirmPasswordFocusNode.requestFocus();
               return;
             }
 
@@ -947,10 +945,10 @@ class UserAccountSheet extends ConsumerWidget {
                     focusNode: newPasswordFocusNode,
                     obscureText: obscureNew,
                     keyboardType: TextInputType.visiblePassword,
-                    textInputAction: TextInputAction.next,
+                    textInputAction: TextInputAction.done,
                     autocorrect: false,
                     enableSuggestions: false,
-                    onSubmitted: (_) => confirmPasswordFocusNode.requestFocus(),
+                    onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
                     decoration: InputDecoration(
                       labelText: 'New Password',
                       hintText: 'Enter new password (min. 6 chars)',
@@ -970,7 +968,7 @@ class UserAccountSheet extends ConsumerWidget {
                     textInputAction: TextInputAction.done,
                     autocorrect: false,
                     enableSuggestions: false,
-                    onSubmitted: (_) => submitPassword(),
+                    onSubmitted: (_) => FocusScope.of(ctx).unfocus(),
                     decoration: InputDecoration(
                       labelText: 'Confirm Password',
                       hintText: 'Re-enter new password',

@@ -69,7 +69,6 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
       Navigator.of(context).pop((phone: phone, message: msg));
     } else {
       setState(() => _phoneError = 'Please enter a recipient phone number');
-      _phoneFocusNode.requestFocus();
     }
   }
 
@@ -106,12 +105,11 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
               controller: _phoneController,
               focusNode: _phoneFocusNode,
               keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
+              textInputAction: TextInputAction.done,
               autocorrect: false,
               enableSuggestions: false,
-              autofocus: true,
               scrollPadding: const EdgeInsets.all(24.0),
-              onSubmitted: (_) => _messageFocusNode.requestFocus(),
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               decoration: InputDecoration(

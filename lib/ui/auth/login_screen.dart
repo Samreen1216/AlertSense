@@ -34,13 +34,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    // Validate first without closing the keyboard abruptly
     if (!_formKey.currentState!.validate()) {
-      if (AuthValidators.validateEmail(_emailController.text) != null) {
-        _emailFocusNode.requestFocus();
-      } else if (AuthValidators.validateLoginPassword(_passwordController.text) != null) {
-        _passwordFocusNode.requestFocus();
-      }
       return;
     }
 
@@ -131,12 +125,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         hintText: 'name@example.com',
                         prefixIcon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
+                        textInputAction: TextInputAction.done,
                         textCapitalization: TextCapitalization.none,
                         autocorrect: false,
                         enableSuggestions: false,
                         validator: AuthValidators.validateEmail,
-                        onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
+                        onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                         enabled: !authState.isLoading,
                       ),
                       const SizedBox(height: 16),

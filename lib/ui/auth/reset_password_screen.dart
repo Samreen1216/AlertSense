@@ -38,11 +38,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   Future<void> _handleUpdatePassword() async {
     if (!_formKey.currentState!.validate()) {
-      if (AuthValidators.validateStrongPassword(_newPasswordController.text) != null) {
-        _newPasswordFocusNode.requestFocus();
-      } else if (_confirmPasswordController.text != _newPasswordController.text) {
-        _confirmPasswordFocusNode.requestFocus();
-      }
       return;
     }
 
@@ -161,12 +156,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         prefixIcon: Icons.lock_outline_rounded,
                         obscureText: _obscureNewPassword,
                         keyboardType: TextInputType.visiblePassword,
-                        textInputAction: TextInputAction.next,
+                        textInputAction: TextInputAction.done,
                         textCapitalization: TextCapitalization.none,
                         autocorrect: false,
                         enableSuggestions: false,
                         validator: AuthValidators.validateStrongPassword,
-                        onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
+                        onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                         enabled: !authState.isLoading,
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -206,7 +201,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         textCapitalization: TextCapitalization.none,
                         autocorrect: false,
                         enableSuggestions: false,
-                        onFieldSubmitted: (_) => _handleUpdatePassword(),
+                        onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                         validator: (value) => AuthValidators.validateConfirmPassword(
                           _newPasswordController.text,
                           value,

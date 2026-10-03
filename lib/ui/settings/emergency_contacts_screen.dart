@@ -73,11 +73,6 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
       _controllers.add(TextEditingController());
       _focusNodes.add(newFocusNode);
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        newFocusNode.requestFocus();
-      }
-    });
   }
 
   void _removeContact(int index) {
@@ -170,7 +165,6 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
               final index = entry.key;
               final controller = entry.value;
               final focusNode = _focusNodes[index];
-              final isLast = index == _controllers.length - 1;
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12.0),
@@ -181,17 +175,11 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
                         controller: controller,
                         focusNode: focusNode,
                         keyboardType: TextInputType.phone,
-                        textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
+                        textInputAction: TextInputAction.done,
                         autocorrect: false,
                         enableSuggestions: false,
                         scrollPadding: const EdgeInsets.all(24.0),
-                        onSubmitted: (_) {
-                          if (!isLast && index + 1 < _focusNodes.length) {
-                            _focusNodes[index + 1].requestFocus();
-                          } else {
-                            _save();
-                          }
-                        },
+                        onSubmitted: (_) => FocusScope.of(context).unfocus(),
                         style: TextStyle(
                           color: isHighContrast ? Colors.white : null,
                         ),

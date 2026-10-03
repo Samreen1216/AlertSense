@@ -92,11 +92,11 @@ class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
               controller: _phoneController,
               focusNode: _phoneFocusNode,
               keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
+              textInputAction: TextInputAction.done,
               autocorrect: false,
               enableSuggestions: false,
               scrollPadding: const EdgeInsets.all(24.0),
-              onSubmitted: (_) => _messageFocusNode.requestFocus(),
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               decoration: InputDecoration(

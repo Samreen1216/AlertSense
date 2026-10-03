@@ -1064,9 +1064,11 @@ class SettingsScreen extends ConsumerWidget {
                       maxLines: 2,
                       keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.done,
                       autocorrect: true,
                       enableSuggestions: true,
                       scrollPadding: const EdgeInsets.all(24.0),
+                      onSubmitted: (_) => FocusScope.of(dialogCtx).unfocus(),
                       decoration: InputDecoration(
                         hintText: selectedRating < 4
                             ? 'What can we improve? (optional)'

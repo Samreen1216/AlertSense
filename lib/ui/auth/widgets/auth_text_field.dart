@@ -33,7 +33,7 @@ class AuthTextField extends StatelessWidget {
     this.suffixIcon,
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
-    this.textInputAction = TextInputAction.next,
+    this.textInputAction = TextInputAction.done,
     this.validator,
     this.onFieldSubmitted,
     this.enabled = true,
@@ -66,7 +66,7 @@ class AuthTextField extends StatelessWidget {
       scrollPadding: scrollPadding,
       onTapOutside: onTapOutside,
       validator: validator,
-      onFieldSubmitted: onFieldSubmitted,
+      onFieldSubmitted: onFieldSubmitted ?? (_) => FocusManager.instance.primaryFocus?.unfocus(),
       enabled: enabled,
       style: theme.textTheme.bodyLarge?.copyWith(
         fontWeight: FontWeight.w500,

@@ -48,15 +48,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) {
-      if (AuthValidators.validateFullName(_nameController.text.trim()) != null) {
-        _nameFocusNode.requestFocus();
-      } else if (AuthValidators.validateEmail(_emailController.text) != null) {
-        _emailFocusNode.requestFocus();
-      } else if (AuthValidators.validateStrongPassword(_passwordController.text) != null) {
-        _passwordFocusNode.requestFocus();
-      } else if (_confirmPasswordController.text != _passwordController.text) {
-        _confirmPasswordFocusNode.requestFocus();
-      }
       return;
     }
 
@@ -171,11 +162,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         hintText: 'e.g. Alex Morgan',
                         prefixIcon: Icons.person_outline_rounded,
                         keyboardType: TextInputType.name,
-                        textInputAction: TextInputAction.next,
+                        textInputAction: TextInputAction.done,
                         textCapitalization: TextCapitalization.words,
                         autocorrect: true,
                         validator: AuthValidators.validateFullName,
-                        onFieldSubmitted: (_) => _emailFocusNode.requestFocus(),
+                        onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                         enabled: !authState.isLoading,
                       ),
                       const SizedBox(height: 16),
@@ -188,12 +179,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         hintText: 'name@example.com',
                         prefixIcon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
+                        textInputAction: TextInputAction.done,
                         textCapitalization: TextCapitalization.none,
                         autocorrect: false,
                         enableSuggestions: false,
                         validator: AuthValidators.validateEmail,
-                        onFieldSubmitted: (_) => _passwordFocusNode.requestFocus(),
+                        onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                         enabled: !authState.isLoading,
                       ),
                       const SizedBox(height: 16),
@@ -207,12 +198,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         prefixIcon: Icons.lock_outline_rounded,
                         obscureText: _obscurePassword,
                         keyboardType: TextInputType.visiblePassword,
-                        textInputAction: TextInputAction.next,
+                        textInputAction: TextInputAction.done,
                         textCapitalization: TextCapitalization.none,
                         autocorrect: false,
                         enableSuggestions: false,
                         validator: AuthValidators.validateStrongPassword,
-                        onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
+                        onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                         enabled: !authState.isLoading,
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -251,7 +242,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         textCapitalization: TextCapitalization.none,
                         autocorrect: false,
                         enableSuggestions: false,
-                        onFieldSubmitted: (_) => _handleSignup(),
+                        onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
                         validator: (value) => AuthValidators.validateConfirmPassword(
                           _passwordController.text,
                           value,
