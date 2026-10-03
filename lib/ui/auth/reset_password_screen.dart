@@ -8,6 +8,7 @@ import '../../providers/auth_providers.dart';
 import 'widgets/auth_header_brand.dart';
 import 'widgets/auth_primary_button.dart';
 import 'widgets/auth_text_field.dart';
+import 'widgets/password_requirements_view.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -103,161 +104,166 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 440),
-                child: AutofillGroup(
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const AuthHeaderBrand(
-                          title: 'Update Password',
-                          subtitle: 'Choose a strong new password for your AlertSense account',
-                          topSpacing: 8,
-                        ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const AuthHeaderBrand(
+                        title: 'Update Password',
+                        subtitle: 'Choose a strong new password for your AlertSense account',
+                        topSpacing: 8,
+                      ),
 
-                        // Error Message Banner
-                        if (authState.errorMessage != null) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: AppColors.error.withValues(alpha: 0.35),
-                                width: 1.0,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.error_outline_rounded,
-                                  color: AppColors.error,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    authState.errorMessage!,
-                                    style: const TextStyle(
-                                      color: AppColors.error,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                      // Error Message Banner
+                      if (authState.errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.35),
+                              width: 1.0,
                             ),
                           ),
-                          const SizedBox(height: 16),
-                        ],
-
-                        // New Password Input
-                        AuthTextField(
-                          controller: _newPasswordController,
-                          focusNode: _newPasswordFocusNode,
-                          labelText: 'New Password',
-                          hintText: 'At least 8 characters',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscureNewPassword,
-                          textInputAction: TextInputAction.next,
-                          textCapitalization: TextCapitalization.none,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          autofillHints: const [AutofillHints.newPassword],
-                          validator: AuthValidators.validateStrongPassword,
-                          onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
-                          enabled: !authState.isLoading,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureNewPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 20,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            tooltip: _obscureNewPassword ? 'Show password' : 'Hide password',
-                            onPressed: () {
-                              setState(() {
-                                _obscureNewPassword = !_obscureNewPassword;
-                              });
-                            },
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline_rounded,
+                                color: AppColors.error,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  authState.errorMessage!,
+                                  style: const TextStyle(
+                                    color: AppColors.error,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 16),
+                      ],
 
-                        // Confirm Password Input
-                        AuthTextField(
-                          controller: _confirmPasswordController,
-                          focusNode: _confirmPasswordFocusNode,
-                          labelText: 'Confirm New Password',
-                          hintText: 'Re-enter your new password',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: _obscureConfirmPassword,
-                          textInputAction: TextInputAction.done,
-                          textCapitalization: TextCapitalization.none,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          autofillHints: const [AutofillHints.newPassword],
-                          onFieldSubmitted: (_) => _handleUpdatePassword(),
-                          validator: (value) => AuthValidators.validateConfirmPassword(
-                            _newPasswordController.text,
-                            value,
+                      // New Password Input
+                      AuthTextField(
+                        controller: _newPasswordController,
+                        focusNode: _newPasswordFocusNode,
+                        labelText: 'New Password',
+                        hintText: 'At least 8 characters',
+                        prefixIcon: Icons.lock_outline_rounded,
+                        obscureText: _obscureNewPassword,
+                        keyboardType: TextInputType.visiblePassword,
+                        textInputAction: TextInputAction.next,
+                        textCapitalization: TextCapitalization.none,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        validator: AuthValidators.validateStrongPassword,
+                        onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
+                        enabled: !authState.isLoading,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureNewPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            size: 20,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
-                          enabled: !authState.isLoading,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 20,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            tooltip: _obscureConfirmPassword ? 'Show password' : 'Hide password',
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                    // Update Password Button
-                    AuthPrimaryButton(
-                      text: 'Update Password',
-                      icon: Icons.check_circle_outline_rounded,
-                      isLoading: authState.isLoading,
-                      onPressed: _handleUpdatePassword,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Cancel / Back to Login
-                    Center(
-                      child: TextButton.icon(
-                        onPressed: authState.isLoading
-                            ? null
-                            : () {
-                                ref.read(authRedirectListenableProvider).clearPasswordRecovery();
-                                ref.read(authControllerProvider.notifier).clearMessages();
-                                final isAuth = ref.read(isAuthenticatedProvider);
-                                try {
-                                  if (Navigator.of(context).canPop()) {
-                                    Navigator.of(context).pop();
-                                  } else {
-                                    context.go(isAuth ? AppRoutes.home : AppRoutes.login);
-                                  }
-                                } catch (_) {}
-                              },
-                        icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                        label: Text(
-                          ref.watch(isAuthenticatedProvider) ? 'Return to Home' : 'Back to Login',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          tooltip: _obscureNewPassword ? 'Show password' : 'Hide password',
+                          onPressed: () {
+                            setState(() {
+                              _obscureNewPassword = !_obscureNewPassword;
+                            });
+                          },
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      ValueListenableBuilder<TextEditingValue>(
+                        valueListenable: _newPasswordController,
+                        builder: (context, value, _) {
+                          return PasswordRequirementsView(password: value.text);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Confirm Password Input
+                      AuthTextField(
+                        controller: _confirmPasswordController,
+                        focusNode: _confirmPasswordFocusNode,
+                        labelText: 'Confirm New Password',
+                        hintText: 'Re-enter your new password',
+                        prefixIcon: Icons.lock_outline_rounded,
+                        obscureText: _obscureConfirmPassword,
+                        keyboardType: TextInputType.visiblePassword,
+                        textInputAction: TextInputAction.done,
+                        textCapitalization: TextCapitalization.none,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        onFieldSubmitted: (_) => _handleUpdatePassword(),
+                        validator: (value) => AuthValidators.validateConfirmPassword(
+                          _newPasswordController.text,
+                          value,
+                        ),
+                        enabled: !authState.isLoading,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            size: 20,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                          tooltip: _obscureConfirmPassword ? 'Show password' : 'Hide password',
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                  // Update Password Button
+                  AuthPrimaryButton(
+                    text: 'Update Password',
+                    icon: Icons.check_circle_outline_rounded,
+                    isLoading: authState.isLoading,
+                    onPressed: _handleUpdatePassword,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Cancel / Back to Login
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: authState.isLoading
+                          ? null
+                          : () {
+                              ref.read(authRedirectListenableProvider).clearPasswordRecovery();
+                              ref.read(authControllerProvider.notifier).clearMessages();
+                              final isAuth = ref.read(isAuthenticatedProvider);
+                              try {
+                                if (Navigator.of(context).canPop()) {
+                                  Navigator.of(context).pop();
+                                } else {
+                                  context.go(isAuth ? AppRoutes.home : AppRoutes.login);
+                                }
+                              } catch (_) {}
+                            },
+                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                      label: Text(
+                        ref.watch(isAuthenticatedProvider) ? 'Return to Home' : 'Back to Login',
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

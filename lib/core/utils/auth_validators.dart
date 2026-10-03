@@ -35,10 +35,9 @@ class AuthValidators {
 
   /// Validates a strong password for Sign Up / Account Creation / Password Reset:
   /// - Minimum 8 characters
-  /// - At least 1 uppercase letter
-  /// - At least 1 lowercase letter
-  /// - At least 1 number
-  /// - At least 1 special character
+  /// - Contains letters (both uppercase and lowercase letters are acceptable)
+  /// - Contains at least 1 number
+  /// - Contains at least 1 special character
   static String? validateStrongPassword(String? value) {
     if (value == null || value.isEmpty) {
       return 'Password is required';
@@ -46,11 +45,8 @@ class AuthValidators {
     if (value.length < 8) {
       return 'Password must be at least 8 characters long';
     }
-    if (!value.contains(RegExp(r'[A-Z]'))) {
-      return 'Password must contain at least 1 uppercase letter';
-    }
-    if (!value.contains(RegExp(r'[a-z]'))) {
-      return 'Password must contain at least 1 lowercase letter';
+    if (!value.contains(RegExp(r'[a-zA-Z]'))) {
+      return 'Password must contain at least 1 letter';
     }
     if (!value.contains(RegExp(r'[0-9]'))) {
       return 'Password must contain at least 1 number';

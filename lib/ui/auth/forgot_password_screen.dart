@@ -80,11 +80,9 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 440),
-              child: AutofillGroup(
-                child: _emailSent
-                    ? _buildSuccessView(theme)
-                    : _buildResetForm(theme, authState),
-              ),
+              child: _emailSent
+                  ? _buildSuccessView(theme)
+                  : _buildResetForm(theme, authState),
             ),
           ),
         ),
@@ -154,7 +152,6 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             textCapitalization: TextCapitalization.none,
             autocorrect: false,
             enableSuggestions: false,
-            autofillHints: const [AutofillHints.email],
             onFieldSubmitted: (_) => _handleSendResetLink(),
             validator: AuthValidators.validateEmail,
             enabled: !authState.isLoading,

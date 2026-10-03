@@ -16,6 +16,7 @@ import 'package:alertsense/ui/auth/forgot_password_screen.dart';
 import 'package:alertsense/ui/auth/reset_password_screen.dart';
 import 'package:alertsense/ui/auth/email_verification_screen.dart';
 import 'package:alertsense/ui/auth/widgets/auth_primary_button.dart';
+import 'package:alertsense/ui/auth/widgets/password_requirements_view.dart';
 
 class _MockSupabaseAuthDataSource implements ISupabaseAuthDataSource {
   User? mockUser;
@@ -142,7 +143,7 @@ void main() {
       expect(AuthValidators.validateLoginPassword('StrongPass1!'), isNull);
     });
 
-    test('validateStrongPassword enforces all production password requirements', () {
+    test('validateStrongPassword enforces production password requirements', () {
       expect(AuthValidators.validateStrongPassword(null), 'Password is required');
       expect(AuthValidators.validateStrongPassword(''), 'Password is required');
       // Less than 8 characters
@@ -150,15 +151,10 @@ void main() {
         AuthValidators.validateStrongPassword('Pass1!'),
         'Password must be at least 8 characters long',
       );
-      // Missing uppercase
+      // Missing letter
       expect(
-        AuthValidators.validateStrongPassword('password123!'),
-        'Password must contain at least 1 uppercase letter',
-      );
-      // Missing lowercase
-      expect(
-        AuthValidators.validateStrongPassword('PASSWORD123!'),
-        'Password must contain at least 1 lowercase letter',
+        AuthValidators.validateStrongPassword('12345678!@#'),
+        'Password must contain at least 1 letter',
       );
       // Missing number
       expect(
@@ -170,7 +166,9 @@ void main() {
         AuthValidators.validateStrongPassword('Password123'),
         'Password must contain at least 1 special character',
       );
-      // Valid strong passwords
+      // Valid passwords (both uppercase and lowercase letters are acceptable)
+      expect(AuthValidators.validateStrongPassword('password123!'), isNull);
+      expect(AuthValidators.validateStrongPassword('PASSWORD123!'), isNull);
       expect(AuthValidators.validateStrongPassword('Password123!'), isNull);
       expect(AuthValidators.validateStrongPassword('AlertSense@2026'), isNull);
       expect(AuthValidators.validateStrongPassword('S3cure#Pass_99'), isNull);
@@ -659,7 +657,14 @@ void main() {
       expect(find.byType(TextFormField), findsOneWidget);
     });
 
-    testWidgets('ResetPasswordScreen renders password and confirmation fields', (tester) async {
+    testWidgets('ResetPasswordScreen renders password, confirmation, and requirements checklist', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -675,10 +680,18 @@ void main() {
       expect(find.text('Reset Password'), findsOneWidget);
       expect(find.text('Update Password'), findsNWidgets(2)); // Header brand & Primary button
       expect(find.byType(TextFormField), findsNWidgets(2));
+      expect(find.byType(PasswordRequirementsView), findsOneWidget);
       expect(find.text('Back to Login'), findsOneWidget);
     });
 
     testWidgets('ResetPasswordScreen submits password update successfully', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
       bool passwordUpdated = false;
       mockDataSource.onUpdatePassword = (newPass) async {
         passwordUpdated = true;
@@ -702,10 +715,41 @@ void main() {
       await tester.enterText(fields.at(1), 'BrandNewPassword123!');
 
       final updateBtn = find.widgetWithText(AuthPrimaryButton, 'Update Password');
+      await tester.ensureVisible(updateBtn);
       await tester.tap(updateBtn);
       await tester.pumpAndSettle();
 
       expect(passwordUpdated, isTrue);
+    });
+
+    testWidgets('PasswordRequirementsView highlights satisfied criteria in real time', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PasswordRequirementsView(password: 'pass1!'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 'pass1!' satisfies: Letters (A-Z / a-z), Numbers (0-9), Special char (!@#$), but NOT 8+ chars
+      expect(find.text('8+ chars'), findsOneWidget);
+      expect(find.text('Letters (A-Z / a-z)'), findsOneWidget);
+      expect(find.text('Numbers (0-9)'), findsOneWidget);
+      expect(find.text('Special char (!@#\$)'), findsOneWidget);
+      expect(find.text('Password requirements:'), findsOneWidget);
+
+      // Pump with full strong password
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: PasswordRequirementsView(password: 'password123!'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Strong password'), findsOneWidget);
     });
 
     testWidgets('EmailVerificationScreen renders verification instructions and resend button', (tester) async {
