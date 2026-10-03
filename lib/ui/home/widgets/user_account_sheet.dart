@@ -32,7 +32,7 @@ class UserAccountSheet extends ConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520, maxHeight: 720),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(24),
               child: const UserAccountSheet(),
             ),
           ),
@@ -123,7 +123,7 @@ class UserAccountSheet extends ConsumerWidget {
       ),
       decoration: BoxDecoration(
         color: sheetBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: sheetBorder,
       ),
       child: SafeArea(
@@ -141,7 +141,7 @@ class UserAccountSheet extends ConsumerWidget {
                   color: isHighContrast
                       ? AppColors.hcPrimary
                       : (isDark ? Colors.white24 : Colors.black12),
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ),
@@ -271,7 +271,7 @@ class UserAccountSheet extends ConsumerWidget {
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: AppColors.success.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -292,30 +292,6 @@ class UserAccountSheet extends ConsumerWidget {
                               : null,
                         ),
                         if (user != null) ...[
-                          const Divider(height: 1),
-                          _buildInfoRow(
-                            context,
-                            label: 'Account ID',
-                            value: '${user.id.substring(0, 12)}...${user.id.substring(user.id.length - 4)}',
-                            icon: Icons.fingerprint_rounded,
-                            isDark: isDark,
-                            isHighContrast: isHighContrast,
-                            trailing: IconButton(
-                              icon: const Icon(Icons.copy_rounded, size: 18),
-                              tooltip: 'Copy UUID',
-                              onPressed: () {
-                                Clipboard.setData(ClipboardData(text: user.id));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('Account ID copied to clipboard'),
-                                    duration: const Duration(seconds: 2),
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
                           const Divider(height: 1),
                           _buildInfoRow(
                             context,
@@ -421,7 +397,7 @@ class UserAccountSheet extends ConsumerWidget {
                           foregroundColor: isHighContrast ? AppColors.hcHighAlert : Colors.white,
                           side: isHighContrast ? const BorderSide(color: AppColors.hcHighAlert, width: 2) : null,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         onPressed: () => _showLogoutDialog(context, ref),
                       )
@@ -433,7 +409,7 @@ class UserAccountSheet extends ConsumerWidget {
                           backgroundColor: isHighContrast ? AppColors.hcPrimary : const Color(0xFF0062FF),
                           foregroundColor: isHighContrast ? Colors.black : Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         onPressed: () {
                           Navigator.of(context).pop();
@@ -470,7 +446,7 @@ class UserAccountSheet extends ConsumerWidget {
         color: isHighContrast
             ? Colors.black
             : (isDark ? const Color(0xFF1E2638) : const Color(0xFFF1F5F9)),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isHighContrast
               ? AppColors.hcPrimary
@@ -585,7 +561,7 @@ class UserAccountSheet extends ConsumerWidget {
                     color: isAuthenticated
                         ? AppColors.success.withValues(alpha: 0.12)
                         : const Color(0xFFF59E0B).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: isAuthenticated
                           ? AppColors.success.withValues(alpha: 0.35)
@@ -797,7 +773,7 @@ class UserAccountSheet extends ConsumerWidget {
                 content: const Text('Profile name updated successfully'),
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             );
           }
@@ -900,7 +876,7 @@ class UserAccountSheet extends ConsumerWidget {
                   ),
                   backgroundColor: success ? AppColors.success : AppColors.error,
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               );
             }
@@ -911,7 +887,7 @@ class UserAccountSheet extends ConsumerWidget {
                 ? Colors.black
                 : (isDark ? const Color(0xFF1E2638) : Colors.white),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               side: isHighContrast
                   ? const BorderSide(color: AppColors.hcPrimary, width: 2)
                   : (isDark ? const BorderSide(color: Colors.white12) : const BorderSide(color: Color(0xFFE2E8F0))),
@@ -922,7 +898,7 @@ class UserAccountSheet extends ConsumerWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0062FF).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.lock_outline_rounded,
@@ -1039,7 +1015,7 @@ class UserAccountSheet extends ConsumerWidget {
                     ),
                     backgroundColor: success ? AppColors.success : AppColors.error,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 );
               }
@@ -1103,7 +1079,7 @@ class UserAccountSheet extends ConsumerWidget {
           return AlertDialog(
             backgroundColor: dialogBg,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               side: isHighContrast
                   ? const BorderSide(color: AppColors.hcHighAlert, width: 2)
                   : (isDark ? const BorderSide(color: Colors.white12) : const BorderSide(color: Color(0xFFE2E8F0))),
@@ -1114,7 +1090,7 @@ class UserAccountSheet extends ConsumerWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: AppColors.error.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.warning_amber_rounded,
@@ -1239,7 +1215,7 @@ class UserAccountSheet extends ConsumerWidget {
                   backgroundColor: isHighContrast ? Colors.black : AppColors.error,
                   foregroundColor: isHighContrast ? AppColors.hcHighAlert : Colors.white,
                   side: isHighContrast ? const BorderSide(color: AppColors.hcHighAlert, width: 2) : null,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: (!confirmIrreversible || isProcessing)
                     ? null
@@ -1281,7 +1257,7 @@ class UserAccountSheet extends ConsumerWidget {
                                 ),
                                 backgroundColor: isHighContrast ? Colors.black : AppColors.error,
                                 behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 duration: const Duration(seconds: 4),
                               ),
                             );
