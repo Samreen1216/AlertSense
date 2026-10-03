@@ -213,15 +213,16 @@ class AuthController extends StateNotifier<AuthActionState> {
     required String email,
     required String password,
   }) async {
+    final normalizedEmail = email.trim().toLowerCase();
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     try {
-      final response = await _repository.signIn(email: email, password: password);
+      final response = await _repository.signIn(email: normalizedEmail, password: password);
       final user = response.user;
       final nameFromMeta = user?.userMetadata?['full_name'] as String? ??
           user?.userMetadata?['name'] as String? ??
           user?.userMetadata?['fullName'] as String?;
       await _localStorage?.saveUserAuthDetails(
-        email: email.trim(),
+        email: normalizedEmail,
         fullName: nameFromMeta,
         userId: user?.id,
       );
@@ -245,15 +246,16 @@ class AuthController extends StateNotifier<AuthActionState> {
     required String password,
     required String fullName,
   }) async {
+    final normalizedEmail = email.trim().toLowerCase();
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     try {
       final response = await _repository.signUp(
-        email: email,
+        email: normalizedEmail,
         password: password,
-        fullName: fullName,
+        fullName: fullName.trim(),
       );
       await _localStorage?.saveUserAuthDetails(
-        email: email.trim(),
+        email: normalizedEmail,
         fullName: fullName.trim(),
         userId: response.user?.id,
       );
@@ -279,9 +281,10 @@ class AuthController extends StateNotifier<AuthActionState> {
 
   /// Send password reset link to email.
   Future<bool> sendPasswordResetEmail(String email) async {
+    final normalizedEmail = email.trim().toLowerCase();
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     try {
-      await _repository.sendPasswordResetEmail(email);
+      await _repository.sendPasswordResetEmail(normalizedEmail);
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Password reset link sent! Check your email inbox.',
@@ -326,9 +329,10 @@ class AuthController extends StateNotifier<AuthActionState> {
 
   /// Resend confirmation email.
   Future<bool> resendVerificationEmail(String email) async {
+    final normalizedEmail = email.trim().toLowerCase();
     state = state.copyWith(isLoading: true, clearError: true, clearSuccess: true);
     try {
-      await _repository.resendVerificationEmail(email);
+      await _repository.resendVerificationEmail(normalizedEmail);
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Verification email resent! Please check your inbox.',

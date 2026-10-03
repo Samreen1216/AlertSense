@@ -111,6 +111,15 @@ class _MockSupabaseAuthDataSource implements ISupabaseAuthDataSource {
 
 void main() {
   group('AuthValidators Unit Tests', () {
+    test('normalizeEmail trims whitespace and converts to lowercase', () {
+      expect(AuthValidators.normalizeEmail(null), '');
+      expect(AuthValidators.normalizeEmail(''), '');
+      expect(AuthValidators.normalizeEmail('   '), '');
+      expect(AuthValidators.normalizeEmail('  user@domain.com  '), 'user@domain.com');
+      expect(AuthValidators.normalizeEmail('  User.Name@Example.COM  '), 'user.name@example.com');
+      expect(AuthValidators.normalizeEmail('ALERTSENSE@TEST.IO'), 'alertsense@test.io');
+    });
+
     test('validateEmail validates format correctly', () {
       expect(AuthValidators.validateEmail(null), 'Email address is required');
       expect(AuthValidators.validateEmail(''), 'Email address is required');
@@ -119,11 +128,55 @@ void main() {
       expect(AuthValidators.validateEmail('test@'), 'Please enter a valid email address');
       expect(AuthValidators.validateEmail('test@domain'), 'Please enter a valid email address');
       expect(AuthValidators.validateEmail('@domain.com'), 'Please enter a valid email address');
+      expect(AuthValidators.validateEmail('user space@domain.com'), 'Please enter a valid email address');
       expect(AuthValidators.validateEmail('user@domain.com'), isNull);
       expect(AuthValidators.validateEmail('alert.sense+test@sub.example.co'), isNull);
+      expect(AuthValidators.validateEmail('   user@domain.com   '), isNull);
     });
 
-    test('validatePassword enforces minimum length', () {
+    test('validateLoginPassword allows any non-empty password without strength requirements', () {
+      expect(AuthValidators.validateLoginPassword(null), 'Password is required');
+      expect(AuthValidators.validateLoginPassword(''), 'Password is required');
+      expect(AuthValidators.validateLoginPassword('123'), isNull);
+      expect(AuthValidators.validateLoginPassword('simple'), isNull);
+      expect(AuthValidators.validateLoginPassword('StrongPass1!'), isNull);
+    });
+
+    test('validateStrongPassword enforces all production password requirements', () {
+      expect(AuthValidators.validateStrongPassword(null), 'Password is required');
+      expect(AuthValidators.validateStrongPassword(''), 'Password is required');
+      // Less than 8 characters
+      expect(
+        AuthValidators.validateStrongPassword('Pass1!'),
+        'Password must be at least 8 characters long',
+      );
+      // Missing uppercase
+      expect(
+        AuthValidators.validateStrongPassword('password123!'),
+        'Password must contain at least 1 uppercase letter',
+      );
+      // Missing lowercase
+      expect(
+        AuthValidators.validateStrongPassword('PASSWORD123!'),
+        'Password must contain at least 1 lowercase letter',
+      );
+      // Missing number
+      expect(
+        AuthValidators.validateStrongPassword('Password!@#'),
+        'Password must contain at least 1 number',
+      );
+      // Missing special character
+      expect(
+        AuthValidators.validateStrongPassword('Password123'),
+        'Password must contain at least 1 special character',
+      );
+      // Valid strong passwords
+      expect(AuthValidators.validateStrongPassword('Password123!'), isNull);
+      expect(AuthValidators.validateStrongPassword('AlertSense@2026'), isNull);
+      expect(AuthValidators.validateStrongPassword('S3cure#Pass_99'), isNull);
+    });
+
+    test('validatePassword enforces configurable minimum length', () {
       expect(AuthValidators.validatePassword(null), 'Password is required');
       expect(AuthValidators.validatePassword(''), 'Password is required');
       expect(AuthValidators.validatePassword('12345'), 'Password must be at least 6 characters long');
@@ -407,6 +460,48 @@ void main() {
       expect(find.text('Password is required'), findsOneWidget);
     });
 
+    testWidgets('LoginScreen trims and normalizes email before submitting', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      String? submittedEmail;
+      String? submittedPassword;
+      mockDataSource.onSignIn = (email, password) async {
+        submittedEmail = email;
+        submittedPassword = password;
+        return AuthResponse(session: mockDataSource.mockSession, user: mockDataSource.mockUser);
+      };
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(AuthRepository(mockDataSource)),
+          ],
+          child: const MaterialApp(
+            home: LoginScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), '   User.AlertSense@Example.COM   ');
+      // Login does not enforce strong password rules (e.g. simple 4-char string is valid)
+      await tester.enterText(fields.at(1), 'simple123');
+
+      final loginBtn = find.widgetWithText(AuthPrimaryButton, 'Log In');
+      await tester.ensureVisible(loginBtn);
+      await tester.tap(loginBtn);
+      await tester.pumpAndSettle();
+
+      expect(submittedEmail, 'user.alertsense@example.com');
+      expect(submittedPassword, 'simple123');
+    });
+
     testWidgets('SignupScreen renders all required registration fields', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
@@ -434,6 +529,41 @@ void main() {
       expect(find.text('Log In'), findsOneWidget);
     });
 
+    testWidgets('SignupScreen validates strong password requirement', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(AuthRepository(mockDataSource)),
+          ],
+          child: const MaterialApp(
+            home: SignupScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), 'John Doe');
+      await tester.enterText(fields.at(1), 'john@example.com');
+      // Password missing special character
+      await tester.enterText(fields.at(2), 'Password123');
+      await tester.enterText(fields.at(3), 'Password123');
+
+      final createAccountBtn = find.widgetWithText(AuthPrimaryButton, 'Create Account');
+      await tester.ensureVisible(createAccountBtn);
+      await tester.tap(createAccountBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Password must contain at least 1 special character'), findsOneWidget);
+    });
+
     testWidgets('SignupScreen validates password confirmation mismatch', (tester) async {
       tester.view.physicalSize = const Size(800, 1200);
       tester.view.devicePixelRatio = 1.0;
@@ -458,8 +588,8 @@ void main() {
       final fields = find.byType(TextFormField);
       await tester.enterText(fields.at(0), 'John Doe');
       await tester.enterText(fields.at(1), 'john@example.com');
-      await tester.enterText(fields.at(2), 'password123');
-      await tester.enterText(fields.at(3), 'mismatched123');
+      await tester.enterText(fields.at(2), 'Password123!');
+      await tester.enterText(fields.at(3), 'DifferentPassword123!');
 
       // Tap Create Account
       final createAccountBtn = find.widgetWithText(AuthPrimaryButton, 'Create Account');
@@ -468,6 +598,46 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Passwords do not match'), findsOneWidget);
+    });
+
+    testWidgets('SignupScreen normalizes email on valid submission', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      String? registeredEmail;
+      mockDataSource.onSignUp = (email, password, fullName) async {
+        registeredEmail = email;
+        return AuthResponse(session: mockDataSource.mockSession, user: mockDataSource.mockUser);
+      };
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authRepositoryProvider.overrideWithValue(AuthRepository(mockDataSource)),
+          ],
+          child: const MaterialApp(
+            home: SignupScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), 'Jane Doe');
+      await tester.enterText(fields.at(1), '   Jane.Doe@AlertSense.IO   ');
+      await tester.enterText(fields.at(2), 'SecurePass2026!');
+      await tester.enterText(fields.at(3), 'SecurePass2026!');
+
+      final createAccountBtn = find.widgetWithText(AuthPrimaryButton, 'Create Account');
+      await tester.ensureVisible(createAccountBtn);
+      await tester.tap(createAccountBtn);
+      await tester.pumpAndSettle();
+
+      expect(registeredEmail, 'jane.doe@alertsense.io');
     });
 
     testWidgets('ForgotPasswordScreen renders email field and submit button', (tester) async {
@@ -528,8 +698,8 @@ void main() {
       await tester.pumpAndSettle();
 
       final fields = find.byType(TextFormField);
-      await tester.enterText(fields.at(0), 'brandNewPassword123');
-      await tester.enterText(fields.at(1), 'brandNewPassword123');
+      await tester.enterText(fields.at(0), 'BrandNewPassword123!');
+      await tester.enterText(fields.at(1), 'BrandNewPassword123!');
 
       final updateBtn = find.widgetWithText(AuthPrimaryButton, 'Update Password');
       await tester.tap(updateBtn);

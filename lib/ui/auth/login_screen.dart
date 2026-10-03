@@ -36,11 +36,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     // Validate first without closing the keyboard abruptly
     if (!_formKey.currentState!.validate()) {
-      if (_emailController.text.trim().isEmpty ||
-          AuthValidators.validateEmail(_emailController.text.trim()) != null) {
+      if (AuthValidators.validateEmail(_emailController.text) != null) {
         _emailFocusNode.requestFocus();
-      } else if (_passwordController.text.isEmpty ||
-          AuthValidators.validatePassword(_passwordController.text) != null) {
+      } else if (AuthValidators.validateLoginPassword(_passwordController.text) != null) {
         _passwordFocusNode.requestFocus();
       }
       return;
@@ -49,13 +47,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     // Dismiss keyboard only once validation has succeeded
     FocusScope.of(context).unfocus();
 
+    final normalizedEmail = AuthValidators.normalizeEmail(_emailController.text);
     final success = await ref.read(authControllerProvider.notifier).signIn(
-          email: _emailController.text.trim(),
+          email: normalizedEmail,
           password: _passwordController.text,
         );
 
     if (success && mounted) {
-      context.go(AppRoutes.home);
+      try {
+        context.go(AppRoutes.home);
+      } catch (_) {}
     }
   }
 
@@ -156,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           enableSuggestions: false,
                           autofillHints: const [AutofillHints.password],
                           onFieldSubmitted: (_) => _handleLogin(),
-                          validator: AuthValidators.validatePassword,
+                          validator: AuthValidators.validateLoginPassword,
                           enabled: !authState.isLoading,
                           suffixIcon: IconButton(
                             icon: Icon(

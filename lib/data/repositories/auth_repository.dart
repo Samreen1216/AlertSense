@@ -37,7 +37,7 @@ class AuthRepository {
   }) async {
     try {
       final response = await _dataSource.signInWithPassword(
-        email: email,
+        email: email.trim().toLowerCase(),
         password: password,
       );
       return response;
@@ -54,9 +54,9 @@ class AuthRepository {
   }) async {
     try {
       final response = await _dataSource.signUp(
-        email: email,
+        email: email.trim().toLowerCase(),
         password: password,
-        fullName: fullName,
+        fullName: fullName.trim(),
       );
       return response;
     } catch (e) {
@@ -76,7 +76,7 @@ class AuthRepository {
   /// Request a password reset link to be sent to the user's email.
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      await _dataSource.resetPasswordForEmail(email);
+      await _dataSource.resetPasswordForEmail(email.trim().toLowerCase());
     } catch (e) {
       throw _mapExceptionToAuthFailure(e);
     }
@@ -95,7 +95,7 @@ class AuthRepository {
   /// Resend confirmation / verification email.
   Future<void> resendVerificationEmail(String email) async {
     try {
-      await _dataSource.resendVerificationEmail(email);
+      await _dataSource.resendVerificationEmail(email.trim().toLowerCase());
     } catch (e) {
       throw _mapExceptionToAuthFailure(e);
     }

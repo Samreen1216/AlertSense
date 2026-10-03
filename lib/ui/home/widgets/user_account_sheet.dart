@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/utils/auth_validators.dart';
 import '../../../data/datasources/local_storage.dart';
 import '../../../data/models/user_profile.dart';
 import '../../../main.dart';
@@ -867,8 +868,9 @@ class UserAccountSheet extends ConsumerWidget {
             final newPass = newPasswordController.text;
             final confirmPass = confirmPasswordController.text;
 
-            if (newPass.length < 6) {
-              setState(() => errorMessage = 'Password must be at least 6 characters long.');
+            final passError = AuthValidators.validateStrongPassword(newPass);
+            if (passError != null) {
+              setState(() => errorMessage = passError);
               newPasswordFocusNode.requestFocus();
               return;
             }

@@ -47,14 +47,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) {
-      if (_nameController.text.trim().isEmpty ||
-          AuthValidators.validateFullName(_nameController.text.trim()) != null) {
+      if (AuthValidators.validateFullName(_nameController.text.trim()) != null) {
         _nameFocusNode.requestFocus();
-      } else if (_emailController.text.trim().isEmpty ||
-          AuthValidators.validateEmail(_emailController.text.trim()) != null) {
+      } else if (AuthValidators.validateEmail(_emailController.text) != null) {
         _emailFocusNode.requestFocus();
-      } else if (_passwordController.text.isEmpty ||
-          AuthValidators.validatePassword(_passwordController.text) != null) {
+      } else if (AuthValidators.validateStrongPassword(_passwordController.text) != null) {
         _passwordFocusNode.requestFocus();
       } else if (_confirmPasswordController.text != _passwordController.text) {
         _confirmPasswordFocusNode.requestFocus();
@@ -64,7 +61,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     FocusScope.of(context).unfocus();
 
-    final email = _emailController.text.trim();
+    final email = AuthValidators.normalizeEmail(_emailController.text);
     final success = await ref.read(authControllerProvider.notifier).signUp(
           email: email,
           password: _passwordController.text,
@@ -74,12 +71,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     if (success && mounted) {
       final user = ref.read(currentUserProvider);
       final isAuthed = ref.read(isAuthenticatedProvider);
-      if (isAuthed || (user != null && user.emailConfirmedAt != null)) {
-        context.go(AppRoutes.home);
-      } else {
-        // Direct user to email verification step
-        context.push('${AppRoutes.verifyEmail}?email=${Uri.encodeComponent(email)}');
-      }
+      try {
+        if (isAuthed || (user != null && user.emailConfirmedAt != null)) {
+          context.go(AppRoutes.home);
+        } else {
+          // Direct user to email verification step
+          context.push('${AppRoutes.verifyEmail}?email=${Uri.encodeComponent(email)}');
+        }
+      } catch (_) {}
     }
   }
 
@@ -206,7 +205,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           controller: _passwordController,
                           focusNode: _passwordFocusNode,
                           labelText: 'Password',
-                          hintText: 'At least 6 characters',
+                          hintText: 'At least 8 characters',
                           prefixIcon: Icons.lock_outline_rounded,
                           obscureText: _obscurePassword,
                           textInputAction: TextInputAction.next,
@@ -214,7 +213,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           autocorrect: false,
                           enableSuggestions: false,
                           autofillHints: const [AutofillHints.newPassword],
-                          validator: AuthValidators.validatePassword,
+                          validator: AuthValidators.validateStrongPassword,
                           onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
                           enabled: !authState.isLoading,
                           suffixIcon: IconButton(

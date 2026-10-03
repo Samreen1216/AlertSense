@@ -37,9 +37,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
     FocusScope.of(context).unfocus();
 
+    final email = AuthValidators.normalizeEmail(_emailController.text);
     final success = await ref
         .read(authControllerProvider.notifier)
-        .sendPasswordResetEmail(_emailController.text.trim());
+        .sendPasswordResetEmail(email);
 
     if (success && mounted) {
       setState(() {

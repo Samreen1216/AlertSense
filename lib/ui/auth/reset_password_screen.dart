@@ -37,8 +37,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
 
   Future<void> _handleUpdatePassword() async {
     if (!_formKey.currentState!.validate()) {
-      if (_newPasswordController.text.isEmpty ||
-          AuthValidators.validatePassword(_newPasswordController.text) != null) {
+      if (AuthValidators.validateStrongPassword(_newPasswordController.text) != null) {
         _newPasswordFocusNode.requestFocus();
       } else if (_confirmPasswordController.text != _newPasswordController.text) {
         _confirmPasswordFocusNode.requestFocus();
@@ -158,7 +157,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           controller: _newPasswordController,
                           focusNode: _newPasswordFocusNode,
                           labelText: 'New Password',
-                          hintText: 'At least 6 characters',
+                          hintText: 'At least 8 characters',
                           prefixIcon: Icons.lock_outline_rounded,
                           obscureText: _obscureNewPassword,
                           textInputAction: TextInputAction.next,
@@ -166,7 +165,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           autocorrect: false,
                           enableSuggestions: false,
                           autofillHints: const [AutofillHints.newPassword],
-                          validator: AuthValidators.validatePassword,
+                          validator: AuthValidators.validateStrongPassword,
                           onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
                           enabled: !authState.isLoading,
                           suffixIcon: IconButton(
