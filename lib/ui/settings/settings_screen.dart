@@ -1067,7 +1067,6 @@ class SettingsScreen extends ConsumerWidget {
                       autocorrect: true,
                       enableSuggestions: true,
                       scrollPadding: const EdgeInsets.all(24.0),
-                      onTapOutside: (_) => FocusScope.of(dialogCtx).unfocus(),
                       decoration: InputDecoration(
                         hintText: selectedRating < 4
                             ? 'What can we improve? (optional)'

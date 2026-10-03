@@ -64,7 +64,7 @@ class AuthTextField extends StatelessWidget {
       enableSuggestions: enableSuggestions,
       autofillHints: autofillHints,
       scrollPadding: scrollPadding,
-      onTapOutside: onTapOutside ?? (event) => FocusScope.of(context).unfocus(),
+      onTapOutside: onTapOutside,
       validator: validator,
       onFieldSubmitted: onFieldSubmitted,
       enabled: enabled,

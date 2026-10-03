@@ -93,7 +93,6 @@ class _EmergencyCallDialogState extends State<EmergencyCallDialog> {
               autofocus: true,
               scrollPadding: const EdgeInsets.all(24.0),
               onSubmitted: (_) => _callNow(),
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
               style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
               decoration: InputDecoration(

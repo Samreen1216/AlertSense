@@ -97,7 +97,6 @@ class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
               enableSuggestions: false,
               scrollPadding: const EdgeInsets.all(24.0),
               onSubmitted: (_) => _messageFocusNode.requestFocus(),
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
@@ -183,7 +182,6 @@ class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
               enableSuggestions: true,
               maxLines: 4,
               scrollPadding: const EdgeInsets.all(24.0),
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               style: const TextStyle(color: Colors.white, fontSize: 13),
               decoration: InputDecoration(
                 filled: true,

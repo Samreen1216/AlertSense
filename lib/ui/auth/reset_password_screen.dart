@@ -97,11 +97,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         title: const Text('Reset Password'),
       ),
       body: SafeArea(
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Center(
-            child: SingleChildScrollView(
+        child: Center(
+          child: SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
@@ -268,7 +265,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
         ),
       ),
     ),
-  ),
-);
+  );
   }
 }

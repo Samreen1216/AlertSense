@@ -119,12 +119,9 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
           ),
         ],
       ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: ListView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(20.0),
+      body: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.all(20.0),
           children: [
             Container(
               padding: const EdgeInsets.all(16),
@@ -285,7 +282,6 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
