@@ -41,6 +41,7 @@ class RecentAlertsSection extends ConsumerWidget {
         : (isDark ? const Color(0xFF38BDF8) : const Color(0xFF0062FF));
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Section Header Row

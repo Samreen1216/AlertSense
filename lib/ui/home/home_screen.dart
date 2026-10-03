@@ -25,14 +25,17 @@ class HomeScreen extends ConsumerWidget {
 
     final scaffoldBg = isHighContrast ? Colors.black : AppColors.darkBackground;
 
-    final bodyContent = SingleChildScrollView(
+    final bodyContent = CustomScrollView(
       physics: const BouncingScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 1. TOP HEADER
-          const AlertSenseHeader(),
-          const SizedBox(height: 4),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // 1. TOP HEADER
+              const AlertSenseHeader(),
+              const SizedBox(height: 4),
 
               // 2. HERO SECTION: 2-Column Responsive Hero (Radar + 3 Cards)
               Padding(
@@ -43,6 +46,7 @@ class HomeScreen extends ConsumerWidget {
 
                     if (isNarrow) {
                       return const Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           SizedBox(
                             height: 200,
@@ -91,51 +95,55 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 14),
-
-              // 3. WHITE / LIGHT / HIGH CONTRAST CONTENT CONTAINER (Radius 28)
-              Container(
-                decoration: BoxDecoration(
-                  color: isHighContrast
-                      ? Colors.black
-                      : (isDark ? AppColors.darkSurface : AppColors.backgroundLight),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  border: isHighContrast
-                      ? const Border(
-                          top: BorderSide(color: AppColors.hcPrimary, width: 2.0),
-                          left: BorderSide(color: AppColors.hcPrimary, width: 1.0),
-                          right: BorderSide(color: AppColors.hcPrimary, width: 1.0),
-                        )
-                      : null,
-                  boxShadow: isHighContrast
-                      ? null
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
-                            blurRadius: 16,
-                            offset: const Offset(0, -4),
-                          ),
-                        ],
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Segmented Profile Selector (Home / Sleep / Outdoor)
-                    SegmentedProfileSelector(),
-                    SizedBox(height: 22),
-
-                    // Sound Categories Section (Horizontal cards with toggles)
-                    SoundCategoryCardsSection(),
-                    SizedBox(height: 22),
-
-                    // Recent Alerts Section (Dynamic alerts from original data)
-                    RecentAlertsSection(),
-                  ],
-                ),
-              ),
             ],
           ),
-        );
+        ),
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Container(
+            decoration: BoxDecoration(
+              color: isHighContrast
+                  ? Colors.black
+                  : (isDark ? AppColors.darkSurface : AppColors.backgroundLight),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: isHighContrast
+                  ? const Border(
+                      top: BorderSide(color: AppColors.hcPrimary, width: 2.0),
+                      left: BorderSide(color: AppColors.hcPrimary, width: 1.0),
+                      right: BorderSide(color: AppColors.hcPrimary, width: 1.0),
+                    )
+                  : null,
+              boxShadow: isHighContrast
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Segmented Profile Selector (Home / Sleep / Outdoor)
+                SegmentedProfileSelector(),
+                SizedBox(height: 22),
+
+                // Sound Categories Section (Horizontal cards with toggles)
+                SoundCategoryCardsSection(),
+                SizedBox(height: 22),
+
+                // Recent Alerts Section (Dynamic alerts from original data)
+                RecentAlertsSection(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
 
     return Scaffold(
       backgroundColor: scaffoldBg,
