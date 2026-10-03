@@ -149,7 +149,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
       setState(() => _isSyncing = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Home Widget updated with live app state!'),
+          content: Text('Home Widget updated with live app state!'),
           backgroundColor: Color(0xFF10B981),
           behavior: SnackBarBehavior.floating,
         ),
@@ -164,7 +164,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('📌 Widget pin request sent to launcher!'),
+            content: Text('Widget pin request sent to launcher!'),
             backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
           ),
@@ -172,7 +172,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('ℹ️ To add: Long press your home screen, tap "Widgets", and select AlertSense.'),
+            content: Text('To add: Long press your home screen, tap "Widgets", and select AlertSense.'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -283,7 +283,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 4,
               ),
               onPressed: _pinWidget,
@@ -299,7 +299,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                 foregroundColor: const Color(0xFF00E5FF),
                 side: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
                 padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 backgroundColor: const Color(0xFF0F172A),
               ),
               onPressed: _syncWidgetData,
@@ -417,7 +417,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                           ),
                         ),
                         child: Text(
-                          isListening ? '● LIVE' : '○ PAUSED',
+                          isListening ? 'LIVE' : 'PAUSED',
                           style: TextStyle(
                             color: isListening ? const Color(0xFF10B981) : theme.textSecondary,
                             fontSize: 9.5,
@@ -445,7 +445,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    '⚡ Open App',
+                    'Open App',
                     style: TextStyle(
                       color: theme.accent,
                       fontSize: 10,
@@ -493,7 +493,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   height: 38,
                   decoration: BoxDecoration(
                     color: theme.secondaryButtonBg,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: theme.secondaryButtonBorder),
                   ),
                   alignment: Alignment.center,
@@ -536,7 +536,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   height: 38,
                   decoration: BoxDecoration(
                     color: theme.secondaryButtonBg,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: theme.secondaryButtonBorder),
                   ),
                   alignment: Alignment.center,
@@ -581,7 +581,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: theme.cardBackground,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: theme.cardBorder),
           ),
           child: Column(
@@ -615,7 +615,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '🏠 ${_capitalize(profile)} Profile Active',
+                    '${_capitalize(profile)} Profile Active',
                     style: TextStyle(color: theme.textSecondary, fontSize: 11),
                   ),
                   Text(
@@ -638,7 +638,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   backgroundColor: theme.primaryButtonBg,
                   foregroundColor: theme.primaryButtonText,
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => context.push(AppRoutes.quickScan),
                 icon: const Icon(Icons.flash_on_rounded, size: 15),
@@ -653,7 +653,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   backgroundColor: theme.secondaryButtonBg,
                   side: BorderSide(color: theme.secondaryButtonBorder),
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => ref.read(isListeningProvider.notifier).toggle(),
                 icon: Icon(
@@ -688,7 +688,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: theme.cardBackground,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isHigh ? const Color(0xFFEF4444).withValues(alpha: 0.4) : theme.cardBorder,
             ),
@@ -699,7 +699,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                 children: [
                   Expanded(
                     child: Text(
-                      '🚨 $alertTitle',
+                      '$alertTitle',
                       style: TextStyle(
                         color: theme.textPrimary,
                         fontSize: 14,
@@ -712,7 +712,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
                       color: isHigh ? const Color(0xFF450A0A) : const Color(0xFF064E3B),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: isHigh ? const Color(0xFFEF4444) : const Color(0xFF10B981),
                       ),
@@ -733,7 +733,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '94% Confidence • Recently Active',
+                    '94% Confidence · Recently Active',
                     style: TextStyle(color: theme.textSecondary, fontSize: 11),
                   ),
                   Text(
@@ -760,7 +760,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   backgroundColor: theme.primaryButtonBg,
                   foregroundColor: theme.primaryButtonText,
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => context.push(AppRoutes.history),
                 icon: const Icon(Icons.history_rounded, size: 15),
@@ -775,7 +775,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   backgroundColor: theme.secondaryButtonBg,
                   side: BorderSide(color: theme.secondaryButtonBorder),
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => context.push(AppRoutes.stats),
                 icon: Icon(Icons.bar_chart_rounded, size: 15, color: theme.accent),
@@ -799,14 +799,14 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: theme.cardBackground,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFEF4444).withValues(alpha: 0.4)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '🚨 Life-Safety Quick Response',
+                'Life-Safety Quick Response',
                 style: TextStyle(
                   color: theme.textPrimary,
                   fontSize: 13.5,
@@ -832,7 +832,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   backgroundColor: const Color(0xFFEF4444),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => context.push(AppRoutes.emergencyContacts),
                 icon: const Icon(Icons.sos_rounded, size: 14),
@@ -847,7 +847,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   backgroundColor: theme.secondaryButtonBg,
                   side: BorderSide(color: theme.secondaryButtonBorder),
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => context.push(AppRoutes.sleepMode),
                 icon: Icon(Icons.bedtime_rounded, size: 14, color: theme.accent),
@@ -862,7 +862,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
                   backgroundColor: theme.secondaryButtonBg,
                   side: BorderSide(color: theme.secondaryButtonBorder),
                   padding: const EdgeInsets.symmetric(vertical: 9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () => context.push(AppRoutes.settings),
                 icon: const Icon(Icons.settings_rounded, size: 14),
@@ -880,7 +880,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFF1E293B)),
       ),
       child: Column(
@@ -906,7 +906,7 @@ class _HomeWidgetShowcaseScreenState extends ConsumerState<HomeWidgetShowcaseScr
           _buildStep(2, 'Touch and hold an empty space until the home menu appears.'),
           _buildStep(3, 'Tap "Widgets" and find "AlertSense".'),
           _buildStep(4, 'Select "AlertSense Radar (4x2)" and drag it onto your screen.'),
-          _buildStep(5, 'Use the ◀ and ▶ buttons on the widget to slide through all 3 views anytime!'),
+          _buildStep(5, 'Use the left and right buttons on the widget to slide through all 3 views anytime!'),
         ],
       ),
     );

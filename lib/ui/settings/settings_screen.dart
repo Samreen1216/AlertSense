@@ -375,7 +375,7 @@ class SettingsScreen extends ConsumerWidget {
         height: 38,
         decoration: BoxDecoration(
           color: Colors.black,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.hcPrimary, width: 1.5),
         ),
         child: Icon(icon, color: AppColors.hcPrimary, size: 20),
@@ -388,7 +388,7 @@ class SettingsScreen extends ConsumerWidget {
         color: isDark
             ? color.withValues(alpha: 0.18)
             : color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(icon, color: color, size: 20),
     );
@@ -619,7 +619,7 @@ class SettingsScreen extends ConsumerWidget {
                   : (isUserActive
                       ? AppColors.success.withValues(alpha: 0.12)
                       : const Color(0xFF64748B).withValues(alpha: 0.12)),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isHighContrast
                     ? AppColors.hcPrimary
@@ -669,7 +669,7 @@ class SettingsScreen extends ConsumerWidget {
                         ? OutlinedButton.styleFrom(
                             foregroundColor: AppColors.hcPrimary,
                             side: const BorderSide(color: AppColors.hcPrimary, width: 1.5),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           )
                         : OutlinedButton.styleFrom(
                             foregroundColor: isDark ? Colors.white : const Color(0xFF0062FF),
@@ -679,7 +679,7 @@ class SettingsScreen extends ConsumerWidget {
                                   : const Color(0xFF0062FF).withValues(alpha: 0.35),
                               width: 1.2,
                             ),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                     onPressed: () => UserAccountSheet.show(context),
                     icon: const Icon(Icons.manage_accounts_rounded, size: 18),
@@ -699,7 +699,7 @@ class SettingsScreen extends ConsumerWidget {
                             ? OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.hcHighAlert,
                                 side: const BorderSide(color: AppColors.hcHighAlert, width: 1.5),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               )
                             : OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFFEF4444),
@@ -707,7 +707,7 @@ class SettingsScreen extends ConsumerWidget {
                                   color: Color(0xFFEF4444),
                                   width: 1.2,
                                 ),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                         onPressed: () => _showLogoutDialog(context, ref),
                         icon: const Icon(Icons.logout_rounded, size: 18),
@@ -721,12 +721,12 @@ class SettingsScreen extends ConsumerWidget {
                             ? FilledButton.styleFrom(
                                 backgroundColor: AppColors.hcPrimary,
                                 foregroundColor: Colors.black,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               )
                             : FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFF0062FF),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
                         onPressed: () => context.push(AppRoutes.login),
                         icon: const Icon(Icons.login_rounded, size: 18),
@@ -938,7 +938,7 @@ class SettingsScreen extends ConsumerWidget {
     try {
       await Share.share(
         message,
-        subject: 'Check out AlertSense — AI Sound Awareness',
+        subject: 'Check out AlertSense - AI Sound Awareness',
         sharePositionOrigin: sharePositionOrigin,
       );
     } catch (e) {
@@ -992,7 +992,7 @@ class SettingsScreen extends ConsumerWidget {
 
           return AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               side: isHighContrast
                   ? const BorderSide(color: Color(0xFF00FF41), width: 2)
                   : BorderSide.none,
@@ -1075,7 +1075,7 @@ class SettingsScreen extends ConsumerWidget {
                             : 'What did you like most? (optional)',
                         hintStyle: const TextStyle(fontSize: 12),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12,

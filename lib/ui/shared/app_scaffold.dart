@@ -625,7 +625,7 @@ class _NavItem extends StatelessWidget {
                 height: 2,
                 decoration: BoxDecoration(
                   color: isSelected ? activeColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ],
@@ -710,7 +710,7 @@ class _SideNavItem extends StatelessWidget {
                 height: 2,
                 decoration: BoxDecoration(
                   color: isSelected ? activeColor : Colors.transparent,
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ],

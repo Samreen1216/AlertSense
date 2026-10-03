@@ -30,7 +30,7 @@ class AuthHeaderBrand extends StatelessWidget {
           width: 72,
           height: 72,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF0072FF).withValues(alpha: 0.35),
@@ -40,7 +40,7 @@ class AuthHeaderBrand extends StatelessWidget {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             child: Image.asset(
               AppAssets.appIcon,
               width: 72,
@@ -57,7 +57,7 @@ class AuthHeaderBrand extends StatelessWidget {
             color: isDark
                 ? AppColors.primary.withValues(alpha: 0.16)
                 : AppColors.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: AppColors.primary.withValues(alpha: 0.25),
               width: 1.0,

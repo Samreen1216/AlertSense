@@ -69,10 +69,10 @@ class ListeningNotifier extends StateNotifier<bool> {
     String initialTitle = 'AlertSense Active';
     String initialText = 'Actively monitoring surrounding sounds in real time...';
     if (isSleep) {
-      initialTitle = 'AlertSense — Sleep Mode Active';
+      initialTitle = 'AlertSense - Sleep Mode Active';
       initialText = 'Monitoring life-safety alarms (Fire, Sirens, Baby Crying)...';
     } else if (isOutdoor) {
-      initialTitle = 'AlertSense — Outdoor Mode Active';
+      initialTitle = 'AlertSense - Outdoor Mode Active';
       initialText = 'Monitoring traffic & hazard sounds (Sirens, Horns, Glass)...';
     }
 
@@ -197,7 +197,7 @@ class ListeningNotifier extends StateNotifier<bool> {
       final statusSuffix = isSleep ? 'AlertSense Sleep Mode' : 'AlertSense Active';
       await foregroundService.updateStatus(
         title: '${cat.label} Detected!',
-        text: 'Confidence: ${(alertEvent.confidence * 100).toStringAsFixed(0)}% • $statusSuffix',
+        text: 'Confidence: ${(alertEvent.confidence * 100).toStringAsFixed(0)}% · $statusSuffix',
       );
 
       if (mounted) {
@@ -262,10 +262,10 @@ class ListeningNotifier extends StateNotifier<bool> {
     String title;
     String text;
     if (isSleep) {
-      title = 'AlertSense — Sleep Mode Active';
+      title = 'AlertSense - Sleep Mode Active';
       text = 'Monitoring life-safety alarms (Fire, Sirens, Baby Crying)...';
     } else if (isOutdoor) {
-      title = 'AlertSense — Outdoor Mode Active';
+      title = 'AlertSense - Outdoor Mode Active';
       text = 'Monitoring traffic & hazard sounds (Sirens, Horns, Glass)...';
     } else {
       title = 'AlertSense Active';

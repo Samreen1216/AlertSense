@@ -91,8 +91,8 @@ class _BackgroundMonitoringSheetContentState
               Expanded(
                 child: Text(
                   granted
-                      ? '✓ 24/7 Background Protection enabled! Alerts will sound when phone is locked.'
-                      : '⚠️ Foreground mode active. Locked-screen alerts may be delayed by Android.',
+                      ? '24/7 Background Protection enabled! Alerts will sound when phone is locked.'
+                      : 'Foreground mode active. Locked-screen alerts may be delayed by Android.',
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -376,7 +376,7 @@ class _BackgroundMonitoringSheetContentState
                               const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: const Color(0xFF10B981).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
                             'RECOMMENDED',
@@ -459,7 +459,7 @@ class _BackgroundMonitoringSheetContentState
                               const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
                             'LIMITED FUNCTIONALITY',
@@ -521,7 +521,7 @@ class _BackgroundMonitoringSheetContentState
                     minimumSize: const Size.fromHeight(48),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
@@ -540,7 +540,7 @@ class _BackgroundMonitoringSheetContentState
                     side: BorderSide(color: borderColor),
                     minimumSize: const Size.fromHeight(44),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),

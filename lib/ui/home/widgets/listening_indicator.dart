@@ -60,7 +60,7 @@ class _ListeningIndicatorState extends ConsumerState<ListeningIndicator>
         color: isDark
             ? const Color(0xFF1E2638)
             : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isListening
               ? dbColor.withValues(alpha: 0.3)
@@ -91,7 +91,7 @@ class _ListeningIndicatorState extends ConsumerState<ListeningIndicator>
                   color: isListening
                       ? const Color(0xFF10B981).withValues(alpha: 0.15)
                       : Colors.grey.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isListening
                         ? const Color(0xFF10B981).withValues(alpha: 0.4)

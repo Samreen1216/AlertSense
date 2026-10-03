@@ -20,7 +20,7 @@ class PasswordRequirementsView extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final hasMinLength = password.length >= 8;
+    final hasMinLength = password.length >= 6;
     final hasLetter = password.contains(RegExp(r'[a-zA-Z]'));
     final hasDigit = password.contains(RegExp(r'[0-9]'));
     final hasSpecial = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>\-_=+[\]\\;/`~]'));
@@ -39,7 +39,7 @@ class PasswordRequirementsView extends StatelessWidget {
             : (allMet
                 ? AppColors.success.withValues(alpha: 0.08)
                 : const Color(0xFFF1F5F9).withValues(alpha: 0.7)),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: allMet
               ? AppColors.success.withValues(alpha: 0.45)
@@ -76,7 +76,7 @@ class PasswordRequirementsView extends StatelessWidget {
             runSpacing: 6,
             children: [
               _buildCriterionChip(
-                label: '8+ chars',
+                label: '6+ chars',
                 isMet: hasMinLength,
                 theme: theme,
                 isDark: isDark,

@@ -133,7 +133,7 @@ class _ManualWhatsAppDialogState extends State<ManualWhatsAppDialog> {
                     color: _messageController.text.contains('maps.google.com')
                         ? const Color(0xFF1B5E20).withValues(alpha: 0.6)
                         : Colors.amber.shade900.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: _messageController.text.contains('maps.google.com')
                           ? const Color(0xFF69F0AE)

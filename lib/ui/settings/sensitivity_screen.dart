@@ -207,7 +207,7 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              '◀ More Alerts\n(Sensitive)',
+                              'More Alerts\n(Sensitive)',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: theme.colorScheme.onSurfaceVariant,
@@ -218,7 +218,7 @@ class _SensitivityScreenState extends ConsumerState<SensitivityScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Fewer False Alarms ▶\n(Strict Certainty)',
+                              'Fewer False Alarms\n(Strict Certainty)',
                               textAlign: TextAlign.right,
                               style: TextStyle(
                                 fontSize: 10,

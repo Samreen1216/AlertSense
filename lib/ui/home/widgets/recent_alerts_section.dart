@@ -74,7 +74,7 @@ class RecentAlertsSection extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
                           color: primaryActionColor.withValues(alpha: isDark ? 0.2 : 0.12),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: primaryActionColor.withValues(alpha: 0.3),
                             width: 1,

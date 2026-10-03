@@ -177,7 +177,7 @@ class _HeroListeningCardState extends ConsumerState<HeroListeningCard>
                                     color: isListening
                                         ? const Color(0xFF00E5FF)
                                         : Colors.white.withValues(alpha: 0.25),
-                                    borderRadius: BorderRadius.circular(2),
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
                                 );
                               }),

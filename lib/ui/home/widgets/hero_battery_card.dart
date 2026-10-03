@@ -48,7 +48,7 @@ class HeroBatteryCard extends ConsumerWidget {
                           ? const Color(0xFF10B981)
                           : const Color(0xFFF59E0B))
                       .withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: (status.isOptimized
                             ? const Color(0xFF10B981)

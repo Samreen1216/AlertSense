@@ -177,7 +177,7 @@ class LastAlertCard extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '$timeAgo  •  ${(lastAlert.confidence * 100).toStringAsFixed(0)}% confidence • ${lastAlert.source}',
+                              '$timeAgo  -  ${(lastAlert.confidence * 100).toStringAsFixed(0)}% confidence - ${lastAlert.source}',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w500,

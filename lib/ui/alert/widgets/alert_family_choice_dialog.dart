@@ -62,7 +62,7 @@ class _AlertFamilyChoiceDialogState extends State<AlertFamilyChoiceDialog> {
     return AlertDialog(
       backgroundColor: isDark ? const Color(0xFF1E222D) : Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isDark ? Colors.white12 : Colors.black12,
           width: 1.0,
@@ -209,7 +209,7 @@ class _ChannelOptionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -217,7 +217,7 @@ class _ChannelOptionTile extends StatelessWidget {
           color: isSelected
               ? accentColor.withValues(alpha: isDark ? 0.18 : 0.12)
               : (isDark ? const Color(0xFF272B37) : const Color(0xFFF3F4F6)),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? accentColor : (isDark ? Colors.white12 : Colors.black12),
             width: isSelected ? 2.0 : 1.0,

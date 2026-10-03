@@ -99,12 +99,12 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
                   widget.onDismiss();
                   context.push(AppRoutes.alertDetails, extra: widget.alert);
                 },
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: priorityColor.withValues(alpha: 0.6),
                       width: 1.5,
@@ -169,7 +169,7 @@ class _InAppNotificationBannerState extends State<InAppNotificationBanner>
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: priorityColor.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(6),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     priority,

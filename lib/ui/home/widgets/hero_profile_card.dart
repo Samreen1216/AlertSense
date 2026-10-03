@@ -81,7 +81,7 @@ class HeroProfileCard extends ConsumerWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   color: const Color(0xFF0072FF).withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: const Color(0xFF0072FF).withValues(alpha: 0.4),
                     width: 1,

@@ -300,7 +300,7 @@ class StatsScreen extends ConsumerWidget {
                                       toY: e.value.toDouble(),
                                       color: theme.colorScheme.primary,
                                       width: 18,
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                   ],
                                 );

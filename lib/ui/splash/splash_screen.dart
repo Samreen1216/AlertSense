@@ -465,7 +465,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     } else if (progress < 0.88) {
       return 'Synchronizing Haptic & Visual Channels...';
     } else {
-      return 'AlertSense Neural Engine Active • Ready';
+      return 'AlertSense Neural Engine Active';
     }
   }
 
@@ -626,12 +626,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             color: Colors.transparent,
             child: InkWell(
               onTap: () => _cycleTheme(currentTheme),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: colors.cardBackground,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: colors.cardBorder,
                     width: colors.cardBorderWidth,
@@ -680,12 +680,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             color: Colors.transparent,
             child: InkWell(
               onTap: _proceedToApp,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
                   color: colors.cardBackground,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: colors.cardBorder,
                     width: colors.cardBorderWidth,
@@ -922,7 +922,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   height: clampedHeight,
                   margin: const EdgeInsets.symmetric(horizontal: 2.2),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(4),
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
@@ -1042,14 +1042,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   width: double.infinity,
                   decoration: BoxDecoration(
                     color: colors.cardBorder.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
                     widthFactor: progress.clamp(0.01, 1.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(3),
+                        borderRadius: BorderRadius.circular(4),
                         gradient: LinearGradient(
                           colors: [
                             colors.equalizerColorStart,
@@ -1125,7 +1125,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 elevation: isReady && !colors.isHighContrast ? 4 : 0,
                 shadowColor: colors.primaryGlow.withValues(alpha: 0.4),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
                     color: colors.cardBorder,
                     width: colors.cardBorderWidth,

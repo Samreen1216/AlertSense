@@ -283,7 +283,7 @@ class _RadarSoundNode extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.75),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
             children: [

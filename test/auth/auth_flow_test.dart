@@ -146,14 +146,14 @@ void main() {
     test('validateStrongPassword enforces production password requirements', () {
       expect(AuthValidators.validateStrongPassword(null), 'Password is required');
       expect(AuthValidators.validateStrongPassword(''), 'Password is required');
-      // Less than 8 characters
+      // Less than 6 characters
       expect(
-        AuthValidators.validateStrongPassword('Pass1!'),
-        'Password must be at least 8 characters long',
+        AuthValidators.validateStrongPassword('Pass!'),
+        'Password must be at least 6 characters long',
       );
       // Missing letter
       expect(
-        AuthValidators.validateStrongPassword('12345678!@#'),
+        AuthValidators.validateStrongPassword('123456!@#'),
         'Password must contain at least 1 letter',
       );
       // Missing number
@@ -166,10 +166,11 @@ void main() {
         AuthValidators.validateStrongPassword('Password123'),
         'Password must contain at least 1 special character',
       );
-      // Valid passwords (both uppercase and lowercase letters are acceptable)
+      // Valid passwords (both uppercase and lowercase letters are acceptable, min 6 chars)
+      expect(AuthValidators.validateStrongPassword('Pass1!'), isNull);
+      expect(AuthValidators.validateStrongPassword('PASS1!'), isNull);
       expect(AuthValidators.validateStrongPassword('password123!'), isNull);
       expect(AuthValidators.validateStrongPassword('PASSWORD123!'), isNull);
-      expect(AuthValidators.validateStrongPassword('Password123!'), isNull);
       expect(AuthValidators.validateStrongPassword('AlertSense@2026'), isNull);
       expect(AuthValidators.validateStrongPassword('S3cure#Pass_99'), isNull);
     });
@@ -726,24 +727,24 @@ void main() {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: PasswordRequirementsView(password: 'pass1!'),
+            body: PasswordRequirementsView(password: 'pa1!'),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      // 'pass1!' satisfies: Letters (A-Z / a-z), Numbers (0-9), Special char (!@#$), but NOT 8+ chars
-      expect(find.text('8+ chars'), findsOneWidget);
+      // 'pa1!' (4 chars) satisfies: Letters (A-Z / a-z), Numbers (0-9), Special char (!@#$), but NOT 6+ chars
+      expect(find.text('6+ chars'), findsOneWidget);
       expect(find.text('Letters (A-Z / a-z)'), findsOneWidget);
       expect(find.text('Numbers (0-9)'), findsOneWidget);
       expect(find.text('Special char (!@#\$)'), findsOneWidget);
       expect(find.text('Password requirements:'), findsOneWidget);
 
-      // Pump with full strong password
+      // Pump with full strong 6-character password
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
-            body: PasswordRequirementsView(password: 'password123!'),
+            body: PasswordRequirementsView(password: 'Pass1!'),
           ),
         ),
       );

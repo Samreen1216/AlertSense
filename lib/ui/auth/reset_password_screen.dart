@@ -117,7 +117,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
                             color: AppColors.error.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: AppColors.error.withValues(alpha: 0.35),
                               width: 1.0,
@@ -152,7 +152,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         controller: _newPasswordController,
                         focusNode: _newPasswordFocusNode,
                         labelText: 'New Password',
-                        hintText: 'At least 8 characters',
+                        hintText: 'At least 6 characters',
                         prefixIcon: Icons.lock_outline_rounded,
                         obscureText: _obscureNewPassword,
                         keyboardType: TextInputType.visiblePassword,

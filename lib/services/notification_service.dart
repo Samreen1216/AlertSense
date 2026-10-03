@@ -170,7 +170,7 @@ class NotificationService {
       styleInformation: BigTextStyleInformation(
         '${category.label} continues to be detected ($count times over ${durationSeconds}s). AlertSense monitoring is actively ongoing.',
         contentTitle: '${category.label} Continues to be Detected',
-        summaryText: '${priority.label.toUpperCase()} • PERSISTENT ALERT',
+        summaryText: '${priority.label.toUpperCase()} - PERSISTENT ALERT',
       ),
       color: category.color,
     );

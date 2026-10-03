@@ -247,7 +247,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           foregroundColor: const Color(0xFF283593),
                           minimumSize: const Size(double.infinity, 52),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                         ),
                         child: const Text(
@@ -266,7 +266,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 52),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                         ),
                         child: const Text(
@@ -483,7 +483,7 @@ class _OnboardingPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Text(
                     'Grant',

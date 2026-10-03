@@ -129,7 +129,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                   color: isHighContrast
                       ? AppColors.hcPrimary
                       : (isDark ? Colors.white24 : Colors.black12),
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               ),
             ),
@@ -201,7 +201,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                         style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             side: isHighContrast
                                 ? const BorderSide(color: AppColors.hcPrimary, width: 1.5)
                                 : BorderSide.none,
@@ -272,7 +272,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           onTap: () {
             HapticFeedback.selectionClick();
             ref.read(themeTypeProvider.notifier).setTheme(item.type);
@@ -282,7 +282,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: tileBg,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               border: tileBorder,
             ),
             child: Row(
@@ -299,7 +299,7 @@ class ThemeAppearanceBottomSheet extends ConsumerWidget {
                             : (isDark
                                 ? Colors.white.withValues(alpha: 0.08)
                                 : Colors.black.withValues(alpha: 0.05))),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     border: isHighContrast
                         ? Border.all(
                             color: isSelected ? AppColors.hcPrimary : Colors.white30,

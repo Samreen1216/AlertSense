@@ -350,7 +350,7 @@ class _VibrationDesignerScreenState extends ConsumerState<VibrationDesignerScree
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.primary.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 'Saved Pattern',

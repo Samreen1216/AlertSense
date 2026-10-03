@@ -31,7 +31,7 @@ class NotificationCenterSheet extends ConsumerWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520, maxHeight: 720),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(24),
               child: const NotificationCenterSheet(),
             ),
           ),
@@ -77,7 +77,7 @@ class NotificationCenterSheet extends ConsumerWidget {
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: sheetBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(color: borderColor, width: isHighContrast ? 2.0 : 1.0),
         boxShadow: isHighContrast
             ? null
@@ -105,7 +105,7 @@ class NotificationCenterSheet extends ConsumerWidget {
                   color: isHighContrast
                       ? AppColors.hcPrimary
                       : (isDark ? Colors.white24 : Colors.black12),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
@@ -167,7 +167,7 @@ class NotificationCenterSheet extends ConsumerWidget {
                                     horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFEF4444),
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   '${unreadAlerts.length} new',
@@ -183,8 +183,8 @@ class NotificationCenterSheet extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Text(
                           unreadAlerts.isNotEmpty
-                              ? 'Swipe card to delete • Tap to view'
-                              : 'All caught up • No unread alerts',
+                              ? 'Swipe card to delete - Tap to view'
+                              : 'All caught up - No unread alerts',
                           style: TextStyle(
                             color: subtitleColor,
                             fontSize: 12,
@@ -297,7 +297,7 @@ class NotificationCenterSheet extends ConsumerWidget {
                     foregroundColor: isHighContrast ? AppColors.hcPrimary : const Color(0xFFEF4444),
                     minimumSize: const Size(double.infinity, 44),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     side: BorderSide(
                       color: isHighContrast
@@ -538,7 +538,7 @@ class NotificationCenterSheet extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            ' • ',
+                            ' - ',
                             style: TextStyle(color: subtitleColor, fontSize: 12),
                           ),
                           Text(

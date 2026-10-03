@@ -86,7 +86,7 @@
             android:gravity="center"
             android:paddingStart="10dp"
             android:paddingEnd="10dp"
-            android:text="⚡ Open App"
+            android:text="Open App"
             android:textColor="@color/widget_accent_cyan"
             android:textSize="10sp"
             android:textStyle="bold" />
@@ -157,7 +157,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="🏠 Home Profile"
+                    android:text="Home Profile"
                     android:textColor="@color/widget_text_secondary"
                     android:textSize="10sp" />
 
@@ -188,7 +188,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="⚡ Quick Scan (10s)"
+                android:text="Quick Scan (10s)"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
@@ -202,7 +202,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="🎙️ Toggle Mic"
+                android:text="Toggle Mic"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
@@ -239,7 +239,7 @@
                     android:layout_weight="1"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:text="🚨 Smoke Alarm"
+                    android:text="Smoke Alarm"
                     android:textColor="@color/widget_text_primary"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -333,7 +333,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="📜 Full History"
+                android:text="Full History"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
@@ -347,7 +347,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="📊 Insights &amp; Stats"
+                android:text="Insights &amp; Stats"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
@@ -375,7 +375,7 @@
                 android:id="@+id/widget_emergency_headline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="🚨 Life-Safety Quick Response"
+                android:text="Life-Safety Quick Response"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -407,7 +407,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="🚨 SOS Contact"
+                android:text="SOS Contact"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="10sp"
                 android:textStyle="bold" />
@@ -422,7 +422,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="🌙 Sleep Mode"
+                android:text="Sleep Mode"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="10sp"
                 android:textStyle="bold" />
@@ -436,7 +436,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center"
-                android:text="⚙️ Settings"
+                android:text="Settings"
                 android:textColor="@color/widget_text_primary"
                 android:textSize="10sp"
                 android:textStyle="bold" />

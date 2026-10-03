@@ -61,7 +61,7 @@ class DbMeterWidget extends ConsumerWidget {
                 color: isHighContrast
                     ? noiseColor
                     : noiseColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isHighContrast ? Colors.white : noiseColor.withValues(alpha: 0.35),
                   width: 1,
@@ -87,7 +87,7 @@ class DbMeterWidget extends ConsumerWidget {
           curve: Curves.easeOutCubic,
           builder: (context, animatedValue, child) {
             return ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               child: Container(
                 height: 8,
                 width: double.infinity,
@@ -118,7 +118,7 @@ class DbMeterWidget extends ConsumerWidget {
                                     Color(0xFFEF4444), // Red
                                   ],
                                 ),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ),

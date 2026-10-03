@@ -124,7 +124,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
                             color: AppColors.error.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: AppColors.error.withValues(alpha: 0.35),
                               width: 1.0,
@@ -194,7 +194,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         controller: _passwordController,
                         focusNode: _passwordFocusNode,
                         labelText: 'Password',
-                        hintText: 'At least 8 characters',
+                        hintText: 'At least 6 characters',
                         prefixIcon: Icons.lock_outline_rounded,
                         obscureText: _obscurePassword,
                         keyboardType: TextInputType.visiblePassword,

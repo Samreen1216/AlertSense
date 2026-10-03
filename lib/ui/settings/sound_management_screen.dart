@@ -194,7 +194,7 @@ class SoundManagementScreen extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color: priorityColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: priorityColor.withValues(alpha: 0.3),
                     width: 0.8,
@@ -253,7 +253,7 @@ class SoundManagementScreen extends ConsumerWidget {
                                     ? AppColors.hcPrimary.withValues(alpha: 0.2)
                                     : const Color(0xFF10B981).withValues(alpha: 0.15))
                                 : (isDark ? Colors.white10 : Colors.black12),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             isEnabled ? 'Active' : 'Muted',

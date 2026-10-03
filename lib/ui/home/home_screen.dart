@@ -98,7 +98,7 @@ class HomeScreen extends ConsumerWidget {
                   color: isHighContrast
                       ? Colors.black
                       : (isDark ? AppColors.darkSurface : AppColors.backgroundLight),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   border: isHighContrast
                       ? const Border(
                           top: BorderSide(color: AppColors.hcPrimary, width: 2.0),

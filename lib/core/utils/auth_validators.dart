@@ -34,7 +34,7 @@ class AuthValidators {
   }
 
   /// Validates a strong password for Sign Up / Account Creation / Password Reset:
-  /// - Minimum 8 characters
+  /// - Minimum 6 characters
   /// - Contains letters (both uppercase and lowercase letters are acceptable)
   /// - Contains at least 1 number
   /// - Contains at least 1 special character
@@ -42,8 +42,8 @@ class AuthValidators {
     if (value == null || value.isEmpty) {
       return 'Password is required';
     }
-    if (value.length < 8) {
-      return 'Password must be at least 8 characters long';
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters long';
     }
     if (!value.contains(RegExp(r'[a-zA-Z]'))) {
       return 'Password must contain at least 1 letter';

@@ -54,7 +54,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         duration: const Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         action: SnackBarAction(
           label: 'Undo',
           textColor: const Color(0xFF00C6FF),
@@ -217,7 +217,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       width: isSelected ? 1.5 : 1.0,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     onSelected: (selected) {
                       ref.read(alertFilterPriorityProvider.notifier).state =
@@ -308,7 +308,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                           foregroundColor: themeType == ThemeType.highContrast ? Colors.black : null,
                                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(14),
+                                            borderRadius: BorderRadius.circular(12),
                                           ),
                                         ),
                                       ),
@@ -572,7 +572,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     height: 4,
                     decoration: BoxDecoration(
                       color: isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
@@ -596,7 +596,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
                       color: const Color(0xFF0072FF).withValues(alpha: 0.3),
                     ),
@@ -606,7 +606,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0072FF).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF0072FF)),
                   ),
@@ -629,7 +629,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     side: BorderSide(
                       color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                     ),
@@ -638,7 +638,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(Icons.text_snippet_rounded, color: theme.colorScheme.primary),
                   ),
@@ -681,7 +681,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             duration: const Duration(seconds: 4),
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             backgroundColor: Colors.red.shade900,
           ),
         );
@@ -743,7 +743,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                   behavior: SnackBarBehavior.floating,
                   margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               );
               _snackBarController = controller;

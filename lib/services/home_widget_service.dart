@@ -79,12 +79,12 @@ class HomeWidgetService {
         await HomeWidget.saveWidgetData<String>('last_alert_priority', lastAlert.priorityLevel.toUpperCase());
         final timeStr = _formatTimeAgo(lastAlert.timestamp);
         final confStr = '${(lastAlert.confidence * 100).toStringAsFixed(0)}%';
-        await HomeWidget.saveWidgetData<String>('last_alert_meta', '$confStr Match • $timeStr');
+        await HomeWidget.saveWidgetData<String>('last_alert_meta', '$confStr Match · $timeStr');
       } else {
         await HomeWidget.saveWidgetData<String>('last_alert_title', 'All Clear');
-        await HomeWidget.saveWidgetData<String>('last_alert_emoji', '🛡️');
+        await HomeWidget.saveWidgetData<String>('last_alert_emoji', '');
         await HomeWidget.saveWidgetData<String>('last_alert_priority', 'LOW');
-        await HomeWidget.saveWidgetData<String>('last_alert_meta', 'No threats detected • Active');
+        await HomeWidget.saveWidgetData<String>('last_alert_meta', 'No threats detected · Active');
       }
 
       await HomeWidget.saveWidgetData<String>('alerts_today', '$alertsTodayCount Alerts Today');

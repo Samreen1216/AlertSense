@@ -313,7 +313,7 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
                 color: isListening
                     ? const Color(0xFF065F46).withValues(alpha: 0.3)
                     : const Color(0xFF991B1B).withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isListening
                       ? const Color(0xFF10B981).withValues(alpha: 0.5)
@@ -379,7 +379,7 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
       padding: EdgeInsets.all(isLandscape ? 14 : 20),
       decoration: BoxDecoration(
         color: const Color(0xFF131D31),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
@@ -477,7 +477,7 @@ class _SleepModeScreenState extends ConsumerState<SleepModeScreen> {
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.amber.shade200,
           side: BorderSide(color: Colors.amber.shade300, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(27)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           backgroundColor: Colors.amber.shade400.withValues(alpha: 0.05),
         ),
         onPressed: _exitSleepMode,

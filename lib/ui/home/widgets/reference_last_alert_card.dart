@@ -168,7 +168,7 @@ class ReferenceLastAlertCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${(lastAlert.confidence * 100).toInt()}% confidence • ${_formatTimeAgo(lastAlert.timestamp)}',
+                      '${(lastAlert.confidence * 100).toInt()}% confidence - ${_formatTimeAgo(lastAlert.timestamp)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark ? Colors.white70 : const Color(0xFF64748B),

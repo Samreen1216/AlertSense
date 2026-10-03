@@ -66,7 +66,7 @@ class _SoundRadarWidgetState extends ConsumerState<SoundRadarWidget>
             Color(0xFF090D16),
           ],
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: isListening
               ? const Color(0xFF00E5FF).withValues(alpha: 0.3)
@@ -211,7 +211,7 @@ class _SoundRadarWidgetState extends ConsumerState<SoundRadarWidget>
                                             color: Colors.black.withValues(
                                                 alpha: 0.8),
                                             borderRadius:
-                                                BorderRadius.circular(10),
+                                                BorderRadius.circular(8),
                                             border: Border.all(
                                               color: dotColor.withValues(
                                                   alpha: 0.5),

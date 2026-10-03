@@ -230,7 +230,7 @@ class AlertSenseWidgetProvider : HomeWidgetProvider() {
         val monitoredSounds = widgetData.getString("monitored_sounds",  "9 Sounds Monitored") ?: "9 Sounds Monitored"
 
         val lastAlertTitle    = widgetData.getString("last_alert_title",    "No Recent Alerts")    ?: "No Recent Alerts"
-        val lastAlertEmoji    = widgetData.getString("last_alert_emoji",    "🛡️")               ?: "🛡️"
+        val lastAlertEmoji    = widgetData.getString("last_alert_emoji",    "")                 ?: ""
         val lastAlertPriority = widgetData.getString("last_alert_priority", "LOW")                 ?: "LOW"
         val lastAlertMeta     = widgetData.getString("last_alert_meta",     "All Quiet • Monitoring") ?: "All Quiet • Monitoring"
         val alertsToday       = widgetData.getString("alerts_today",        "0 Alerts Today")      ?: "0 Alerts Today"
@@ -311,24 +311,19 @@ class AlertSenseWidgetProvider : HomeWidgetProvider() {
         views.setViewVisibility(R.id.layout_slide_3, if (currentSlide == 2) View.VISIBLE else View.GONE)
 
         // ── 3. Slide 1 Data: Live Monitor ──────────────────────────────────────────
-        val profileEmoji = when (activeProfile.lowercase().trim()) {
-            "sleep" -> "🌙"
-            "outdoor" -> "🌳"
-            else -> "🏠"
-        }
         views.setTextViewText(R.id.widget_db_level,         ambientDb)
         views.setTextViewText(R.id.widget_sound_status,     soundStatus)
-        views.setTextViewText(R.id.widget_profile_name,     "$profileEmoji $activeProfile Profile")
+        views.setTextViewText(R.id.widget_profile_name,     "$activeProfile Profile")
         views.setTextViewText(R.id.widget_monitored_sounds, monitoredSounds)
 
         // Dynamic Mic button label
         views.setTextViewText(
             R.id.btn_toggle_listen,
-            if (isListening) "⏸️ Pause Mic" else "🎙️ Start Mic"
+            if (isListening) "Pause Mic" else "Start Mic"
         )
 
         // ── 4. Slide 2 Data: Recent Alerts Feed ────────────────────────────────────
-        views.setTextViewText(R.id.widget_alert_title, "$lastAlertEmoji $lastAlertTitle")
+        views.setTextViewText(R.id.widget_alert_title, lastAlertTitle)
         views.setTextViewText(R.id.widget_alert_meta,  lastAlertMeta)
         views.setTextViewText(R.id.widget_alert_stats, alertsToday)
 

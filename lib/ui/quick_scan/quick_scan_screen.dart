@@ -271,7 +271,7 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
                     height: h,
                     decoration: BoxDecoration(
                       color: const Color(0xFF00E5FF),
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                   );
                 }),
@@ -359,7 +359,7 @@ class _QuickScanScreenState extends ConsumerState<QuickScanScreen>
               color: isHighContrast
                   ? Colors.black
                   : priorityColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(isShort ? 18 : 30),
+              borderRadius: BorderRadius.circular(isShort ? 16 : 24),
               border: Border.all(
                 color: isHighContrast ? Colors.white : priorityColor.withValues(alpha: 0.4),
                 width: isHighContrast ? 2.0 : 1.5,

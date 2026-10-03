@@ -460,7 +460,7 @@ class _FullScreenAlertState extends ConsumerState<FullScreenAlert>
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: const FittedBox(
                       fit: BoxFit.scaleDown,
