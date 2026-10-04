@@ -151,24 +151,6 @@ class RecentAlertsSection extends ConsumerWidget {
               ),
             );
           }),
-          if (alerts.length > 3)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Center(
-                child: TextButton.icon(
-                  onPressed: () => context.push(AppRoutes.history),
-                  icon: const Icon(Icons.history_rounded, size: 16),
-                  label: Text('View all ${alerts.length} alerts in History'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: primaryActionColor,
-                    textStyle: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ],
     );

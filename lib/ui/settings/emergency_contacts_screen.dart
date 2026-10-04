@@ -6,6 +6,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../providers/settings_providers.dart';
+import '../../services/sms_service.dart';
 
 class EmergencyContactsScreen extends ConsumerStatefulWidget {
   const EmergencyContactsScreen({super.key});
@@ -49,6 +50,11 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
         .toList();
 
     ref.read(userSettingsProvider.notifier).setEmergencyContacts(numbers);
+
+    if (numbers.isNotEmpty) {
+      SmsService.requestSmsPermission().catchError((_) => false);
+    }
+
     final messenger = ScaffoldMessenger.of(context);
     messenger.clearSnackBars();
     final controller = messenger.showSnackBar(

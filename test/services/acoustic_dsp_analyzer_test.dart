@@ -194,6 +194,67 @@ void main() {
       expect(result!.soundCategory, equals(SoundCategory.glassBreaking.name));
       expect(result.confidence, greaterThanOrEqualTo(0.80));
     });
+
+    test('Smoke alarm (~3900 Hz piezo tone) is accurately identified as smokeAlarm', () {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      // Piezo smoke alarm pure high tone at 3900 Hz
+      const freq = 3900.0;
+      for (int i = 0; i < totalSamples; i++) {
+        final t = i / sampleRate;
+        audioData[i] = 0.25 * sin(2 * pi * freq * t);
+      }
+
+      final result = analyzer.classify(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.smokeAlarm.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.75));
+    });
+
+    test('Emergency Siren (sweeping wailing tone 1200-2200 Hz) is accurately identified as emergencySiren', () {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      double phase = 0.0;
+      for (int i = 0; i < totalSamples; i++) {
+        final t = i / sampleRate;
+        final freq = 1400.0 + 500.0 * sin(2 * pi * 2.0 * t);
+        phase += 2 * pi * freq / sampleRate;
+        audioData[i] = 0.22 * sin(phase);
+      }
+
+      final result = analyzer.classify(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.emergencySiren.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.75));
+    });
+
+    test('Baby Crying (vocal cries with harmonic formants) is accurately identified as babyCrying', () {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      // Cry bursts with fundamental ~520 Hz and vocal formants ~1040 Hz, 1560 Hz
+      for (int i = 1000; i < 14000; i++) {
+        final t = (i - 1000) / sampleRate;
+        final modulation = 0.5 * (1.0 + sin(2 * pi * 3.0 * t));
+        final vocal = 0.16 * sin(2 * pi * 520 * t) +
+            0.12 * sin(2 * pi * 1040 * t) +
+            0.08 * sin(2 * pi * 1560 * t);
+        audioData[i] = modulation * vocal;
+      }
+
+      final result = analyzer.classify(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.babyCrying.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.75));
+    });
   });
 
   group('AcousticDspAnalyzer Background Isolate (classifyAsync) Tests', () {

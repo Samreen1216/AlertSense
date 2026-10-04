@@ -12,7 +12,6 @@ enum SoundCategory {
     icon: Icons.local_fire_department,
     yamnetLabels: [
       'Fire alarm',
-      'Smoke detector, smoke alarm',
       'Alarm',
       'Buzzer',
     ],
@@ -27,8 +26,6 @@ enum SoundCategory {
     icon: Icons.smoke_free,
     yamnetLabels: [
       'Smoke detector, smoke alarm',
-      'Fire alarm',
-      'Alarm',
     ],
     defaultThreshold: 0.70,
   ),

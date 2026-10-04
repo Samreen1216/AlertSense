@@ -16,7 +16,7 @@ class MockNotificationService extends NotificationService {}
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Swiping alert card shows SnackBar and auto-dismisses after 4 seconds', (tester) async {
+  testWidgets('Swiping alert card shows confirmation dialog, deletes on confirm, and SnackBar auto-dismisses after 2 seconds', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final storage = LocalStorage(prefs);
@@ -59,6 +59,14 @@ void main() {
     await tester.drag(find.byType(Dismissible), const Offset(-500, 0));
     await tester.pumpAndSettle();
 
+    // Verify confirmation dialog is displayed
+    expect(find.text('Delete Alert?'), findsOneWidget);
+    expect(find.text('Are you sure you want to delete the alert for "Doorbell"?'), findsOneWidget);
+
+    // Confirm deletion
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
     // Verify card is removed from list
     expect(find.text('Doorbell'), findsNothing);
 
@@ -66,8 +74,8 @@ void main() {
     expect(find.text('Removed Doorbell alert'), findsOneWidget);
     expect(find.text('Undo'), findsOneWidget);
 
-    // Advance virtual timer by 4.2 seconds
-    await tester.pump(const Duration(milliseconds: 4200));
+    // Advance virtual timer by 2.2 seconds (very short time, auto-dismisses after 2s)
+    await tester.pump(const Duration(milliseconds: 2200));
     await tester.pumpAndSettle();
 
     // Verify SnackBar has disappeared
@@ -113,6 +121,11 @@ void main() {
     await tester.drag(find.byType(Dismissible), const Offset(-500, 0));
     await tester.pumpAndSettle();
 
+    // Confirm deletion
+    expect(find.text('Delete Alert?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Undo'), findsOneWidget);
 
     // Tap Undo
@@ -121,5 +134,55 @@ void main() {
 
     // Verify alert card was restored
     expect(find.text('Doorbell'), findsOneWidget);
+  });
+
+  testWidgets('Swiping alert card and canceling confirmation dialog keeps alert card', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final storage = LocalStorage(prefs);
+    final alertRepo = AlertRepository(storage);
+    await alertRepo.init();
+    final settingsRepo = SettingsRepository(storage);
+    await settingsRepo.init();
+
+    final testAlert = AlertEvent(
+      id: 'test_alert_3',
+      soundCategory: 'doorbell',
+      priorityLevel: 'medium',
+      confidence: 0.85,
+      timestamp: DateTime.now(),
+      acknowledged: false,
+      source: 'live_mic',
+    );
+    await alertRepo.addAlert(testAlert);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          notificationServiceProvider.overrideWithValue(MockNotificationService()),
+        ],
+        child: const MaterialApp(
+          home: HistoryScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Swipe to delete
+    await tester.drag(find.byType(Dismissible), const Offset(-500, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete Alert?'), findsOneWidget);
+
+    // Tap Cancel
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    // Alert card is still present
+    expect(find.text('Doorbell'), findsOneWidget);
+    expect(find.text('Removed Doorbell alert'), findsNothing);
   });
 }

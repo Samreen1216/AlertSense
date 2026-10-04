@@ -11,6 +11,7 @@ import 'service_providers.dart';
 import 'settings_providers.dart';
 import 'stats_providers.dart';
 import '../core/theme/theme_provider.dart';
+import '../ui/alert/full_screen_alert.dart';
 
 import '../core/constants/priority_levels.dart';
 
@@ -129,7 +130,9 @@ class ListeningNotifier extends StateNotifier<bool> {
 
       // 3. Category-Specific Threshold Gating & Hysteresis
       final thresholds = _ref.read(soundDetectionThresholdsProvider);
-      final baselineThreshold = thresholds.thresholdFor(category);
+      final currentProfile = _ref.read(currentProfileProvider);
+      final profileThreshold = currentProfile.sensitivityOverrides[category.name];
+      final baselineThreshold = profileThreshold ?? thresholds.thresholdFor(category);
       final effectiveThreshold = smoother.getEffectiveThreshold(category, baselineThreshold);
 
       if (result.confidence < effectiveThreshold) {
@@ -179,6 +182,7 @@ class ListeningNotifier extends StateNotifier<bool> {
     final settings = _ref.read(userSettingsProvider);
 
     final dispatcher = _ref.read(alertDispatcherServiceProvider);
+    FullScreenAlert.recordDetection(result.soundCategory);
     final alertEvent = await dispatcher.dispatchClassification(
       result: result,
       isSleepMode: isSleep,

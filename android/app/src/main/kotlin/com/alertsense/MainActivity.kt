@@ -16,6 +16,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Telephony
+import android.telephony.SmsManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -45,10 +46,31 @@ class MainActivity: FlutterActivity() {
                     result.success(isIgnoring)
                 }
                 "sendDirectSms" -> {
+                    val recipients: List<String> = when {
+                        call.argument<List<*>>("recipients") != null -> {
+                            call.argument<List<*>>("recipients")!!.mapNotNull { it?.toString() }
+                        }
+                        call.argument<String>("recipient") != null -> {
+                            val r = call.argument<String>("recipient") ?: ""
+                            r.split(";", ",")
+                        }
+                        else -> emptyList()
+                    }
+                    val message = call.argument<String>("message") ?: ""
+                    val success = sendDirectSms(recipients, message)
+                    result.success(success)
+                }
+                "openSmsApp" -> {
                     val recipient = call.argument<String>("recipient") ?: ""
                     val message = call.argument<String>("message") ?: ""
-                    val success = sendDirectSms(recipient, message)
+                    val success = openSmsApp(recipient, message)
                     result.success(success)
+                }
+                "hasSmsPermission" -> {
+                    val hasPerm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        checkSelfPermission(android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
+                    } else true
+                    result.success(hasPerm)
                 }
                 "isLocationServiceEnabled" -> {
                     val isEnabled = isLocationServiceEnabled()
@@ -75,7 +97,51 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    private fun sendDirectSms(recipient: String, message: String): Boolean {
+    private fun sendDirectSms(recipients: List<String>, message: String): Boolean {
+        if (recipients.isEmpty() || message.isEmpty()) return false
+
+        val hasPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            checkSelfPermission(android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
+        } else true
+
+        if (!hasPermission) {
+            return false
+        }
+
+        return try {
+            val smsManager: SmsManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                applicationContext.getSystemService(SmsManager::class.java)
+                    ?: @Suppress("DEPRECATION") SmsManager.getDefault()
+            } else {
+                @Suppress("DEPRECATION")
+                SmsManager.getDefault()
+            }
+
+            val parts = smsManager.divideMessage(message)
+            var sentCount = 0
+
+            val uniqueRecipients = recipients
+                .map { it.trim().replace(Regex("[^0-9+]"), "") }
+                .filter { it.isNotEmpty() }
+                .distinct()
+
+            for (cleanRecipient in uniqueRecipients) {
+                try {
+                    if (parts.size > 1) {
+                        smsManager.sendMultipartTextMessage(cleanRecipient, null, parts, null, null)
+                    } else {
+                        smsManager.sendTextMessage(cleanRecipient, null, message, null, null)
+                    }
+                    sentCount++
+                } catch (_: Exception) {}
+            }
+            sentCount > 0
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun openSmsApp(recipient: String, message: String): Boolean {
         return try {
             val defaultSmsPackage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 Telephony.Sms.getDefaultSmsPackage(applicationContext)

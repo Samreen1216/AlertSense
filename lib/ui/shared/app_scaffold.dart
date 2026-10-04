@@ -11,6 +11,7 @@ import '../../core/utils/responsive_utils.dart';
 import '../../data/models/alert_event.dart';
 import '../../providers/service_providers.dart';
 import '../../providers/settings_providers.dart';
+import '../alert/full_screen_alert.dart';
 import 'in_app_notification_banner.dart';
 
 class AppScaffold extends ConsumerStatefulWidget {
@@ -58,6 +59,12 @@ class _AppScaffoldState extends ConsumerState<AppScaffold>
       final currentProfile = ref.read(currentProfileProvider);
       final isSleep = currentProfile.name.toLowerCase() == 'sleep';
       if (isSleep) return;
+
+      // Prevent stacking duplicate full-screen alerts when one is already active
+      if (FullScreenAlert.isAlertActive) {
+        debugPrint('[AppScaffold] FullScreenAlert is already active, ignoring duplicate urgent alert push');
+        return;
+      }
 
       context.push(AppRoutes.fullScreenAlert, extra: {
         'id': alert.id,

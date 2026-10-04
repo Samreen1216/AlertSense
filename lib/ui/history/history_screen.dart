@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -51,7 +52,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final controller = messenger.showSnackBar(
       SnackBar(
         content: Text('Removed $label alert'),
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -67,8 +68,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
     _snackBarController = controller;
 
-    // Guaranteed auto-dismissal after 4.0s even if system accessibleNavigation disables internal timer
-    _snackBarTimer = Timer(const Duration(milliseconds: 4000), () {
+    // Guaranteed auto-dismissal after 2.0s even if system accessibleNavigation disables internal timer
+    _snackBarTimer = Timer(const Duration(milliseconds: 2000), () {
       try {
         controller.close();
       } catch (_) {}
@@ -100,7 +101,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         cardBgColor = Colors.white;
         break;
       case ThemeType.light:
-      default:
         cardBorderColor = isDark ? const Color(0xFF1E2D4E) : const Color(0xFFE2E8F0);
         cardBgColor = isDark ? AppColors.surfaceDark : Colors.white;
         break;
@@ -397,6 +397,50 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             return Dismissible(
                               key: Key(alert.id),
                               direction: DismissDirection.endToStart,
+                              confirmDismiss: (direction) async {
+                                if (direction == DismissDirection.endToStart) {
+                                  HapticFeedback.mediumImpact();
+                                  final confirmed = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      title: const Row(
+                                        children: [
+                                          Icon(Icons.delete_outline_rounded,
+                                              color: Color(0xFFEF4444), size: 24),
+                                          SizedBox(width: 8),
+                                          Text('Delete Alert?'),
+                                        ],
+                                      ),
+                                      content: Text(
+                                        'Are you sure you want to delete the alert for "${category?.label ?? alert.soundCategory}"?',
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(ctx).pop(false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        FilledButton(
+                                          onPressed: () => Navigator.of(ctx).pop(true),
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: const Color(0xFFEF4444),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                  return confirmed ?? false;
+                                }
+                                return false;
+                              },
                               background: Container(
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 5),

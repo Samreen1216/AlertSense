@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,8 +14,9 @@ import '../../shared/priority_badge.dart';
 import '../../shared/sound_icon.dart';
 
 /// Modal bottom sheet and standalone dialog displaying real-time sound notifications,
-/// unread alerts count, quick acknowledgment, and direct navigation to history.
-class NotificationCenterSheet extends ConsumerWidget {
+/// unread alerts count, quick acknowledgment, right-swipe to mark as read,
+/// left-swipe to delete with confirmation, and direct navigation to details/history.
+class NotificationCenterSheet extends ConsumerStatefulWidget {
   const NotificationCenterSheet({super.key});
 
   /// Display the notifications modal bottom sheet (or centered dialog on desktop/tablets).
@@ -48,7 +50,24 @@ class NotificationCenterSheet extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationCenterSheet> createState() => _NotificationCenterSheetState();
+}
+
+class _NotificationCenterSheetState extends ConsumerState<NotificationCenterSheet> {
+  Timer? _snackBarTimer;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _snackBarController;
+
+  @override
+  void dispose() {
+    _snackBarTimer?.cancel();
+    try {
+      _snackBarController?.close();
+    } catch (_) {}
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final alerts = ref.watch(alertListProvider);
     final unreadAlerts = alerts.where((a) => !a.acknowledged).toList();
     final theme = Theme.of(context);
@@ -183,8 +202,8 @@ class NotificationCenterSheet extends ConsumerWidget {
                         const SizedBox(height: 2),
                         Text(
                           unreadAlerts.isNotEmpty
-                              ? 'Swipe card to delete - Tap to view'
-                              : 'All caught up - No unread alerts',
+                              ? 'Swipe right to read • Swipe left to delete'
+                              : 'All caught up • No unread alerts',
                           style: TextStyle(
                             color: subtitleColor,
                             fontSize: 12,
@@ -196,6 +215,19 @@ class NotificationCenterSheet extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  if (alerts.isNotEmpty)
+                    IconButton(
+                      onPressed: () => _confirmClearAll(context, ref),
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        color: isHighContrast ? AppColors.hcPrimary : const Color(0xFFEF4444),
+                        size: 20,
+                      ),
+                      tooltip: 'Clear All Notifications',
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.all(6),
+                      constraints: const BoxConstraints(),
+                    ),
                   if (unreadAlerts.isNotEmpty)
                     TextButton(
                       onPressed: () async {
@@ -237,8 +269,8 @@ class NotificationCenterSheet extends ConsumerWidget {
                   ? _buildEmptyState(context, isDark, isHighContrast, titleColor, subtitleColor)
                   : ListView.separated(
                       shrinkWrap: true,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      itemCount: alerts.length > 8 ? 8 : alerts.length,
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                      itemCount: alerts.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final alert = alerts[index];
@@ -247,6 +279,7 @@ class NotificationCenterSheet extends ConsumerWidget {
                           ref: ref,
                           alert: alert,
                           isDark: isDark,
+                          themeType: themeType,
                           isHighContrast: isHighContrast,
                           titleColor: titleColor,
                           subtitleColor: subtitleColor,
@@ -254,64 +287,53 @@ class NotificationCenterSheet extends ConsumerWidget {
                       },
                     ),
             ),
-
-            if (alerts.isNotEmpty) ...[
-              const Divider(height: 1, thickness: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    HapticFeedback.selectionClick();
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Clear Notifications?'),
-                        content: const Text(
-                          'This will clear all current notifications from your active list.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            style: TextButton.styleFrom(
-                              foregroundColor: const Color(0xFFEF4444),
-                            ),
-                            child: const Text('Clear All'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm == true) {
-                      await ref.read(alertListProvider.notifier).clear();
-                    }
-                  },
-                  icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                  label: const Text(
-                    'Clear All Notifications',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isHighContrast ? AppColors.hcPrimary : const Color(0xFFEF4444),
-                    minimumSize: const Size(double.infinity, 44),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    side: BorderSide(
-                      color: isHighContrast
-                          ? AppColors.hcPrimary
-                          : const Color(0xFFEF4444).withValues(alpha: 0.35),
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _confirmClearAll(BuildContext context, WidgetRef ref) async {
+    HapticFeedback.selectionClick();
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline_rounded,
+                color: Color(0xFFEF4444), size: 24),
+            SizedBox(width: 8),
+            Text('Clear Notifications?'),
+          ],
+        ),
+        content: const Text(
+          'This will clear all current notifications from your active list.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await ref.read(alertListProvider.notifier).clear();
+    }
   }
 
   Widget _buildEmptyState(
@@ -380,43 +402,108 @@ class NotificationCenterSheet extends ConsumerWidget {
     required WidgetRef ref,
     required AlertEvent alert,
     required bool isDark,
+    required ThemeType themeType,
     required bool isHighContrast,
     required Color titleColor,
     required Color subtitleColor,
   }) {
     final category = SoundCategoryExtension.fromName(alert.soundCategory);
-    final cardBg = isHighContrast
-        ? Colors.black
-        : (alert.acknowledged
-            ? (isDark ? const Color(0xFF1E293B).withValues(alpha: 0.6) : const Color(0xFFF8FAFC))
-            : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)));
 
-    final cardBorder = isHighContrast
+    // Resolve vibrant category accent color
+    final Color catColor;
+    if (isHighContrast) {
+      catColor = AppColors.hcPrimary;
+    } else if (themeType == ThemeType.colorBlindSafe) {
+      catColor = category?.color ??
+          (alert.priorityLevel.toUpperCase() == 'HIGH'
+              ? AppColors.cbSafeHigh
+              : (alert.priorityLevel.toUpperCase() == 'MEDIUM'
+                  ? AppColors.cbSafeMedium
+                  : AppColors.cbSafeLow));
+    } else {
+      catColor = category?.color ?? AppColors.emergencySiren;
+    }
+
+    // Avatar styling matching Recent Alerts & Sound Categories
+    final avatarBg = isHighContrast
+        ? AppColors.hcSurface
+        : catColor.withValues(alpha: isDark ? 0.22 : 0.14);
+
+    final avatarBorder = isHighContrast
         ? AppColors.hcPrimary
-        : (!alert.acknowledged
-            ? const Color(0xFF0072FF).withValues(alpha: 0.45)
-            : (isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE2E8F0)));
+        : catColor.withValues(alpha: 0.35);
+
+    final avatarIconColor = isHighContrast
+        ? AppColors.hcPrimary
+        : catColor;
+
+    // Card background, border & elevation shadow
+    final Color cardBg;
+    final Color cardBorder;
+    final List<BoxShadow>? cardShadow;
+
+    if (isHighContrast) {
+      cardBg = const Color(0xFF0D1424);
+      cardBorder = AppColors.hcPrimary;
+      cardShadow = null;
+    } else if (isDark) {
+      cardBg = alert.acknowledged
+          ? const Color(0xFF111C35)
+          : const Color(0xFF162344);
+      cardBorder = alert.acknowledged
+          ? Colors.white.withValues(alpha: 0.08)
+          : const Color(0xFF38BDF8).withValues(alpha: 0.45);
+      cardShadow = [
+        BoxShadow(
+          color: alert.acknowledged
+              ? Colors.black.withValues(alpha: 0.25)
+              : const Color(0xFF0072FF).withValues(alpha: 0.18),
+          blurRadius: alert.acknowledged ? 8 : 12,
+          offset: const Offset(0, 3),
+        ),
+      ];
+    } else {
+      // Light Mode
+      cardBg = alert.acknowledged
+          ? const Color(0xFFF8FAFC)
+          : Colors.white;
+      cardBorder = alert.acknowledged
+          ? const Color(0xFFE2E8F0)
+          : const Color(0xFF0072FF).withValues(alpha: 0.38);
+      cardShadow = [
+        BoxShadow(
+          color: alert.acknowledged
+              ? const Color(0xFF64748B).withValues(alpha: 0.06)
+              : const Color(0xFF0072FF).withValues(alpha: 0.12),
+          blurRadius: alert.acknowledged ? 8 : 12,
+          offset: const Offset(0, 3),
+        ),
+      ];
+    }
 
     final relativeTime = _formatRelativeTime(alert.timestamp);
 
     return Dismissible(
       key: ValueKey('notification_dismiss_${alert.id}'),
       direction: DismissDirection.horizontal,
+      // ── Swipe Right (startToEnd): Mark as Read ──
       background: Container(
         margin: const EdgeInsets.symmetric(vertical: 2),
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.only(left: 20),
         decoration: BoxDecoration(
-          color: isHighContrast ? const Color(0xFFFF453A) : const Color(0xFFEF4444),
+          color: isHighContrast
+              ? const Color(0xFF30D158)
+              : const Color(0xFF10B981),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
-            SizedBox(width: 6),
+            Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 22),
+            SizedBox(width: 8),
             Text(
-              'Delete',
+              'Mark Read',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
@@ -426,12 +513,15 @@ class NotificationCenterSheet extends ConsumerWidget {
           ],
         ),
       ),
+      // ── Swipe Left (endToStart): Delete ──
       secondaryBackground: Container(
         margin: const EdgeInsets.symmetric(vertical: 2),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: isHighContrast ? const Color(0xFFFF453A) : const Color(0xFFEF4444),
+          color: isHighContrast
+              ? const Color(0xFFFF453A)
+              : const Color(0xFFEF4444),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Row(
@@ -446,34 +536,127 @@ class NotificationCenterSheet extends ConsumerWidget {
                 fontSize: 13,
               ),
             ),
-            SizedBox(width: 6),
+            SizedBox(width: 8),
             Icon(Icons.delete_outline_rounded, color: Colors.white, size: 22),
           ],
         ),
       ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Swipe Right: Mark as read
+          HapticFeedback.selectionClick();
+          if (!alert.acknowledged) {
+            await ref.read(alertListProvider.notifier).acknowledgeAlert(alert.id);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Marked "${category?.label ?? alert.soundCategory}" as read',
+                  ),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            }
+          } else {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    '"${category?.label ?? alert.soundCategory}" is already marked as read',
+                  ),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              );
+            }
+          }
+          // Return false so card snaps back into place with updated "read" design
+          return false;
+        } else if (direction == DismissDirection.endToStart) {
+          // Swipe Left: Show confirmation dialog before deletion
+          HapticFeedback.mediumImpact();
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.delete_outline_rounded,
+                      color: Color(0xFFEF4444), size: 24),
+                  SizedBox(width: 8),
+                  Text('Delete Notification?'),
+                ],
+              ),
+              content: Text(
+                'Are you sure you want to delete the notification for "${category?.label ?? alert.soundCategory}"?',
+                style: const TextStyle(fontSize: 14),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF4444),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Delete'),
+                ),
+              ],
+            ),
+          );
+          return confirmed ?? false;
+        }
+        return false;
+      },
       onDismissed: (direction) {
-        HapticFeedback.mediumImpact();
-        ref.read(alertListProvider.notifier).removeAlert(alert.id);
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Removed ${category?.label ?? alert.soundCategory} notification',
+        if (direction == DismissDirection.endToStart) {
+          HapticFeedback.mediumImpact();
+          ref.read(alertListProvider.notifier).removeAlert(alert.id);
+          ScaffoldMessenger.of(context).clearSnackBars();
+          _snackBarTimer?.cancel();
+          _snackBarController = ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Removed ${category?.label ?? alert.soundCategory} notification',
+              ),
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              action: SnackBarAction(
+                label: 'Undo',
+                textColor: const Color(0xFF00C6FF),
+                onPressed: () {
+                  _snackBarTimer?.cancel();
+                  ref.read(alertListProvider.notifier).addAlert(alert);
+                },
+              ),
             ),
-            duration: const Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            action: SnackBarAction(
-              label: 'Undo',
-              textColor: const Color(0xFF00C6FF),
-              onPressed: () {
-                ref.read(alertListProvider.notifier).addAlert(alert);
-              },
-            ),
-          ),
-        );
+          );
+          _snackBarTimer = Timer(const Duration(milliseconds: 2000), () {
+            try {
+              _snackBarController?.close();
+            } catch (_) {}
+          });
+        }
       },
       child: Material(
         color: Colors.transparent,
@@ -489,20 +672,29 @@ class NotificationCenterSheet extends ConsumerWidget {
             }
           },
           borderRadius: BorderRadius.circular(16),
+          splashColor: catColor.withValues(alpha: 0.1),
+          highlightColor: catColor.withValues(alpha: 0.05),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: cardBg,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: cardBorder, width: !alert.acknowledged ? 1.5 : 1.0),
+              border: Border.all(
+                color: cardBorder,
+                width: isHighContrast ? 1.5 : (!alert.acknowledged ? 1.4 : 1.0),
+              ),
+              boxShadow: cardShadow,
             ),
             child: Row(
               children: [
+                // ── Vibrant Sound Category Avatar ──
                 SoundIcon(
-                  iconName: alert.soundCategory,
-                  color: (category?.color ?? AppColors.emergencySiren).withValues(alpha: 0.25),
-                  size: 38,
-                  iconSize: 20,
+                  iconName: category?.name ?? alert.soundCategory,
+                  color: avatarBg,
+                  borderColor: avatarBorder,
+                  iconColor: avatarIconColor,
+                  size: 44,
+                  iconSize: 22,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -517,12 +709,15 @@ class NotificationCenterSheet extends ConsumerWidget {
                               style: TextStyle(
                                 color: titleColor,
                                 fontSize: 15,
-                                fontWeight: alert.acknowledged ? FontWeight.w600 : FontWeight.w800,
+                                fontWeight: alert.acknowledged
+                                    ? FontWeight.w600
+                                    : FontWeight.w800,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 6),
                           PriorityBadge(priority: alert.priorityLevel),
                         ],
                       ),
@@ -538,7 +733,7 @@ class NotificationCenterSheet extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            ' - ',
+                            ' • ',
                             style: TextStyle(color: subtitleColor, fontSize: 12),
                           ),
                           Text(
@@ -554,9 +749,21 @@ class NotificationCenterSheet extends ConsumerWidget {
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF0072FF),
+                              decoration: BoxDecoration(
+                                color: isHighContrast
+                                    ? AppColors.hcPrimary
+                                    : const Color(0xFF0072FF),
                                 shape: BoxShape.circle,
+                                boxShadow: isHighContrast
+                                    ? null
+                                    : [
+                                        BoxShadow(
+                                          color: const Color(0xFF0072FF)
+                                              .withValues(alpha: 0.5),
+                                          blurRadius: 4,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
                               ),
                             ),
                           ],

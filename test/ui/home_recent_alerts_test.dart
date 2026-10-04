@@ -327,7 +327,8 @@ void main() {
       expect(find.text('Fire Alarm'), findsOneWidget);
       expect(find.text('Doorbell'), findsOneWidget);
       expect(find.text('Baby Crying'), findsOneWidget);
-      expect(find.text('View all 4 alerts in History'), findsOneWidget);
+      expect(find.text('View all 4 alerts in History'), findsNothing);
+      expect(find.text('See All'), findsOneWidget);
 
       // Verify scrollable behavior
       final scrollable = find.byType(Scrollable);

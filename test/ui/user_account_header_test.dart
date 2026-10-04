@@ -242,12 +242,98 @@ void main() {
       // Verify "View Full Alert History" is removed from notification center
       expect(find.text('View Full Alert History'), findsNothing);
 
-      // Verify swipe card notification for delete
+      // Verify swipe right marks as read
+      await tester.drag(find.text('Fire Alarm'), const Offset(600.0, 0.0));
+      await tester.pumpAndSettle();
+      expect(find.text('Fire Alarm'), findsOneWidget);
+
+      // Verify swipe left shows confirmation dialog before deleting
       await tester.drag(find.text('Fire Alarm'), const Offset(-600.0, 0.0));
+      await tester.pumpAndSettle();
+
+      // Confirmation dialog is shown
+      expect(find.text('Delete Notification?'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      expect(find.text('Delete'), findsWidgets);
+
+      // Tap Delete in the confirmation dialog
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
       await tester.pumpAndSettle();
 
       // Card is deleted and empty state appears
       expect(find.text('Fire Alarm'), findsNothing);
+      expect(find.text('No Notifications Yet'), findsOneWidget);
+
+      // Verify SnackBar auto-dismisses after short time
+      await tester.pump(const Duration(milliseconds: 2200));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('NotificationCenterSheet renders small trash bin icon in top header to the left of Mark all read and removes bottom Clear All Notifications button', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final alert1 = AlertEvent(
+        id: 'test-alarm-1',
+        soundCategory: 'Fire Alarm',
+        confidence: 0.95,
+        priorityLevel: 'High',
+        timestamp: DateTime.now(),
+        acknowledged: false,
+      );
+      final alert2 = AlertEvent(
+        id: 'test-alarm-2',
+        soundCategory: 'Doorbell',
+        confidence: 0.88,
+        priorityLevel: 'Medium',
+        timestamp: DateTime.now(),
+        acknowledged: false,
+      );
+      await alertRepo.addAlert(alert1);
+      await alertRepo.addAlert(alert2);
+
+      await tester.pumpWidget(createTestApp(child: const AlertSenseHeader()));
+      await tester.pumpAndSettle();
+
+      // Open Notification Center Sheet
+      await tester.tap(find.byIcon(Icons.notifications_active_rounded));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NotificationCenterSheet), findsOneWidget);
+
+      // Verify bottom button is completely removed
+      expect(find.text('Clear All Notifications'), findsNothing);
+
+      // Verify trash bin icon is present in the top header
+      final trashFinder = find.byTooltip('Clear All Notifications');
+      expect(trashFinder, findsOneWidget);
+      expect(find.byIcon(Icons.delete_outline_rounded), findsOneWidget);
+
+      // Verify "Mark all read" is also present
+      final markAllReadFinder = find.text('Mark all read');
+      expect(markAllReadFinder, findsOneWidget);
+
+      // Verify trash bin icon is to the left of "Mark all read"
+      final trashOffset = tester.getTopLeft(trashFinder);
+      final markReadOffset = tester.getTopLeft(markAllReadFinder);
+      expect(trashOffset.dx, lessThan(markReadOffset.dx));
+
+      // Tap trash bin icon -> should show confirmation dialog
+      await tester.tap(trashFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Clear Notifications?'), findsOneWidget);
+      expect(find.text('This will clear all current notifications from your active list.'), findsOneWidget);
+
+      // Tap "Clear All" in dialog to confirm
+      await tester.tap(find.widgetWithText(FilledButton, 'Clear All'));
+      await tester.pumpAndSettle();
+
+      // Verify all notifications are cleared and empty state shown
+      expect(find.text('Fire Alarm'), findsNothing);
+      expect(find.text('Doorbell'), findsNothing);
       expect(find.text('No Notifications Yet'), findsOneWidget);
     });
 

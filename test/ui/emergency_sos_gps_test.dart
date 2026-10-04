@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -225,6 +226,10 @@ void main() {
   });
 
   group('Alert Screens Family Alert Channel Tests', () {
+    setUp(() {
+      FullScreenAlert.resetTracking();
+    });
+
     testWidgets('FullScreenAlert renders Alert Family (SMS) button and removes WhatsApp option', (tester) async {
       final mockLoc = LocationResult(
         latitude: 33.6844,
@@ -268,11 +273,16 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
-      // Should show 'Alert Family (SMS)'
-      expect(find.text('Alert Family (SMS)'), findsOneWidget);
-      // Should NOT show standalone 'Send WhatsApp to Family'
-      expect(find.text('Send WhatsApp to Family'), findsNothing);
-      expect(find.text('Choose Emergency Channel'), findsNothing);
+      // Should show 'Alert Family (WhatsApp / SMS)'
+      expect(find.text('Alert Family (WhatsApp / SMS)'), findsOneWidget);
+      // Tapping it opens AlertFamilyChoiceDialog (Messages / WhatsApp)
+      await tester.tap(find.text('Alert Family (WhatsApp / SMS)'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Alert Family'), findsOneWidget);
+      expect(find.text('Messages (SMS)'), findsOneWidget);
+      expect(find.text('WhatsApp'), findsOneWidget);
     });
 
     testWidgets('AlertDetailsScreen renders Alert Family (WhatsApp / SMS) and removes standalone WhatsApp button', (tester) async {
@@ -530,6 +540,250 @@ void main() {
       // Tap 'JUST ONCE' for default SMS
       await tester.tap(find.text('JUST ONCE'));
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('FullScreenAlert auto-dispatch timer expiration triggers direct SMS and acknowledges alert without opening inbox', (tester) async {
+      const deviceChannel = MethodChannel('com.alertsense/device');
+      const permChannel = MethodChannel('flutter.baseflow.com/permissions/methods');
+
+      Map<String, dynamic>? dispatchedCall;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(permChannel, (MethodCall call) async => 1);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(deviceChannel, (MethodCall call) async {
+        if (call.method == 'sendDirectSms') {
+          dispatchedCall = Map<String, dynamic>.from(call.arguments as Map);
+          return true;
+        }
+        return false;
+      });
+
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(deviceChannel, null);
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(permChannel, null);
+        FullScreenAlert.resetTracking();
+      });
+
+      final alertRepo = AlertRepository(localStorage);
+      await alertRepo.init();
+
+      await settingsRepo.updateSettings(
+        const UserSettings(
+          emergencyContacts: ['+923001234567'],
+        ),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          locationServiceProvider.overrideWithValue(_FakeLocationService(mockLocation: null)),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: FullScreenAlert(
+              alertData: {
+                'id': 'auto-sms-test-123',
+                'soundCategory': 'fireAlarm',
+                'confidence': 98.0,
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Initially shows countdown
+      expect(find.textContaining('Auto-SMS to family in'), findsOneWidget);
+
+      // Fast-forward 121 seconds for 2-minute countdown to expire
+      await tester.pump(const Duration(seconds: 121));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Verify direct SMS was dispatched
+      expect(dispatchedCall, isNotNull);
+      expect(dispatchedCall!['recipients'], ['+923001234567']);
+      expect(dispatchedCall!['message'], contains('CRITICAL ALERT'));
+
+      // Verify banner changed to auto-dispatched status
+      expect(find.text('Emergency SMS auto-dispatched to family'), findsOneWidget);
+    });
+
+    testWidgets('FullScreenAlert auto-dispatch sends ONLY ONE TIME and does not duplicate on additional ticks', (tester) async {
+      FullScreenAlert.resetTracking();
+
+      const deviceChannel = MethodChannel('com.alertsense/device');
+      const permChannel = MethodChannel('flutter.baseflow.com/permissions/methods');
+
+      int dispatchCount = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(permChannel, (MethodCall call) async => 1);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(deviceChannel, (MethodCall call) async {
+        if (call.method == 'sendDirectSms') {
+          dispatchCount++;
+          return true;
+        }
+        return false;
+      });
+
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(deviceChannel, null);
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(permChannel, null);
+        FullScreenAlert.resetTracking();
+      });
+
+      final alertRepo = AlertRepository(localStorage);
+      await alertRepo.init();
+
+      await settingsRepo.updateSettings(
+        const UserSettings(
+          emergencyContacts: ['+923001234567'],
+        ),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          locationServiceProvider.overrideWithValue(_FakeLocationService(mockLocation: null)),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: FullScreenAlert(
+              alertData: {
+                'id': 'auto-sms-single-test',
+                'soundCategory': 'fireAlarm',
+                'confidence': 98.0,
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Fast forward past 2-minute (120s) countdown
+      await tester.pump(const Duration(seconds: 121));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(dispatchCount, 1);
+
+      // Fast forward additional 120s while alert remains open
+      await tester.pump(const Duration(seconds: 120));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Must remain exactly 1, never sent multiple times
+      expect(dispatchCount, 1);
+    });
+
+    testWidgets('when sound continuously detected then ONLY 1 time msg sent through auto msg timer if unacknowledged in 2 mins', (tester) async {
+      FullScreenAlert.resetTracking();
+
+      const deviceChannel = MethodChannel('com.alertsense/device');
+      const permChannel = MethodChannel('flutter.baseflow.com/permissions/methods');
+
+      int dispatchCount = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(permChannel, (MethodCall call) async => 1);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(deviceChannel, (MethodCall call) async {
+        if (call.method == 'sendDirectSms') {
+          dispatchCount++;
+          return true;
+        }
+        return false;
+      });
+
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(deviceChannel, null);
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(permChannel, null);
+        FullScreenAlert.resetTracking();
+      });
+
+      final alertRepo = AlertRepository(localStorage);
+      await alertRepo.init();
+
+      await settingsRepo.updateSettings(
+        const UserSettings(
+          emergencyContacts: ['+923001234567'],
+        ),
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          localStorageProvider.overrideWithValue(localStorage),
+          settingsRepositoryProvider.overrideWithValue(settingsRepo),
+          alertRepositoryProvider.overrideWithValue(alertRepo),
+          notificationServiceProvider.overrideWithValue(_MockNotificationService()),
+          locationServiceProvider.overrideWithValue(_FakeLocationService(mockLocation: null)),
+        ],
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: FullScreenAlert(
+              alertData: {
+                'id': 'continuous-alarm-1',
+                'soundCategory': 'fireAlarm',
+                'confidence': 99.0,
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Continuous detections keep arriving during the 2 minutes
+      FullScreenAlert.recordDetection('fireAlarm');
+      await tester.pump(const Duration(seconds: 30));
+      FullScreenAlert.recordDetection('fireAlarm');
+      await tester.pump(const Duration(seconds: 30));
+      FullScreenAlert.recordDetection('fireAlarm');
+      await tester.pump(const Duration(seconds: 61));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // After 2 minutes unacknowledged, exactly 1 auto-message is sent
+      expect(dispatchCount, 1);
+
+      // Sound is STILL continuously detected (fire alarm blaring continuously for multiple minutes)
+      FullScreenAlert.recordDetection('fireAlarm');
+      await tester.pump(const Duration(seconds: 30));
+      FullScreenAlert.recordDetection('fireAlarm');
+      await tester.pump(const Duration(seconds: 60));
+      FullScreenAlert.recordDetection('fireAlarm');
+      await tester.pump(const Duration(seconds: 60));
+
+      // Even across continuous detection over 4+ minutes, message count remains strictly 1
+      expect(dispatchCount, 1);
     });
   });
 }

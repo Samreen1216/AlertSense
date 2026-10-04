@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:alertsense/services/location_service.dart';
 import 'package:alertsense/services/sms_service.dart';
@@ -178,6 +179,82 @@ void main() {
       expect(encoded, contains(Uri.encodeComponent('https://maps.google.com/?q=33.6844,73.0479')));
       expect(encoded, contains(Uri.encodeComponent('📍 Pin:')));
       expect(encoded, contains('%0A')); // newlines encoded as %0A
+    });
+  });
+
+  group('SmsService sendEmergencySms direct dispatch tests', () {
+    const channel = MethodChannel('com.alertsense/device');
+    const permChannel = MethodChannel('flutter.baseflow.com/permissions/methods');
+
+    setUp(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(permChannel, (MethodCall methodCall) async {
+        if (methodCall.method == 'checkPermissionStatus') {
+          return 1; // PermissionStatus.granted index
+        }
+        if (methodCall.method == 'requestPermissions') {
+          return {13: 1}; // SMS permission granted
+        }
+        return 1;
+      });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(permChannel, null);
+    });
+
+    test('sendEmergencySms returns false when recipients list is empty', () async {
+      final result = await SmsService.sendEmergencySms(
+        recipients: [],
+        message: 'test',
+        directOnly: true,
+      );
+      expect(result, isFalse);
+    });
+
+    test('sendEmergencySms sends via native sendDirectSms with directOnly=true', () async {
+      Map<String, dynamic>? receivedArgs;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == 'sendDirectSms') {
+          receivedArgs = Map<String, dynamic>.from(methodCall.arguments as Map);
+          return true;
+        }
+        return false;
+      });
+
+      final result = await SmsService.sendEmergencySms(
+        recipients: ['+923001234567', '03009876543'],
+        message: 'Critical Fire Alarm detected!',
+        directOnly: true,
+      );
+
+      expect(result, isTrue);
+      expect(receivedArgs, isNotNull);
+      expect(receivedArgs!['recipients'], ['+923001234567', '03009876543']);
+      expect(receivedArgs!['message'], 'Critical Fire Alarm detected!');
+    });
+
+    test('sendEmergencySms with directOnly=true suppresses inbox opening if native dispatch fails', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+        if (methodCall.method == 'sendDirectSms') {
+          return false;
+        }
+        return false;
+      });
+
+      final result = await SmsService.sendEmergencySms(
+        recipients: ['03001234567'],
+        message: 'Test alert',
+        directOnly: true,
+      );
+
+      // Should return false and not launch URL / inbox
+      expect(result, isFalse);
     });
   });
 }

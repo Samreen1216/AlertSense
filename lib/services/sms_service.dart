@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'location_service.dart';
@@ -29,10 +30,27 @@ class SmsService {
     }
   }
 
-  /// Send an SMS message to contact(s) with pre-composed text directly via native SMS inbox.
+  /// Ensure SMS permission is granted ahead of time (e.g. on emergency contacts setup or full screen alert launch).
+  static Future<bool> requestSmsPermission() async {
+    try {
+      final status = await Permission.sms.status;
+      if (status.isGranted) return true;
+      final requested = await Permission.sms.request();
+      return requested.isGranted;
+    } catch (e) {
+      debugPrint('[SmsService] Error requesting SMS permission: $e');
+      return false;
+    }
+  }
+
+  /// Send an SMS message to contact(s) with pre-composed text.
+  /// When [directOnly] is true (e.g. unacknowledged critical alert auto-dispatch),
+  /// the message is sent directly via native cellular radio (SmsManager) in the background
+  /// and will never open the native SMS composer/inbox.
   static Future<bool> sendEmergencySms({
     required List<String> recipients,
     required String message,
+    bool directOnly = false,
   }) async {
     if (recipients.isEmpty) {
       debugPrint('[SmsService] No recipients specified');
@@ -42,6 +60,7 @@ class SmsService {
     final cleanRecipients = recipients
         .map((r) => r.trim().replaceAll(' ', ''))
         .where((r) => r.isNotEmpty)
+        .toSet()
         .toList();
 
     if (cleanRecipients.isEmpty) return false;
@@ -50,22 +69,38 @@ class SmsService {
     final allRecipients = cleanRecipients.join(',');
     final encodedMsg = Uri.encodeComponent(message);
 
-    // 0. On Android, use native Intent with default SMS package to bypass the "Open with WhatsApp" chooser
+    // 0. On Android, attempt direct background transmission via SmsManager
     if (defaultTargetPlatform == TargetPlatform.android) {
       try {
-        final targetRecipient =
-            cleanRecipients.length == 1 ? primaryRecipient : cleanRecipients.join(';');
-        final success = await _deviceChannel.invokeMethod<bool>('sendDirectSms', {
-          'recipient': targetRecipient,
-          'message': message,
-        });
-        if (success == true) {
-          debugPrint('[SmsService] Native direct SMS successfully launched for $targetRecipient');
-          return true;
+        var smsPermission = await Permission.sms.status;
+        if (!smsPermission.isGranted) {
+          smsPermission = await Permission.sms.request();
+        }
+
+        if (smsPermission.isGranted) {
+          final targetRecipient =
+              cleanRecipients.length == 1 ? primaryRecipient : cleanRecipients.join(';');
+          final success = await _deviceChannel.invokeMethod<bool>('sendDirectSms', {
+            'recipients': cleanRecipients,
+            'recipient': targetRecipient,
+            'message': message,
+          });
+          if (success == true) {
+            debugPrint('[SmsService] Native direct SMS successfully sent via SmsManager to $cleanRecipients');
+            return true;
+          }
+        } else {
+          debugPrint('[SmsService] SEND_SMS permission denied ($smsPermission)');
         }
       } catch (e) {
-        debugPrint('[SmsService] Native direct SMS failed: $e, falling back to url_launcher');
+        debugPrint('[SmsService] Native direct SMS failed: $e, checking fallback');
       }
+    }
+
+    // When directOnly is true (unacknowledged auto-dispatch), NEVER open the SMS inbox
+    if (directOnly) {
+      debugPrint('[SmsService] directOnly=true: suppressing SMS inbox launch');
+      return false;
     }
 
     // 1. Prioritize smsto: and sms: schemes with proper body encoding (targets native SMS Inbox)

@@ -7,6 +7,8 @@ class DeduplicationService {
   final Map<String, DateTime> _lastAlertTimestamps = {};
   final Map<String, int> _ongoingEventCounts = {};
   final Map<String, DateTime> _ongoingEventStartTimes = {};
+  final Map<String, DateTime> _lastDetectionTimestamps = {};
+  final Map<String, bool> _autoDispatchedForContinuousEvent = {};
 
   /// Default cooldown durations in seconds.
   static const Map<String, int> defaultCooldowns = {
@@ -28,6 +30,13 @@ class DeduplicationService {
   }) {
     final now = DateTime.now();
     final lastTime = _lastAlertTimestamps[category.name];
+    final lastDetection = _lastDetectionTimestamps[category.name];
+    _lastDetectionTimestamps[category.name] = now;
+
+    // If silence was >= 120 seconds (2 minutes), previous continuous event ended
+    if (lastDetection != null && now.difference(lastDetection).inSeconds >= 120) {
+      _autoDispatchedForContinuousEvent[category.name] = false;
+    }
 
     final cooldownSeconds = customCooldowns?[category.name] ??
         defaultCooldowns[category.name] ??
@@ -58,6 +67,32 @@ class DeduplicationService {
     return true;
   }
 
+  /// Records an ongoing detection timestamp for continuous sound tracking
+  void recordDetection(String categoryName) {
+    final now = DateTime.now();
+    final lastDetection = _lastDetectionTimestamps[categoryName];
+    _lastDetectionTimestamps[categoryName] = now;
+    if (lastDetection != null && now.difference(lastDetection).inSeconds >= 120) {
+      _autoDispatchedForContinuousEvent[categoryName] = false;
+    }
+  }
+
+  /// Whether an auto-message has already been dispatched for the current continuous detection of [categoryName].
+  bool hasDispatchedForContinuousEvent(String categoryName) {
+    final lastDetection = _lastDetectionTimestamps[categoryName];
+    if (lastDetection == null || DateTime.now().difference(lastDetection).inSeconds >= 120) {
+      _autoDispatchedForContinuousEvent[categoryName] = false;
+      return false;
+    }
+    return _autoDispatchedForContinuousEvent[categoryName] ?? false;
+  }
+
+  /// Marks that an auto-message (or manual acknowledgement) has completed for the current continuous sound event.
+  void markDispatchedForContinuousEvent(String categoryName) {
+    _lastDetectionTimestamps[categoryName] = DateTime.now();
+    _autoDispatchedForContinuousEvent[categoryName] = true;
+  }
+
   /// Get the duration in seconds for an ongoing event.
   int getOngoingDurationSeconds(SoundCategory category) {
     final start = _ongoingEventStartTimes[category.name];
@@ -76,10 +111,14 @@ class DeduplicationService {
       _lastAlertTimestamps.remove(categoryName);
       _ongoingEventCounts.remove(categoryName);
       _ongoingEventStartTimes.remove(categoryName);
+      _lastDetectionTimestamps.remove(categoryName);
+      _autoDispatchedForContinuousEvent.remove(categoryName);
     } else {
       _lastAlertTimestamps.clear();
       _ongoingEventCounts.clear();
       _ongoingEventStartTimes.clear();
+      _lastDetectionTimestamps.clear();
+      _autoDispatchedForContinuousEvent.clear();
     }
   }
 }

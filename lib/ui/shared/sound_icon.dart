@@ -24,9 +24,16 @@ class SoundIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final key = iconName ?? emoji ?? 'alert';
-    final isLightColor = color.computeLuminance() > 0.4;
+    // If explicit iconColor is provided, use it.
+    // If container color is translucent (alpha < 0.85), use full opaque color for rich vibrancy and contrast.
+    // Otherwise calculate luminance: dark container -> white icon, light container -> dark icon.
     final resolvedIconColor = iconColor ??
-        (isLightColor ? const Color(0xFF0F172A) : Colors.white);
+        (color.a < 0.85
+            ? color.withValues(alpha: 1.0)
+            : (color.computeLuminance() > 0.4 ? const Color(0xFF0F172A) : Colors.white));
+
+    final resolvedBorderColor = borderColor ??
+        (color.a < 0.85 ? color.withValues(alpha: 0.35) : null);
 
     return Container(
       width: size,
@@ -34,8 +41,8 @@ class SoundIcon extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: borderColor != null
-            ? Border.all(color: borderColor!, width: 1.0)
+        border: resolvedBorderColor != null
+            ? Border.all(color: resolvedBorderColor, width: 1.0)
             : null,
       ),
       alignment: Alignment.center,
