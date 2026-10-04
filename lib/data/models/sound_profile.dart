@@ -68,7 +68,7 @@ class SoundProfile {
       emoji: '🏠',
       enabledCategories: [
         'fireAlarm', 'smokeAlarm', 'babyCrying', 'emergencySiren',
-        'doorbell', 'dogBarking', 'vehicleHorn', 'glassBreaking'
+        'doorbell', 'dogBarking', 'vehicleHorn', 'glassBreaking', 'knocking',
       ],
       isDefault: true,
     );

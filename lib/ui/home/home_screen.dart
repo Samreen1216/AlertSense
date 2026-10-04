@@ -24,87 +24,94 @@ class HomeScreen extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final scaffoldBg = isHighContrast ? Colors.black : AppColors.darkBackground;
+    final contentBg = isHighContrast
+        ? Colors.black
+        : (isDark ? AppColors.darkSurface : AppColors.backgroundLight);
 
     final bodyContent = CustomScrollView(
       physics: const BouncingScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 1. TOP HEADER
-              const AlertSenseHeader(),
-              const SizedBox(height: 4),
+          child: Container(
+            color: scaffoldBg,
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. TOP HEADER
+                  const AlertSenseHeader(),
+                  const SizedBox(height: 4),
 
-              // 2. HERO SECTION: 2-Column Responsive Hero (Radar + 3 Cards)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final isNarrow = constraints.maxWidth < 340;
+                  // 2. HERO SECTION: 2-Column Responsive Hero (Radar + 3 Cards)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isNarrow = constraints.maxWidth < 340;
 
-                    if (isNarrow) {
-                      return const Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            height: 200,
-                            child: HeroSoundRadar(),
-                          ),
-                          SizedBox(height: 12),
-                          HeroListeningCard(),
-                          SizedBox(height: 8),
-                          HeroProfileCard(),
-                          SizedBox(height: 8),
-                          HeroBatteryCard(),
-                        ],
-                      );
-                    }
-
-                    return const Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Left: Live Sound Radar
-                        Expanded(
-                          flex: 11,
-                          child: SizedBox(
-                            height: 205,
-                            child: HeroSoundRadar(),
-                          ),
-                        ),
-                        SizedBox(width: 10),
-
-                        // Right: 3 Stacked Status Cards
-                        Expanded(
-                          flex: 11,
-                          child: Column(
+                        if (isNarrow) {
+                          return const Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              SizedBox(
+                                height: 200,
+                                child: HeroSoundRadar(),
+                              ),
+                              SizedBox(height: 12),
                               HeroListeningCard(),
-                              SizedBox(height: 6),
+                              SizedBox(height: 8),
                               HeroProfileCard(),
-                              SizedBox(height: 6),
+                              SizedBox(height: 8),
                               HeroBatteryCard(),
                             ],
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
+                          );
+                        }
+
+                        return const Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Left: Live Sound Radar
+                            Expanded(
+                              flex: 11,
+                              child: SizedBox(
+                                height: 205,
+                                child: HeroSoundRadar(),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+
+                            // Right: 3 Stacked Status Cards
+                            Expanded(
+                              flex: 11,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  HeroListeningCard(),
+                                  SizedBox(height: 6),
+                                  HeroProfileCard(),
+                                  SizedBox(height: 6),
+                                  HeroBatteryCard(),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
               ),
-              const SizedBox(height: 14),
-            ],
+            ),
           ),
         ),
         SliverFillRemaining(
           hasScrollBody: false,
           child: Container(
             decoration: BoxDecoration(
-              color: isHighContrast
-                  ? Colors.black
-                  : (isDark ? AppColors.darkSurface : AppColors.backgroundLight),
+              color: contentBg,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               border: isHighContrast
                   ? const Border(
@@ -123,7 +130,12 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ],
             ),
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              20,
+              16,
+              24 + MediaQuery.paddingOf(context).bottom,
+            ),
             child: const Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,21 +158,34 @@ class HomeScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      backgroundColor: scaffoldBg,
+      backgroundColor: contentBg,
       endDrawer: const ProfileSideNavigation(),
-      body: SafeArea(
-        bottom: false,
-        child: context.isTablet
-            ? Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: ResponsiveBreakpoints.maxDesktopWidth,
-                  ),
-                  child: bodyContent,
-                ),
-              )
-            : bodyContent,
+      body: Stack(
+        children: [
+          // Responsive split background: dark blue at top for header and overscroll bounce,
+          // white/surface at bottom so scrolling and bottom overscroll never expose dark background.
+          Column(
+            children: [
+              Expanded(child: Container(color: scaffoldBg)),
+              Expanded(child: Container(color: contentBg)),
+            ],
+          ),
+          SafeArea(
+            top: false,
+            bottom: false,
+            child: context.isTablet
+                ? Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: ResponsiveBreakpoints.maxDesktopWidth,
+                      ),
+                      child: bodyContent,
+                    ),
+                  )
+                : bodyContent,
+          ),
+        ],
       ),
     );
   }

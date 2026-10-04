@@ -3,10 +3,10 @@ import 'package:alertsense/data/models/sound_profile.dart';
 
 void main() {
   group('Factory presets', () {
-    /// Verifies Home profile has exactly 8 categories
-    test('Home profile has 8 categories', () {
+    /// Verifies Home profile has all 9 categories
+    test('Home profile has 9 categories', () {
       final profile = SoundProfile.home();
-      expect(profile.enabledCategories.length, 8);
+      expect(profile.enabledCategories.length, 9);
       expect(
         profile.enabledCategories,
         containsAll([
@@ -17,7 +17,8 @@ void main() {
           'doorbell',
           'dogBarking',
           'vehicleHorn',
-          'glassBreaking'
+          'glassBreaking',
+          'knocking',
         ]),
       );
     });

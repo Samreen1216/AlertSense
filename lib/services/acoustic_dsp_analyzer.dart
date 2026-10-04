@@ -135,7 +135,7 @@ class AcousticDspAnalyzer {
     // Vehicle horns typically have fundamental frequency between 250 Hz and 700 Hz (e.g. dual tone F4/A4 ~350/440 Hz)
     // with strong low/mid energy and harmonic flatness < 0.45.
     // Evaluated BEFORE general bell/doorbell so low-mid vehicle horns are never misclassified as doorbell!
-    else if (peakHz >= 200 && peakHz <= 750 && (eLow > 0.24 || (eLow + eMid) > 0.48) && flatness < 0.45 && rms > 0.025) {
+    else if (peakHz >= 200 && peakHz <= 750 && (eLow > 0.24 || (eLow + eMid) > 0.48) && flatness < 0.45 && rms > 0.025 && (overallRms / rms) >= 0.38) {
       category = SoundCategory.vehicleHorn;
       confidence = _mapConfidence(eLow + eMid * 0.4, 0.24, 0.70, base: 0.80, maxConf: 0.96);
     }
@@ -148,9 +148,9 @@ class AcousticDspAnalyzer {
       confidence = (0.76 + 0.12 * promScore + 0.10 * flatnessScore).clamp(0.76, 0.96);
     }
     // 5. Knocking: low-frequency percussive impulse burst
-    else if (eLow > 0.36 && peakHz < 650 && centroid < 850 && zcr < 0.16 && rms > 0.015) {
+    else if (eLow > 0.25 && peakHz < 950 && centroid < 1200 && zcr < 0.22 && rms > 0.012) {
       category = SoundCategory.knocking;
-      confidence = _mapConfidence(eLow, 0.36, 0.75, base: 0.76, maxConf: 0.95);
+      confidence = _mapConfidence(eLow + (1.0 - zcr) * 0.1, 0.25, 0.75, base: 0.76, maxConf: 0.95);
     }
     // 6. Siren: sweeping pitch, mid-high energy, sustained
     else if (centroid > 1100 && centroid < 3500 && (eMid + eHigh) > 0.42 && flatness < 0.55 && rms > 0.03) {
@@ -158,9 +158,9 @@ class AcousticDspAnalyzer {
       confidence = _mapConfidence(eMid + eHigh, 0.42, 0.80, base: 0.76, maxConf: 0.95);
     }
     // 7. Glass Breaking: high ZCR, very high freq, impulsive noisy
-    else if (zcr > 0.25 && (eHigh + eVeryHigh) > 0.38 && flatness > 0.40 && rms > 0.025) {
+    else if ((centroid > 1800 || peakHz > 2200) && zcr > 0.15 && (eHigh + eVeryHigh > 0.22 || (eMid + eHigh + eVeryHigh) > 0.55) && flatness > 0.22 && rms > 0.015) {
       category = SoundCategory.glassBreaking;
-      confidence = _mapConfidence((eHigh + eVeryHigh) * flatness, 0.16, 0.55, base: 0.80, maxConf: 0.96);
+      confidence = _mapConfidence((eHigh + eVeryHigh) * (flatness + 0.3), 0.10, 0.55, base: 0.80, maxConf: 0.96);
     }
     // 8. Baby Crying: mid-high harmonic vocal cries
     else if (centroid > 700 && centroid < 2400 && eMid > 0.28 && zcr > 0.10 && zcr < 0.35 && rms > 0.018) {

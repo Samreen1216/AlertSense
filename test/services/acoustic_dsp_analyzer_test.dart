@@ -140,7 +140,59 @@ void main() {
       expect(SoundCategoryExtension.fromYamnetLabel('Whimper (dog)'), equals(SoundCategory.dogBarking));
       expect(SoundCategoryExtension.fromYamnetLabel('Growling'), equals(SoundCategory.dogBarking));
       expect(SoundCategoryExtension.fromYamnetLabel('Breaking'), equals(SoundCategory.glassBreaking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Smash, crash'), equals(SoundCategory.glassBreaking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Crack'), equals(SoundCategory.glassBreaking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Chink, clink'), equals(SoundCategory.glassBreaking));
       expect(SoundCategoryExtension.fromYamnetLabel('Bicycle bell'), equals(SoundCategory.doorbell));
+      expect(SoundCategoryExtension.fromYamnetLabel('Knock'), equals(SoundCategory.knocking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Door'), equals(SoundCategory.knocking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Thump, thud'), equals(SoundCategory.knocking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Bang'), equals(SoundCategory.knocking));
+      expect(SoundCategoryExtension.fromYamnetLabel('Slam'), equals(SoundCategory.knocking));
+    });
+
+    test('Door knocking percussive burst is accurately identified as knocking', () {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      // Door knock: damped low-frequency percussive impulse burst (~240 Hz wood body)
+      for (int i = 2000; i < 4000; i++) {
+        final t = (i - 2000) / sampleRate;
+        final decay = exp(-t * 30.0);
+        audioData[i] = 0.35 * sin(2 * pi * 240 * t) * decay +
+            0.15 * sin(2 * pi * 480 * t) * decay;
+      }
+
+      final result = analyzer.classify(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.knocking.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.75));
+    });
+
+    test('Glass breaking shatter burst is accurately identified as glassBreaking', () {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      // Glass breaking: high-frequency shatter crash + noisy resonant shards (2800 Hz, 4200 Hz, 5500 Hz + noise)
+      final rng = Random(123);
+      for (int i = 1500; i < 5000; i++) {
+        final t = (i - 1500) / sampleRate;
+        final env = exp(-t * 8.0);
+        final highTones = 0.15 * sin(2 * pi * 2800 * t) +
+            0.18 * sin(2 * pi * 4200 * t) +
+            0.12 * sin(2 * pi * 5500 * t);
+        final shatterNoise = 0.20 * (rng.nextDouble() * 2 - 1);
+        audioData[i] = env * (highTones + shatterNoise);
+      }
+
+      final result = analyzer.classify(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.glassBreaking.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.80));
     });
   });
 
@@ -225,6 +277,48 @@ void main() {
 
       expect(result, isNotNull);
       expect(result!.soundCategory, equals(SoundCategory.dogBarking.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.80));
+    });
+
+    test('classifyAsync identifies Door Knocking on background isolate', () async {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      for (int i = 2000; i < 4000; i++) {
+        final t = (i - 2000) / sampleRate;
+        final decay = exp(-t * 30.0);
+        audioData[i] = 0.35 * sin(2 * pi * 240 * t) * decay +
+            0.15 * sin(2 * pi * 480 * t) * decay;
+      }
+
+      final result = await analyzer.classifyAsync(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.knocking.name));
+      expect(result.confidence, greaterThanOrEqualTo(0.75));
+    });
+
+    test('classifyAsync identifies Glass Breaking on background isolate', () async {
+      const sampleRate = 16000;
+      const totalSamples = 15600;
+      final audioData = List<double>.filled(totalSamples, 0.0);
+
+      final rng = Random(123);
+      for (int i = 1500; i < 5000; i++) {
+        final t = (i - 1500) / sampleRate;
+        final env = exp(-t * 8.0);
+        final highTones = 0.15 * sin(2 * pi * 2800 * t) +
+            0.18 * sin(2 * pi * 4200 * t) +
+            0.12 * sin(2 * pi * 5500 * t);
+        final shatterNoise = 0.20 * (rng.nextDouble() * 2 - 1);
+        audioData[i] = env * (highTones + shatterNoise);
+      }
+
+      final result = await analyzer.classifyAsync(audioData);
+
+      expect(result, isNotNull);
+      expect(result!.soundCategory, equals(SoundCategory.glassBreaking.name));
       expect(result.confidence, greaterThanOrEqualTo(0.80));
     });
 

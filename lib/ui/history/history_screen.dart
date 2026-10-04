@@ -83,6 +83,29 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    // Resolve clean, theme-calibrated card border and surface colors
+    final Color cardBorderColor;
+    final Color cardBgColor;
+    switch (themeType) {
+      case ThemeType.highContrast:
+        cardBorderColor = AppColors.hcPrimary;
+        cardBgColor = AppColors.hcSurface;
+        break;
+      case ThemeType.dark:
+        cardBorderColor = const Color(0xFF1E2D4E);
+        cardBgColor = AppColors.surfaceDark;
+        break;
+      case ThemeType.colorBlindSafe:
+        cardBorderColor = const Color(0xFFD0D7DE);
+        cardBgColor = Colors.white;
+        break;
+      case ThemeType.light:
+      default:
+        cardBorderColor = isDark ? const Color(0xFF1E2D4E) : const Color(0xFFE2E8F0);
+        cardBgColor = isDark ? AppColors.surfaceDark : Colors.white;
+        break;
+    }
+
     // Group alerts by Today, Yesterday, Earlier
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -358,14 +381,31 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           ),
                           ...groupAlerts.map((alert) {
                             final category = _getCategory(alert.soundCategory);
-                            final borderColor =
+                            final priorityColor =
                                 _getPriorityColor(alert.priorityLevel, themeType);
+                            final catColor = category?.color ?? priorityColor;
+                            final avatarBg = themeType == ThemeType.highContrast
+                                ? AppColors.hcSurface
+                                : catColor.withValues(alpha: isDark ? 0.22 : 0.14);
+                            final avatarBorder = themeType == ThemeType.highContrast
+                                ? AppColors.hcPrimary
+                                : catColor.withValues(alpha: 0.35);
+                            final iconColor = themeType == ThemeType.highContrast
+                                ? AppColors.hcPrimary
+                                : catColor;
 
                             return Dismissible(
                               key: Key(alert.id),
                               direction: DismissDirection.endToStart,
                               background: Container(
-                                color: theme.colorScheme.error,
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: themeType == ThemeType.highContrast
+                                      ? const Color(0xFFFF453A)
+                                      : theme.colorScheme.error,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
                                 alignment: Alignment.centerRight,
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 24),
@@ -392,11 +432,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                 margin: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 5),
                                 elevation: 0,
+                                color: cardBgColor,
+                                clipBehavior: Clip.antiAlias,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   side: BorderSide(
-                                    color: borderColor.withValues(alpha: 0.4),
-                                    width: 1.0,
+                                    color: cardBorderColor,
+                                    width: themeType == ThemeType.highContrast
+                                        ? 1.5
+                                        : 1.0,
                                   ),
                                 ),
                                 child: InkWell(
@@ -405,87 +449,115 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                         extra: alert);
                                   },
                                   borderRadius: BorderRadius.circular(16),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border(
-                                        left: BorderSide(
-                                            color: borderColor, width: 5),
-                                      ),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 16, vertical: 6),
-                                      leading: SoundIcon(
-                                        iconName: alert.soundCategory,
-                                        color:
-                                            borderColor.withValues(alpha: 0.15),
-                                      ),
-                                      title: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              category?.label ??
-                                                  alert.soundCategory,
-                                              style: theme.textTheme.titleMedium
-                                                  ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ),
-                                          PriorityBadge(
-                                              priority: alert.priorityLevel
-                                                  .toUpperCase()),
-                                        ],
-                                      ),
-                                      subtitle: Padding(
-                                        padding: const EdgeInsets.only(top: 4.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '${(alert.confidence * 100).toStringAsFixed(0)}% • ${DateFormat.jm().format(alert.timestamp)} • ${alert.source}',
-                                              style: theme.textTheme.bodySmall
-                                                  ?.copyWith(
-                                                color: theme.colorScheme
-                                                    .onSurfaceVariant,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            if (alert.acknowledged)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                    top: 4.0),
-                                                child: Row(
-                                                  children: [
-                                                    const Icon(
-                                                        Icons.check_circle,
-                                                        size: 13,
-                                                        color: Colors.green),
-                                                    const SizedBox(width: 4),
-                                                    Expanded(
-                                                      child: Text(
-                                                        'Acknowledged (${alert.responseAction ?? "checked"})',
-                                                        overflow: TextOverflow.ellipsis,
-                                                        maxLines: 1,
-                                                        style: const TextStyle(
-                                                            fontSize: 11,
-                                                            color: Colors.green,
-                                                            fontWeight:
-                                                                FontWeight.w500),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 12),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        SoundIcon(
+                                          iconName: category?.name ?? alert.soundCategory,
+                                          color: avatarBg,
+                                          borderColor: avatarBorder,
+                                          iconColor: iconColor,
+                                          size: 44,
+                                          iconSize: 22,
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      category?.label ??
+                                                          alert.soundCategory,
+                                                      style: theme
+                                                          .textTheme
+                                                          .titleMedium
+                                                          ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w700,
                                                       ),
                                                     ),
-                                                  ],
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  PriorityBadge(
+                                                      priority: alert
+                                                          .priorityLevel
+                                                          .toUpperCase()),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                '${(alert.confidence * 100).toStringAsFixed(0)}% • ${DateFormat.jm().format(alert.timestamp)} • ${alert.source}',
+                                                style: theme
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                  fontWeight:
+                                                      FontWeight.w500,
                                                 ),
                                               ),
-                                          ],
+                                              if (alert.acknowledged)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          top: 4.0),
+                                                  child: Row(
+                                                    children: [
+                                                      const Icon(
+                                                          Icons
+                                                              .check_circle,
+                                                          size: 13,
+                                                          color: Colors
+                                                              .green),
+                                                      const SizedBox(
+                                                          width: 4),
+                                                      Expanded(
+                                                        child: Text(
+                                                          'Acknowledged (${alert.responseAction ?? "checked"})',
+                                                          overflow:
+                                                              TextOverflow
+                                                                  .ellipsis,
+                                                          maxLines: 1,
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize:
+                                                                      11,
+                                                                  color: Colors
+                                                                      .green,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      trailing: const Icon(
+                                        const SizedBox(width: 8),
+                                        Icon(
                                           Icons.chevron_right_rounded,
-                                          size: 18),
+                                          size: 18,
+                                          color: themeType ==
+                                                  ThemeType.highContrast
+                                              ? AppColors.hcPrimary
+                                              : (isDark
+                                                  ? Colors.white38
+                                                  : const Color(0xFF94A3B8)),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),

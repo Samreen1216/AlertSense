@@ -140,13 +140,14 @@ class ListeningNotifier extends StateNotifier<bool> {
       debugPrint('[Threshold] ${result.confidence.toStringAsFixed(2)} >= ${effectiveThreshold.toStringAsFixed(2)} → PASS');
 
       // 4. Temporal Smoothing / Multi-Window Confirmation
+      final isTransient = category == SoundCategory.glassBreaking || category == SoundCategory.knocking;
       final confirmed = smoother.processPrediction(
         category: category,
         confidence: result.confidence,
         timestamp: result.timestamp,
       );
 
-      if (confirmed == null) {
+      if (confirmed == null && !isTransient) {
         debugPrint('[Alert] NOT TRIGGERED');
         return;
       }
@@ -155,9 +156,9 @@ class ListeningNotifier extends StateNotifier<bool> {
 
       // 5. Confirmed Detection Passed to Alert Dispatcher
       final confirmedResult = ClassificationResult(
-        soundCategory: confirmed.category.name,
-        confidence: confirmed.aggregatedConfidence,
-        timestamp: confirmed.timestamp,
+        soundCategory: category.name,
+        confidence: confirmed?.aggregatedConfidence ?? result.confidence,
+        timestamp: confirmed?.timestamp ?? result.timestamp,
         topPredictions: result.topPredictions,
         ambientDbLevel: result.ambientDbLevel,
       );

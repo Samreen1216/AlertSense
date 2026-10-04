@@ -343,6 +343,49 @@ void main() {
 
       expect(find.text('GPS Pin Attached'), findsOneWidget);
     });
+
+    testWidgets('responsive layout on narrow screen (320px) does not overflow', (tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        Theme(
+          data: ThemeData.light(),
+          child: wrapWithMaterial(
+            const ManualSmsDialog(
+              initialPhone: '+15551234567',
+              defaultMessage: 'EMERGENCY: Siren detected\n\n📍 Pin: https://maps.google.com/?q=33.6844,73.0479 (±12m)',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('GPS Pin Attached'), findsOneWidget);
+    });
+
+    testWidgets('adapts styling in dark mode without throwing error', (tester) async {
+      await tester.pumpWidget(
+        Theme(
+          data: ThemeData.dark(),
+          child: wrapWithMaterial(
+            const ManualSmsDialog(
+              initialPhone: '+15551234567',
+              defaultMessage: 'EMERGENCY: Siren detected',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Alert Family via SMS'), findsOneWidget);
+    });
   });
 
   group('ManualWhatsAppDialog GPS Status Tests', () {
@@ -357,6 +400,31 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(find.text('GPS Pin Attached'), findsOneWidget);
+    });
+
+    testWidgets('responsive layout on narrow screen (320px) does not overflow', (tester) async {
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        Theme(
+          data: ThemeData.light(),
+          child: wrapWithMaterial(
+            const ManualWhatsAppDialog(
+              initialPhone: '+923001234567',
+              defaultMessage: 'EMERGENCY: Fire detected\n\n📍 Pin: https://maps.google.com/?q=31.5204,74.3587 (±10m)',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
       expect(find.text('GPS Pin Attached'), findsOneWidget);
     });
   });

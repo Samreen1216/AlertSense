@@ -12,7 +12,9 @@ import 'package:alertsense/providers/alert_providers.dart';
 import 'package:alertsense/providers/audio_providers.dart';
 import 'package:alertsense/providers/service_providers.dart';
 import 'package:alertsense/services/notification_service.dart';
+import 'package:alertsense/core/constants/app_colors.dart';
 import 'package:alertsense/ui/home/home_screen.dart';
+import 'package:alertsense/ui/home/widgets/profile_side_navigation.dart';
 import 'package:alertsense/ui/home/widgets/recent_alerts_section.dart';
 import 'package:alertsense/ui/home/widgets/sound_category_cards.dart';
 
@@ -358,5 +360,59 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('Recent Alerts'), findsOneWidget);
     });
+
+    testWidgets('Scrolling and overscrolling keeps content background white without exposing dark blue', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(412, 915));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final multipleAlerts = [
+        AlertEvent(
+          id: 's-1',
+          soundCategory: 'fireAlarm',
+          priorityLevel: 'High',
+          confidence: 0.95,
+          timestamp: DateTime.now().subtract(const Duration(minutes: 2)),
+        ),
+        AlertEvent(
+          id: 's-2',
+          soundCategory: 'doorbell',
+          priorityLevel: 'Medium',
+          confidence: 0.88,
+          timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
+        ),
+      ];
+
+      await tester.pumpWidget(
+        createTestWidget(
+          child: Scaffold(
+            body: const HomeScreen(),
+            bottomNavigationBar: Container(height: 70, color: Colors.white, child: const Text('Nav')),
+          ),
+          initialAlerts: multipleAlerts,
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // 1. Verify HomeScreen Scaffold background is contentBg (backgroundLight in light mode)
+      final homeScaffolds = tester.widgetList<Scaffold>(find.byType(Scaffold));
+      final innerScaffold = homeScaffolds.firstWhere(
+        (s) => s.endDrawer is ProfileSideNavigation,
+      );
+      expect(innerScaffold.backgroundColor, equals(AppColors.backgroundLight));
+
+      // 2. Scroll up (drag by -150)
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -150));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Recent Alerts'), findsOneWidget);
+
+      // 3. Overscroll at bottom (drag further up)
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -200));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Background remains backgroundLight
+      expect(innerScaffold.backgroundColor, equals(AppColors.backgroundLight));
+    });
   });
 }
+

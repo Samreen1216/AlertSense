@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../core/constants/app_colors.dart';
 
 /// Modal dialog for dispatching direct emergency SMS messages with phone input and message preview.
 class ManualSmsDialog extends StatefulWidget {
@@ -74,163 +75,263 @@ class _ManualSmsDialogState extends State<ManualSmsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isHighContrast = theme.scaffoldBackgroundColor == Colors.black;
+
+    final Color dialogBg;
+    final Color dialogBorder;
+    final Color titleColor;
+    final Color labelColor;
+    final Color inputFill;
+    final Color inputTextColor;
+    final Color inputBorder;
+    final Color tipColor;
+    final Color cancelColor;
+
+    if (isHighContrast) {
+      dialogBg = AppColors.hcSurface;
+      dialogBorder = AppColors.hcPrimary;
+      titleColor = Colors.white;
+      labelColor = const Color(0xFFE2E8F0);
+      inputFill = Colors.black;
+      inputTextColor = Colors.white;
+      inputBorder = AppColors.hcPrimary;
+      tipColor = const Color(0xFFE2E8F0);
+      cancelColor = Colors.white;
+    } else if (isDark) {
+      dialogBg = const Color(0xFF111C35);
+      dialogBorder = const Color(0xFF1E2D4E);
+      titleColor = Colors.white;
+      labelColor = Colors.white70;
+      inputFill = const Color(0xFF182544);
+      inputTextColor = Colors.white;
+      inputBorder = const Color(0xFF23355E);
+      tipColor = Colors.white54;
+      cancelColor = Colors.white70;
+    } else {
+      dialogBg = Colors.white;
+      dialogBorder = const Color(0xFFE2E8F0);
+      titleColor = const Color(0xFF0F172A);
+      labelColor = const Color(0xFF475569);
+      inputFill = const Color(0xFFF8FAFC);
+      inputTextColor = const Color(0xFF0F172A);
+      inputBorder = const Color(0xFFCBD5E1);
+      tipColor = const Color(0xFF64748B);
+      cancelColor = const Color(0xFF64748B);
+    }
+
+    final hasGps = _messageController.text.contains('maps.google.com');
+    final gpsBadgeBg = hasGps
+        ? (isDark
+            ? const Color(0xFF1B5E20).withValues(alpha: 0.6)
+            : const Color(0xFFE8F5E9))
+        : (isDark
+            ? Colors.amber.shade900.withValues(alpha: 0.4)
+            : const Color(0xFFFFF3E0));
+    final gpsBadgeBorder = hasGps
+        ? (isDark ? const Color(0xFF69F0AE) : const Color(0xFF2E7D32))
+        : (isDark ? Colors.amberAccent : const Color(0xFFE65100));
+    final gpsBadgeText = hasGps
+        ? (isDark ? const Color(0xFF69F0AE) : const Color(0xFF1B5E20))
+        : (isDark ? Colors.amberAccent : const Color(0xFFE65100));
+
     return AlertDialog(
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: dialogBg,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Colors.white24, width: 1.0),
+        side: BorderSide(
+          color: dialogBorder,
+          width: isHighContrast ? 1.5 : 1.0,
+        ),
       ),
-      title: const Row(
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      title: Row(
         children: [
-          Icon(Icons.sms_rounded, color: Color(0xFFE65100), size: 28),
-          SizedBox(width: 12),
-          Text(
-            'Alert Family via SMS',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE65100).withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.sms_rounded, color: Color(0xFFE65100), size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Alert Family via SMS',
+              style: TextStyle(
+                color: titleColor,
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
-      content: SingleChildScrollView(
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Phone number to SMS:',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _phoneController,
-              focusNode: _phoneFocusNode,
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.done,
-              autocorrect: false,
-              enableSuggestions: false,
-              scrollPadding: const EdgeInsets.all(24.0),
-              onSubmitted: (_) => FocusScope.of(context).unfocus(),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.phone, color: Color(0xFFE65100)),
-                hintText: 'Enter recipient phone number',
-                hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
-                errorText: _phoneError,
-                filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE65100)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE65100)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFFF9800), width: 2.0),
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 440,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.72,
+        ),
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Phone number to SMS:',
+                style: TextStyle(
+                  color: labelColor,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Message preview & edit:',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: _messageController.text.contains('maps.google.com')
-                        ? const Color(0xFF1B5E20).withValues(alpha: 0.6)
-                        : Colors.amber.shade900.withValues(alpha: 0.4),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _phoneController,
+                focusNode: _phoneFocusNode,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.done,
+                autocorrect: false,
+                enableSuggestions: false,
+                scrollPadding: const EdgeInsets.all(24.0),
+                onSubmitted: (_) => FocusScope.of(context).unfocus(),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\+\-\(\) ]'))],
+                style: TextStyle(color: inputTextColor, fontWeight: FontWeight.bold),
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.phone, color: Color(0xFFE65100)),
+                  hintText: 'Enter recipient phone number',
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
+                    fontSize: 13,
+                  ),
+                  errorText: _phoneError,
+                  filled: true,
+                  fillColor: inputFill,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _messageController.text.contains('maps.google.com')
-                          ? const Color(0xFF69F0AE)
-                          : Colors.amberAccent,
-                      width: 1.0,
+                    borderSide: BorderSide(color: inputBorder),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: inputBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE65100), width: 2.0),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  Text(
+                    'Message preview & edit:',
+                    style: TextStyle(
+                      color: labelColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _messageController.text.contains('maps.google.com')
-                            ? Icons.location_on_rounded
-                            : Icons.location_off_rounded,
-                        size: 13,
-                        color: _messageController.text.contains('maps.google.com')
-                            ? const Color(0xFF69F0AE)
-                            : Colors.amberAccent,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: gpsBadgeBg,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: gpsBadgeBorder,
+                        width: 1.0,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _messageController.text.contains('maps.google.com')
-                            ? 'GPS Pin Attached'
-                            : 'No GPS Pin',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: _messageController.text.contains('maps.google.com')
-                              ? Colors.white
-                              : Colors.amberAccent,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          hasGps
+                              ? Icons.location_on_rounded
+                              : Icons.location_off_rounded,
+                          size: 13,
+                          color: gpsBadgeText,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Text(
+                          hasGps ? 'GPS Pin Attached' : 'No GPS Pin',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: gpsBadgeText,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _messageController,
+                focusNode: _messageFocusNode,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                textCapitalization: TextCapitalization.sentences,
+                autocorrect: true,
+                enableSuggestions: true,
+                maxLines: 4,
+                scrollPadding: const EdgeInsets.all(24.0),
+                style: TextStyle(color: inputTextColor, fontSize: 13),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: inputFill,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: inputBorder),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: inputBorder),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE65100), width: 1.5),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _messageController,
-              focusNode: _messageFocusNode,
-              keyboardType: TextInputType.multiline,
-              textInputAction: TextInputAction.newline,
-              textCapitalization: TextCapitalization.sentences,
-              autocorrect: true,
-              enableSuggestions: true,
-              maxLines: 4,
-              scrollPadding: const EdgeInsets.all(24.0),
-              style: const TextStyle(color: Colors.white, fontSize: 13),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white24),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.white24),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE65100), width: 1.5),
-                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Tip: Save contacts in Settings → Emergency Contacts for one-tap sending.',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                'Tip: Save contacts in Settings → Emergency Contacts for one-tap sending.',
+                style: TextStyle(color: tipColor, fontSize: 11),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          child: Text('Cancel', style: TextStyle(color: cancelColor, fontWeight: FontWeight.w600)),
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: const Color(0xFFE65100)),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFFE65100),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
           onPressed: _sendSms,
-          child: const Text('SEND SMS', style: TextStyle(fontWeight: FontWeight.bold)),
+          icon: const Icon(Icons.send_rounded, size: 16),
+          label: const Text('SEND SMS', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );
